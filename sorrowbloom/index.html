@@ -93,7 +93,7 @@ const Save={
   d:null,
   fresh(){return{ach:{},seenI:{},gotI:{},seenE:{},bossK:{},
     stats:{runs:0,wins:0,deaths:0,kills:0,secrets:0,confess:0},
-    opts:{lang:(navigator.language||'').toLowerCase().startsWith('es')?'es':'en',master:1,music:.75,sfx:.8,shake:1,flash:true,hints:true,autofire:false,aim:false,dmgNums:false,fps:false,crt:true,grain:true,pixel:false,hiContrast:false,touchSize:1,diff:0,timer:false,touchStyle:'twin',touchAssist:true,aimLine:true,flick:true,lefty:false,binds:{}},daily:{},best:0,hard:false,lastChar:'wren',tutDone:false,mods:{},chars:{},weekly:{},bestSplits:{}}},
+    opts:{lang:(navigator.language||'').toLowerCase().startsWith('es')?'es':'en',master:1,music:.75,sfx:.8,shake:1,flash:true,hints:true,autofire:false,aim:false,dmgNums:false,fps:false,crt:true,grain:true,pixel:false,hiContrast:false,touchSize:1,diff:0,timer:false,touchStyle:'twin',touchAssist:true,aimLine:true,flick:true,lefty:false,binds:{}},daily:{},best:0,hard:false,lastChar:'wren',tutDone:false,mods:{},chars:{},weekly:{},bestSplits:{},texts:{},bank:0,merch:{owned:{},on:{}}}},
   load(){
     let s=null;try{s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){s=null}
     const f=this.fresh();
@@ -2328,7 +2328,9 @@ function bossDefeated(e){
     G.locked=false;G.room.cleared=true;G.bossDying=false;
     const it=drawItem('b');if(it)G.room.peds.push({x:CX,y:CY-14,item:it});
     spawnPickup('heart',CX-34,CY+8);
-    G.room.trapdoor={x:CX,y:CY+44,t:0};AU.play('door');saveRun();
+    G.room.trapdoor={x:CX,y:CY+44,t:0};AU.play('door');
+    if(G.floor.curse&&!G.floor.curseLifted){G.floor.curseLifted=true;p.pins=Math.min(99,p.pins+15);G.run.curseBonus=(G.run.curseBonus||0)+300;toast('The curse lifts.','+15 pins','#ffd23f')}
+    saveRun();
   }});
 }
 function ending(kind){
@@ -2336,6 +2338,94 @@ function ending(kind){
   G.run.win=kind;Save.d.stats.wins++;grantAch('win');if(kind==='hug')grantAch('hug');Save.write();
   G.state='ending';G.endT=0;Music.setMode('void');
 }
+
+// ---------- texts from Sam, between floors ----------
+const TEXTS={
+  '2':{time:'11:52 PM',lines:[['sam','hey'],['sam','you went quiet in the group chat'],['sam','you ok?']]},
+  mall:{time:'11:52 PM',lines:[['sam','are you at the mall??'],['sam','it closed like four hours ago'],['sam','save me a pretzel i guess']]},
+  '3':{time:'12:40 AM',lines:[['sam','walked past your place tonight'],['sam','your light was on'],["sam","i didn't knock. sorry"]]},
+  '4':{time:'1:15 AM',lines:[['sam','remember the chapel show?'],['sam','you screamed every word'],['sam','i still have the setlist you stole for me']]},
+  '5':{time:'2:03 AM',lines:[["sam","you don't have to text back"],['sam','just eat something. please']]},
+  '6':{time:'3:12 AM',lines:[['sam','found the mixtape you made me'],['sam','side b is all songs about leaving'],['sam','i listened to it twice']]},
+  '7':{time:'3:47 AM',lines:[["sam","i'm outside"],["sam","i'm not going anywhere"]]},
+  hug:{time:'5:58 AM',lines:[['sam','you there?'],['you','yeah'],['you','can you come up'],['sam','already on the stairs']]},
+  kill:{time:'5:58 AM',lines:[['sam','you up?'],['sam','...'],['sam',"i'll try again tomorrow"]]}};
+const TEXT_ORDER=['2','mall','3','4','5','6','7','hug','kill'];
+function textTitle(k){if(k==='hug')return tr('Morning');if(k==='kill')return tr('Morning, alone');const fl=k==='mall'?MALL:FLOORS[(+k)-1];return fl.ro+' · '+tr(fl.n)}
+// a full conversation the first time; after that just a notification
+function floorTexts(d){
+  const r=G.run;if(r.tutorial||r.mode!=='story'||r.loop||d<2)return;
+  const k=G.floorDef===MALL?'mall':String(d),tx=TEXTS[k];if(!tx)return;
+  if(Save.d.texts&&Save.d.texts[k]){toast('sam: '+tr(tx.lines[0][1]),'','#7ff5e6');return}
+  openPhone(k,{});
+}
+function openPhone(k,o){
+  (Save.d.texts||(Save.d.texts={}))[k]=1;Save.write();
+  G.phone={key:k,tx:TEXTS[k],shown:0,t:0,next:40,dark:!!o.dark,back:G.state,then:o.then||null};G.state='phone';
+}
+function updPhone(){
+  const ph=G.phone;if(!ph){G.state='play';return}ph.t++;
+  const n=ph.tx.lines.length;
+  if(ph.shown<n&&ph.t>=ph.next){ph.shown++;ph.next=ph.t+70;AU.play(ph.tx.lines[ph.shown-1][0]==='you'?'blip':'beep')}
+  if(ph.t>20&&(Input.pressed('ok')||Input.pressed('back')||Input.clicks.length)){if(ph.shown<n)ph.shown=n;else{G.phone=null;G.state=ph.back==='phone'?'play':ph.back;if(ph.then)ph.then()}}
+}
+function renderPhone(c){
+  const ph=G.phone;if(!ph)return;
+  c.fillStyle=ph.dark?'#030104':'rgba(5,2,8,.65)';c.fillRect(0,0,W,H);
+  const w=160,h=236,x=CX-w/2,y=17;
+  c.fillStyle='#0a0810';c.fillRect(x-5,y-5,w+10,h+10);c.strokeStyle='#3a3048';c.strokeRect(x-4.5,y-4.5,w+9,h+9);
+  c.fillStyle='#120e18';c.fillRect(x,y,w,h);c.fillStyle='#1c1624';c.fillRect(x,y,w,20);
+  c.fillStyle='#7ff5e6';c.beginPath();c.arc(x+12,y+10,5,0,TAU);c.fill();
+  txt(c,'sam',x+22,y+6,{col:'#fff'});txt(c,ph.tx.time,x+w-6,y+6,{align:'right',col:'#6a607a'});
+  let by=y+28;c.font='12px '+F_X;
+  for(let i=0;i<ph.shown;i++){
+    const[from,t]=ph.tx.lines[i],you=from==='you',ls=wrapText(c,t,104,12),bw=Math.max(...ls.map(l=>c.measureText(l).width))+12,bh=ls.length*11+7,bx=you?x+w-8-bw:x+8;
+    c.fillStyle=you?'#ff4f7b':'#2a2434';c.fillRect(bx,by,bw,bh);ls.forEach((l,j)=>txt(c,l,bx+6,by+3+j*11,{font:F_X,size:12,col:'#fff',shadow:false}));by+=bh+5;c.font='12px '+F_X;
+  }
+  if(ph.shown<ph.tx.lines.length){const you=ph.tx.lines[ph.shown][0]==='you',bx=you?x+w-38:x+8;c.fillStyle=you?'#5a2a3a':'#2a2434';c.fillRect(bx,by,30,14);
+    for(let k=0;k<3;k++){c.globalAlpha=.4+.6*((G.frame>>3)%3===k?1:0);c.fillStyle='#e9e1f0';c.fillRect(bx+7+k*7,by+6,3,3)}c.globalAlpha=1}
+  else txt(c,'tap to keep going',CX,y+h-14,{align:'center',font:F_X,size:11,col:'#8f86a0'});
+}
+
+// ---------- merch table: pins you bring home buy small permanent perks ----------
+const MERCH=[
+  {id:'candle',n:'Spare Candle',f:'Start every run with an extra candle.',cost:25},
+  {id:'change',n:'Loose Change',f:'Start every run with 6 pins.',cost:35},
+  {id:'pin',n:'Lucky Pin',f:'Luck up.',cost:60},
+  {id:'setlist',n:'Taped Setlist',f:'Every fight starts with some HYPE.',cost:70},
+  {id:'strings',n:'New Strings',f:'Damage up a little.',cost:90},
+  {id:'sketch',n:'Map Sketch',f:'See the shape of every floor when you arrive.',cost:110},
+  {id:'hoodie',n:'Thrifted Hoodie',f:'Start with one more heart.',cost:160}];
+function activePerks(){const m=Save.d.merch||{},out={};for(const x of MERCH)if(m.owned&&m.owned[x.id]&&m.on&&m.on[x.id])out[x.id]=true;return out}
+function applyPerks(p,pk){if(pk.candle)p.candles++;if(pk.change)p.pins+=6;if(pk.pin)p.bonus.luck+=1;if(pk.strings)p.bonus.dmg+=.3;if(pk.hoodie){addContainers(p,1);healRed(p,2)}recalc(p)}
+function updMerch(){
+  const m=G.menu,rows=[...MERCH,{id:'back',n:'BACK'}],md=Save.d.merch||(Save.d.merch={owned:{},on:{}});
+  if(Input.pressed('back')||backBtnHit()){Save.write();G.state='modes';G.menu={sel:MODE_LIST.findIndex(x=>x.id==='merch')};return}
+  const i=menuNav(rows.length);if(i<0)return;const r=rows[i];
+  if(r.id==='back'){Save.write();G.state='modes';G.menu={sel:MODE_LIST.findIndex(x=>x.id==='merch')};return}
+  if(md.owned[r.id]){md.on[r.id]=!md.on[r.id];AU.play('blip')}
+  else if((Save.d.bank|0)>=r.cost){Save.d.bank-=r.cost;md.owned[r.id]=true;md.on[r.id]=true;AU.play('buy')}
+  else AU.play('denied');
+  Save.write();
+}
+function renderMerch(c){
+  drawRainBg(c);drawBackBtn(c);
+  const m=G.menu,md=Save.d.merch||{owned:{},on:{}},rows=[...MERCH,{id:'back',n:'BACK'}];
+  txt(c,'Merch Table',CX,8,{align:'center',font:F_T,size:24});
+  txt(c,tr('{0} pins banked',Save.d.bank|0),CX,40,{align:'center',col:'#ffd23f'});
+  m.rects=[];
+  rows.forEach((r,i)=>{const y=58+i*16,sel=i===m.sel;m.rects.push([90,y-3,300,15]);
+    if(sel){c.fillStyle='rgba(255,79,123,.15)';c.fillRect(90,y-3,300,14);txt(c,'>',82,y,{col:'#ff4f7b'})}
+    txt(c,r.n,98,y,{col:sel?'#fff':'#a89cb8'});
+    if(r.cost){const own=md.owned&&md.owned[r.id],v=own?(md.on[r.id]?'ON':'OFF'):tr('{0} pins',r.cost),afford=(Save.d.bank|0)>=r.cost;
+      txt(c,v,382,y,{align:'right',col:own?(md.on[r.id]?'#7cff6a':'#8f86a0'):afford?'#ffd23f':'#5a5068'})}});
+  const r=rows[m.sel];c.fillStyle='rgba(0,0,0,.45)';c.fillRect(70,190,340,36);
+  if(r&&r.f)txt(c,r.f,CX,196,{align:'center',font:F_X,size:13,col:'#d8cce4'});
+  txt(c,"Perks don't apply to the daily or weekly challenge.",CX,212,{align:'center',font:F_X,size:11,col:'#8f86a0'});
+}
+
+// ---------- floor curses: harder floors that pay out when you beat the boss ----------
+const CURSES={lost:{n:'Curse of the Lost',f:'Your map forgets where you have been.'},blackout:{n:'Curse of the Blackout',f:'Every light on this floor is out.'},haunted:{n:'Curse of the Haunted',f:'Something follows you into every fight.'}};
 
 // ---------- modes: encore loops, boss rush rounds, weekly challenge, speedrun splits ----------
 const ROUNDS=[{boss:'moths',d:1},{boss:'opening',d:2},{boss:'mascot',d:2,fl:'mall'},{boss:'gutter',d:2},{boss:'choirm',d:3},{boss:'angel',d:4},{boss:'flatline',d:4},
@@ -2385,11 +2475,11 @@ function snapshotRun(){
     rooms.push(o);
   }
   return{v:1,build:BUILD,at:Date.now(),
-    run:{mode:r.mode,loop:r.loop,round:r.round,weekly:r.weekly,splits:r.splits,seedStr:r.seedStr,char:r.char.id,depth:r.depth,diff:r.diff,mods:r.mods,daily:r.daily,dailyKey:r.dailyKey,items:ids(r.items),taken:r.taken,pools:r.pools,
+    run:{perks:r.perks,curseBonus:r.curseBonus,mode:r.mode,loop:r.loop,round:r.round,weekly:r.weekly,splits:r.splits,seedStr:r.seedStr,char:r.char.id,depth:r.depth,diff:r.diff,mods:r.mods,daily:r.daily,dailyKey:r.dailyKey,items:ids(r.items),taken:r.taken,pools:r.pools,
       candyMap:r.candyMap,candyKnown:r.candyKnown,kills:r.kills,frames:r.frames,bossKills:r.bossKills,secrets:r.secrets,newUnlocks:r.newUnlocks.map(a=>a.id)},
     player:{red:p.red,maxRed:p.maxRed,extras:p.extras,pins:p.pins,candles:p.candles,consum:p.consum,active:p.active?p.active.id:null,charge:p.charge,items:ids(p.items),
       bonus:p.bonus,mood:p.mood,trans:p.trans,revives:p.revives,fams:p.fams.map(f=>f.kind),hype:p.hype||0,tearN:p.tearN,dashes:p.dashes||0},
-    floor:{room:G.room.idx,rooms}};
+    floor:{room:G.room.idx,rooms,curseLifted:!!G.floor.curseLifted}};
 }
 function restoreRun(d){
   const sr=d.run,sp=d.player,ch=CHARS.find(c=>c.id===sr.char);if(!ch)throw new Error('unknown character');
@@ -2399,7 +2489,7 @@ function restoreRun(d){
     mult:runMult(diffId,mods),daily:!!sr.daily,dailyKey:sr.dailyKey||null,tutorial:false,kills:sr.kills|0,frames:sr.frames|0,bossKills:sr.bossKills|0,killer:null,
     newUnlocks:(sr.newUnlocks||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean),pools:{},candyMap:sr.candyMap,candyKnown:sr.candyKnown||{},
     hurtBoss:false,hurtRoom:false,secrets:sr.secrets|0,win:null,lastHurt:null,
-    mode:sr.mode||'story',loop:sr.loop|0,round:sr.round|0,weekly:sr.weekly||null,splits:sr.splits||[]};
+    mode:sr.mode||'story',loop:sr.loop|0,round:sr.round|0,weekly:sr.weekly||null,splits:sr.splits||[],perks:sr.perks||{},curseBonus:sr.curseBonus|0};
   for(const k of 'tsbc')run.pools[k]=((sr.pools||{})[k]||[]).filter(id=>ITEM[id]); // a newer build may have dropped an item
   G.run=run;const p=G.player=makePlayer(ch);
   G.hist=[];G.toasts=[];G.banner=null;G.sadBar=0;G.mapToggle=false;G.tut=null;G.trans=null;
@@ -2408,7 +2498,7 @@ function restoreRun(d){
   Object.assign(p.bonus,sp.bonus||{});Object.assign(p.mood,sp.mood||{});
   p.items=many(sp.items);p.active=sp.active?one(sp.active):null;p.fams=[];for(const k of sp.fams||[])addFam(p,k);
   recalc(p);
-  setupFloor(run.depth,true);
+  setupFloor(run.depth,true);G.floor.curseLifted=!!d.floor.curseLifted;
   for(const o of d.floor.rooms){
     const rm=G.floor.rooms.get(o.idx);if(!rm)continue;
     Object.assign(rm,{type:o.type,visited:o.visited,seen:o.seen,mapped:o.mapped,cleared:o.cleared,counted:o.counted,sold:o.sold});
@@ -2485,7 +2575,7 @@ function startRun(charId,o){
   let diffId=o.tutorial?0:(Save.d.opts.diff|0);if(!diffOk(diffId))diffId=0;
   const mods={},pick=o.weekly?o.weekly.mods:Save.d.mods;if(!o.tutorial)for(const x of MODS)if(pick&&pick[x.id])mods[x.id]=true;
   const run={seed,seedStr,rng,char:ch,depth:1,items:[],taken:{},diff:diffId,hard:diffId===3||diffId===5,mods,mult:runMult(diffId,mods),daily:!!o.daily,dailyKey:o.daily?dateKey():null,
-    mode:o.mode||'story',loop:0,round:0,weekly:o.weekly?o.weekly.key:null,splits:[],
+    mode:o.mode||'story',loop:0,round:0,weekly:o.weekly?o.weekly.key:null,splits:[],curseBonus:0,perks:o.tutorial||o.daily||o.weekly?{}:activePerks(),
     tutorial:!!o.tutorial,kills:0,frames:0,bossKills:0,killer:null,newUnlocks:[],pools:null,candyMap:null,candyKnown:{},hurtBoss:false,hurtRoom:false,secrets:0,win:null,lastHurt:null};
   const pools={t:[],s:[],b:[],c:[]};
   for(const it of ITEMS){if(it.lock&&!isUnlocked(it.lock))continue;if(ch.items.includes(it.id))continue;for(const k of'tsbc')if(it.pool.includes(k))pools[k].push(it.id)}
@@ -2496,7 +2586,7 @@ function startRun(charId,o){
   if(run.tutorial){G.player.candles=1;run.pools={t:[],s:[],b:[],c:[]};for(const k in pools)run.pools[k]=pools[k]}
   for(const id of ch.items){const it=ITEM[id];run.taken[id]=1;if(it.active){G.player.active=it;G.player.charge=it.active.charge;run.items.push(it)}else{G.player.items.push(it);run.items.push(it);if(it.fam)for(const f of it.fam)addFam(G.player,f)}}
   recalc(G.player);
-  applyHeartMods(G.player,mods);if(mods.sellout)G.player.pins+=20;
+  applyHeartMods(G.player,mods);if(mods.sellout)G.player.pins+=20;applyPerks(G.player,run.perks);
   if(!run.tutorial){Save.d.stats.runs++;Save.d.lastChar=ch.id;charStats(ch.id).runs++;clearRunSave()}
   if(run.daily)Save.d.daily[dateKey()]={done:false,score:0,diff:diffId};
   Save.write();
@@ -2533,7 +2623,10 @@ function setupFloor(d,restoring){
   Music.setSong(makeSong(hashStr(run.seedStr+':song'+d+L),d,G.floorDef));Music.setMode('explore');
   AU.setAmbience(G.floorDef.amb);AU.setMuffle(G.floorDef.water?2400:18000);
   const p=G.player;
+  G.floor.curse=null;
+  if(!run.tutorial&&run.mode!=='rush'&&d>=2&&d<7){const cr=new RNG(hashStr(run.seedStr+':curse'+d+L));if(cr.chance(.25))G.floor.curse=cr.pick(Object.keys(CURSES))}
   if(!restoring){
+    if(run.perks&&run.perks.sketch)revealMap(1);
     if(d>=3)grantAch('floor3');if(d>=4)grantAch('floor4');
     if(p.items.some(i=>i.mood))rollMood(p);
     hooks('floor');
@@ -2551,6 +2644,8 @@ function enterFloor(d){
   if(r.mode==='rush'){card.sub=tr('ROUND {0} / {1}',r.round+1,ROUNDS.length);card.title=tr(BOSS[ROUNDS[r.round].boss].name)}
   else if(r.loop)card.sub=tr('FLOOR')+' '+G.floorDef.ro+' · '+tr('LOOP {0}',r.loop+1);
   if(!r.tutorial&&(d>1||r.loop||r.round))takeSplit();
+  if(G.floor.curse){card.curse=G.floor.curse;G.fx.push({t:100,f:()=>toast(CURSES[G.floor.curse].n,CURSES[G.floor.curse].f,'#c21e3a')})}
+  floorTexts(d);
   if(G.trans&&G.trans.type==='fade')G.trans.after=card;else G.trans=card;
 }
 function descend(){
@@ -2581,6 +2676,8 @@ function enterRoom(room,fromDir){
         const c=randomCell({minDist:95,fly:EN[s.type].fly})||randomCell({fly:true})||{x:CX,y:CY};
         if(s.type==='choir')spawnChoir(c.x,c.y);else spawnEnemy(s.type,c.x,c.y,{elite:s.elite});
       }
+      if(G.floor.curse==='haunted'){const c=randomCell({minDist:80,fly:true})||{x:CX,y:CY};spawnEnemy('echo',c.x,c.y)}
+      if(G.run.perks&&G.run.perks.setlist)p.hype=Math.min(100,(p.hype||0)+25);
       G.locked=true;G.roomStartCount=G.enemies.length;AU.play('door');Music.setMode('combat');
       if(p.flags.earplugs)p.plug=true;
       if(room.outage){G.extraDark=.32;G.outage=true;toast('The power went out.','','#9aa7ff')}
@@ -2649,7 +2746,7 @@ function collectLights(){
   return L;
 }
 function renderLighting(c){
-  const fl=G.floorDef;let dark=fl.dark+G.extraDark+(G.run.hard?.05:0)+(G.run.mods&&G.run.mods.insomniac?.3:0);
+  const fl=G.floorDef;let dark=fl.dark+G.extraDark+(G.run.hard?.05:0)+(G.run.mods&&G.run.mods.insomniac?.3:0)+(G.floor&&G.floor.curse==='blackout'?.25:0);
   if(fl.flicker){if(FX.chance(.012))G.flickT=FX.int(3,14);if(G.flickT>0){G.flickT--;dark+=Save.d.opts.flash?.22:.08}}
   if(G.void)dark=0;
   dark=clamp(dark,0,.93);
@@ -2878,6 +2975,7 @@ function drawMinimap(c,full){
   else{x0=404;y0=4;x1=474;y1=36;c.fillStyle='rgba(5,2,8,.55)';c.fillRect(x0,y0,x1-x0,y1-y0);ox=(x0+x1)/2-cur.gx*sx-cw/2;oy=(y0+y1)/2-cur.gy*sy-chh/2;c.save();c.beginPath();c.rect(x0,y0,x1-x0,y1-y0);c.clip()}
   for(const r of fl.rooms.values()){
     if(!(r.seen||r.mapped))continue;
+    if(G.floor.curse==='lost'&&r!==cur)continue;
     if(r.type==='secret'&&!r.visited&&!r.mapped&&!Object.values(r.doors).some(d=>d.link.revealed))continue;
     const x=ox+r.gx*sx,y=oy+r.gy*sy;
     c.fillStyle=r===cur?'#ffffff':r.visited?'#7d728c':'#2f283a';c.fillRect(x,y,cw,chh);
@@ -2930,7 +3028,7 @@ function renderGame(c){
   const showTimer=Save.d.opts.timer&&!G.run.tutorial;
   if(showTimer)txt(c,fmtTime(G.run.frames),CX,3,{align:'center',font:F_X,size:13,col:'#ffd23f'});
   if(Save.d.opts.fps)txt(c,G.fps+' FPS',CX,showTimer?16:4,{align:'center',col:'#7cff6a'});
-  if(trn&&trn.type==='floor'){const a=trn.t<20?trn.t/20:trn.t>110?Math.max(0,(trn.dur-trn.t)/40):1;c.globalAlpha=a;c.fillStyle='rgba(0,0,0,.55)';c.fillRect(0,96,W,62);txt(c,trn.sub||tr('FLOOR')+' '+G.floorDef.ro,CX,102,{align:'center',col:G.floorDef.acc});txt(c,trn.title||G.floorDef.n,CX,114,{align:'center',font:F_T,size:28});c.globalAlpha=1}
+  if(trn&&trn.type==='floor'){const a=trn.t<20?trn.t/20:trn.t>110?Math.max(0,(trn.dur-trn.t)/40):1;c.globalAlpha=a;c.fillStyle='rgba(0,0,0,.55)';c.fillRect(0,96,W,62);txt(c,trn.sub||tr('FLOOR')+' '+G.floorDef.ro,CX,102,{align:'center',col:G.floorDef.acc});txt(c,trn.title||G.floorDef.n,CX,114,{align:'center',font:F_T,size:28});if(trn.curse)txt(c,CURSES[trn.curse].n,CX,146,{align:'center',col:'#c21e3a'});c.globalAlpha=1}
   if(trn&&trn.type==='fade'){const h=trn.dur/2,a=trn.t<h?trn.t/h:(trn.dur-trn.t)/h;c.fillStyle=`rgba(0,0,0,${clamp(a,0,1)})`;c.fillRect(0,0,W,H)}
   let hint=null,toastY=H-26;
   if(Save.d.opts.hints&&!G.run.tutorial&&G.run.depth===1&&G.state==='play'&&G.room===G.floor.start){
@@ -3108,6 +3206,26 @@ const ES={
 'Insomniac':'Insomne','The lights never come on. Everything drops twice as much.':'Las luces nunca se prenden. Todo suelta el doble.',
 'Sellout':'Vendido','Treasure rooms become shops. Start with 20 pins, and everything costs 40% less.':'Los cuartos del tesoro se vuelven tiendas. Empiezas con 20 seguros y todo cuesta 40% menos.',
 'Hand-me-downs':'Heredado','Start with two random items, and one less heart.':'Empiezas con dos objetos al azar y un corazón menos.',
+// texts, merch, curses
+'TEXTS':'MENSAJES','Morning':'Mañana','Morning, alone':'Mañana, a solas','tap to keep going':'toca para seguir','Keep going. Someone is texting.':'Sigue. Alguien te está escribiendo.',
+'hey':'hey','you went quiet in the group chat':'te quedaste callado en el grupo','you ok?':'¿estás bien?',
+'are you at the mall??':'¿¿estás en el centro comercial??','it closed like four hours ago':'cerró hace como cuatro horas','save me a pretzel i guess':'guárdame un pretzel supongo',
+'walked past your place tonight':'pasé por tu casa hoy','your light was on':'tu luz estaba prendida',"i didn't knock. sorry":'no toqué. perdón',
+'remember the chapel show?':'¿te acuerdas del show en la capilla?','you screamed every word':'gritaste cada palabra','i still have the setlist you stole for me':'todavía tengo el setlist que robaste para mí',
+"you don't have to text back":'no tienes que contestar','just eat something. please':'solo come algo. por favor',
+'found the mixtape you made me':'encontré el mixtape que me hiciste','side b is all songs about leaving':'el lado b son puras canciones de irse','i listened to it twice':'lo escuché dos veces',
+"i'm outside":'estoy afuera',"i'm not going anywhere":'no me voy a ir',
+'you there?':'¿estás ahí?','yeah':'sí','can you come up':'¿puedes subir?','already on the stairs':'ya voy en las escaleras','you up?':'¿despierto?',"i'll try again tomorrow":'mañana lo intento otra vez',
+'Merch Table':'Mesa de Merch','MERCH TABLE':'MESA DE MERCH','Spend the pins you bring home on small perks for future runs.':'Gasta los seguros que traes a casa en pequeñas ventajas para futuras partidas.',
+'{0} pins banked':'{0} seguros guardados','{0} pins':'{0} seguros','+{0} pins to the merch table':'+{0} seguros a la mesa de merch',
+"Perks don't apply to the daily or weekly challenge.":'Las ventajas no aplican a la partida diaria ni al reto semanal.',
+'Spare Candle':'Vela de Repuesto','Start every run with an extra candle.':'Empieza cada partida con una vela extra.','Loose Change':'Cambio Suelto','Start every run with 6 pins.':'Empieza cada partida con 6 seguros.',
+'Lucky Pin':'Seguro de la Suerte','Luck up.':'Más suerte.','Taped Setlist':'Setlist Pegado','Every fight starts with some HYPE.':'Cada pelea empieza con algo de HYPE.',
+'New Strings':'Cuerdas Nuevas','Damage up a little.':'Un poco más de daño.','Map Sketch':'Croquis del Mapa','See the shape of every floor when you arrive.':'Ves la forma de cada piso al llegar.',
+'Thrifted Hoodie':'Sudadera de Segunda','Start with one more heart.':'Empiezas con un corazón más.',
+'Curse of the Lost':'Maldición del Extraviado','Your map forgets where you have been.':'Tu mapa olvida por dónde has pasado.',
+'Curse of the Blackout':'Maldición del Apagón','Every light on this floor is out.':'Todas las luces de este piso están apagadas.',
+'Curse of the Haunted':'Maldición del Acechado','Something follows you into every fight.':'Algo te sigue a cada pelea.','The curse lifts.':'La maldición se levanta.','+15 pins':'+15 seguros',
 // new content
 'The Mall After Close':'El Centro Comercial Cerrado','a Mannequin':'un Maniquí','The Mascot':'La Mascota','The Ex':'El Ex','The Night Bus':'El Bus Nocturno',
 'The head comes off.':'Se le cae la cabeza.','It brings up old stuff.':'Saca cosas del pasado.','It still has your {0}.':'Todavía tiene tu {0}.','It runs every red light.':'Se pasa todos los rojos.','the night bus':'el bus nocturno',
@@ -3652,13 +3770,15 @@ function openSetup(kind,charId){
   G.state='setup';G.setup={kind,daily:kind==='daily'||kind==='weekly',charId,seed:'',err:'',wk:kind==='weekly'?weeklySpec():null};G.menu={sel:setupRows().length-1};
 }
 const MODE_LIST=[{id:'encore',l:'ENCORE',f:'The floors never end. After the last room it loops back to the start, heavier every time. Go until you drop.'},
-  {id:'rush',l:'BOSS RUSH',f:'Every boss, back to back, with an item between fights.'}];
+  {id:'rush',l:'BOSS RUSH',f:'Every boss, back to back, with an item between fights.'},
+  {id:'merch',l:'MERCH TABLE',f:'Spend the pins you bring home on small perks for future runs.'}];
 function updModes(){
   const items=[...MODE_LIST,{id:'back',l:'BACK'}];
   if(Input.pressed('back')||backBtnHit()){goTitle();return}
   const i=menuNav(items.length);if(i<0)return;
   const id=items[i].id;AU.play('select');
   if(id==='back'){goTitle();return}
+  if(id==='merch'){G.state='merch';G.menu={sel:0};return}
   G.selMode=id;G.state='select';G.menu={sel:Math.max(0,CHARS.findIndex(c=>c.id===Save.d.lastChar))};
 }
 function renderModes(c){
@@ -3667,6 +3787,7 @@ function renderModes(c){
   const items=[...MODE_LIST,{id:'back',l:'BACK'}];drawMenu(c,items,CX,86,22,{size:8});
   const it=items[G.menu.sel];
   if(it&&it.f){c.fillStyle='rgba(0,0,0,.45)';c.fillRect(70,170,340,40);wrapText(c,it.f,320,13).slice(0,3).forEach((l,i)=>txt(c,l,CX,175+i*12,{align:'center',font:F_X,size:13,col:'#d8cce4'}))}
+  if(it&&it.id==='merch')txt(c,tr('{0} pins banked',Save.d.bank|0),CX,218,{align:'center',font:F_X,size:12,col:'#ffd23f'});
   if(it&&it.id==='rush'){const b=(Save.d.bestSplits||{}).rush;if(b)txt(c,tr('Best clear {0}',fmtTime(b.frames)),CX,218,{align:'center',font:F_X,size:12,col:'#ffd23f'})}
 }
 function cycleRow(list,get,set){return{cycle:true,act:d=>{const n=list.length,i=list.indexOf(get());set(list[((i<0?0:i)+(d<0?n-1:1))%n])}}}
@@ -3765,18 +3886,19 @@ function closeSeed(apply){
   else if(v.length!==8){G.setup.err='Run codes are 8 letters or numbers, like ABCD-EFGH.';AU.play('denied')}
   else{G.setup.seed=v.slice(0,4)+'-'+v.slice(4);AU.play('select')}
 }
-const JTABS=['ITEMS','ENEMIES','UNLOCKS'];
+const JTABS=['ITEMS','ENEMIES','UNLOCKS','TEXTS'];
 function journalList(tab){
   if(tab===0)return ITEMS.map(it=>({k:'i',it,seen:!!Save.d.seenI[it.id],got:!!Save.d.gotI[it.id]}));
   if(tab===1)return[...Object.keys(EN).map(k=>({k:'e',id:k,def:EN[k],seen:!!Save.d.seenE[k]})),...Object.keys(BOSS).map(k=>({k:'b',id:k,def:BOSS[k],seen:!!Save.d.bossK[k]}))];
+  if(tab===3)return TEXT_ORDER.map(id=>({k:'t',id,seen:!!(Save.d.texts||{})[id]}));
   return ACH.map(a=>({k:'a',a,seen:!!Save.d.ach[a.id]}));
 }
 function updJournal(){
-  const m=G.menu,list=journalList(m.tab),cols=m.tab===2?1:14;
+  const m=G.menu,list=journalList(m.tab),cols=m.tab>=2?1:14;
   if(Input.pressed('back')||backBtnHit()){goTitle();return}
-  if(Input.pressed('bomb')||Input.pressed('use')){m.tab=(m.tab+(Input.pressed('use')?1:2))%3;m.sel=0;AU.play('blip')}
-  for(const cl of Input.clicks)JTABS.forEach((t,i)=>{if(inRect(cl,[CX-120+i*90,26,80,12])){m.tab=i;m.sel=0}});
-  if(m.tab<2&&m.rects)for(const cl of Input.clicks)m.rects.forEach((r,i)=>{if(inRect(cl,r))m.sel=i});
+  if(Input.pressed('bomb')||Input.pressed('use')){m.tab=(m.tab+(Input.pressed('use')?1:JTABS.length-1))%JTABS.length;m.sel=0;AU.play('blip')}
+  for(const cl of Input.clicks)JTABS.forEach((t,i)=>{if(inRect(cl,[CX-160+i*80,26,80,12])){m.tab=i;m.sel=0}});
+  if(m.tab!==2&&m.rects)for(const cl of Input.clicks)m.rects.forEach((r,i)=>{if(inRect(cl,r))m.sel=i});
   if(Input.pressed('mr'))m.sel=Math.min(list.length-1,m.sel+1);
   if(Input.pressed('ml'))m.sel=Math.max(0,m.sel-1);
   if(Input.pressed('md'))m.sel=Math.min(list.length-1,m.sel+cols);
@@ -3786,7 +3908,7 @@ function renderJournal(c){
   c.fillStyle='#0b0714';c.fillRect(0,0,W,H);
   const m=G.menu,list=journalList(m.tab);
   txt(c,'Journal',CX,4,{align:'center',font:F_T,size:20});
-  JTABS.forEach((t,i)=>txt(c,t,CX-80+i*80,28,{align:'center',col:i===m.tab?'#ff4f7b':'#6a607a'}));
+  JTABS.forEach((t,i)=>txt(c,t,CX-120+i*80,28,{align:'center',col:i===m.tab?'#ff4f7b':'#6a607a'}));
   const cnt=list.filter(l=>l.seen).length;txt(c,`${cnt}/${list.length}`,W-16,28,{align:'right',col:'#6a607a'});
   m.rects=[];
   if(m.tab<2){
@@ -3805,6 +3927,16 @@ function renderJournal(c){
     if(l){c.fillStyle='rgba(0,0,0,.6)';c.fillRect(20,H-52,W-40,44);
       if(l.k==='i'){txt(c,l.seen?l.it.n:'???',30,H-48,{font:F_T,size:16,col:l.seen?'#fff':'#555'});txt(c,l.seen?l.it.f:(l.it.lock&&!isUnlocked(l.it.lock)?tr('Locked: {0}',tr(unlockHint(l.it.lock))):'Not found yet.'),30,H-28,{font:F_X,size:13,col:'#b8aec8'});if(l.seen&&l.it.set)txt(c,SETS[l.it.set].n,W-30,H-48,{align:'right',col:SETS[l.it.set].col})}
       else{const nm=tr(l.def.name);txt(c,l.seen?nm[0].toUpperCase()+nm.slice(1):'???',30,H-48,{font:F_T,size:16,col:l.seen?'#fff':'#555'});txt(c,l.k==='b'?(l.seen?'Defeated.':'Not defeated yet.'):(l.seen?'Killed at least once.':'Not met yet.'),30,H-28,{font:F_X,size:13,col:'#b8aec8'})}}
+  }else if(m.tab===3){
+    // conversations on the left, the selected one on the right
+    list.forEach((l,i)=>{const y=46+i*17,sel=i===m.sel;m.rects.push([20,y-3,150,15]);
+      if(sel){c.fillStyle='rgba(255,79,123,.18)';c.fillRect(20,y-3,150,15)}
+      txt(c,l.seen?textTitle(l.id):'???',26,y,{col:l.seen?(sel?'#fff':'#a89cb8'):'#4a4058'})});
+    const l=list[m.sel];c.fillStyle='rgba(255,255,255,.03)';c.fillRect(186,42,274,196);
+    if(l&&l.seen){const tx=TEXTS[l.id];let by=50;txt(c,tx.time,452,46,{align:'right',font:F_X,size:11,col:'#6a607a'});c.font='12px '+F_X;
+      for(const[from,t]of tx.lines){const you=from==='you',ls=wrapText(c,t,170,12),bw=Math.max(...ls.map(q=>c.measureText(q).width))+12,bh=ls.length*11+7,bx=you?452-bw:196;
+        c.fillStyle=you?'#ff4f7b':'#2a2434';c.fillRect(bx,by,bw,bh);ls.forEach((q,j)=>txt(c,q,bx+6,by+3+j*11,{font:F_X,size:12,col:'#fff',shadow:false}));by+=bh+5;c.font='12px '+F_X}}
+    else txt(c,'Keep going. Someone is texting.',323,134,{align:'center',font:F_X,size:13,col:'#5a5068'});
   }else{
     const rows=Math.ceil(list.length/2),lh=Math.min(20,(H-62)/rows);
     list.forEach((l,i)=>{const x=i<rows?22:248,y=42+(i%rows)*lh;txt(c,(l.seen?'■ ':'□ ')+tr(l.a.name),x,y,{col:l.seen?'#ffd23f':'#6a607a'});txt(c,fitText(c,l.a.desc,214,10,F_X),x+12,y+8,{font:F_X,size:10,col:l.seen?'#d8cce4':'#5a5068'})});
@@ -3828,7 +3960,7 @@ function renderPause(c){
   drawMenu(c,['RESUME','SETTINGS','QUIT RUN'],90,80,16);
   txt(c,'CONTROLS',20,150,{col:'#a89cb8'});[['move','move'],['cry','shoot'],['dash','dash'],['candle','bomb'],['item','active'],['use','use'],['map','map'],['pause','pause']].forEach(([l,a],k)=>{txt(c,l,20,162+k*9,{size:8,col:'#6a607a'});txt(c,glyph(a),84,162+k*9,{size:8,col:'#d8cce4'})});
   const p=G.player,r=G.run;
-  txt(c,G.run.mode==='rush'?tr('ROUND {0} / {1}',G.run.round+1,ROUNDS.length)+' · '+tr(G.floorDef.n):tr('FLOOR')+' '+G.floorDef.ro+' · '+tr(G.floorDef.n)+(G.run.loop?' · '+tr('LOOP {0}',G.run.loop+1):''),190,22,{col:G.floorDef.acc});
+  txt(c,fitText(c,(G.run.mode==='rush'?tr('ROUND {0} / {1}',G.run.round+1,ROUNDS.length)+' · '+tr(G.floorDef.n):tr('FLOOR')+' '+G.floorDef.ro+' · '+tr(G.floorDef.n)+(G.run.loop?' · '+tr('LOOP {0}',G.run.loop+1):''))+(G.floor.curse?' · '+tr(CURSES[G.floor.curse].n):''),W-200),190,22,{col:G.floorDef.acc});
   {const tags=runTags(r);txt(c,fitText(c,tr('SEED')+' '+r.seedStr+(r.daily?' ('+tr('DAILY')+')':'')+(tags?' · '+tags:''),W-200),190,34,{col:'#6a607a'})}
   const st=[['WEAPON',p.weapon?tr(ITEMS.find(i=>i.weapon===p.weapon).n):tr('tears')],['DAMAGE',p.dmg.toFixed(2)],['TEARS/S',p.rate.toFixed(2)],['RANGE',p.range|0],['SPEED',p.spd.toFixed(2)],['SHOT SPEED',p.ss.toFixed(2)],['LUCK',p.luck|0]];
   st.forEach(([k,v],i)=>{txt(c,k,190,48+i*10,{col:'#a89cb8'});txt(c,String(v),300,48+i*10,{col:'#fff'})});
@@ -3856,10 +3988,11 @@ function toSummary(){
   const r=G.run,p=G.player,won=!!r.win;
   const mins=r.frames/3600;
   const progress=r.mode==='rush'?r.round+1:r.mode==='encore'?(r.loop||0)*7+r.depth:r.depth;
-  r.score=Math.max(0,Math.round((progress*1000+r.kills*10+r.items.length*25+r.bossKills*500+(won?5000:0)-mins*20)*(r.mult||1)));
+  r.score=Math.max(0,Math.round((progress*1000+(r.curseBonus||0)+r.kills*10+r.items.length*25+r.bossKills*500+(won?5000:0)-mins*20)*(r.mult||1)));
   if(r.score>Save.d.best)Save.d.best=r.score;
   if(r.daily){Save.d.daily[r.dailyKey||dateKey()]={done:true,score:r.score,diff:r.diff}}
   if(r.weekly){const w=Save.d.weekly||(Save.d.weekly={}),cur=w[r.weekly];if(!cur||r.score>cur.best)w[r.weekly]={best:r.score,diff:r.diff}}
+  if(!r.tutorial){r.banked=Math.max(0,p?p.pins:0)+r.bossKills*5;Save.d.bank=(Save.d.bank|0)+r.banked}
   if(won&&r.mode!=='encore'){const bs=Save.d.bestSplits||(Save.d.bestSplits={}),k=r.mode,cur=bs[k];if(!cur||r.frames<cur.frames)bs[k]={frames:r.frames,splits:r.splits.slice()}}
   if(!r.tutorial){const cs=charStats(r.char.id);cs.best=Math.max(cs.best,r.score);cs.deep=Math.max(cs.deep,r.depth);if(won)cs.wins++}
   Save.write();clearRunSave();
@@ -3895,13 +4028,15 @@ function renderSummary(c){
   lines.forEach(([k,v],i)=>{txt(c,k,CX-120,y0+i*lh,{col:'#8f86a0',alpha:Math.min(1,Math.max(0,(t-40)/20))});txt(c,String(v),CX-30,y0+i*lh,{col:'#fff',alpha:Math.min(1,Math.max(0,(t-40)/20))})});
   r.items.forEach((it,i)=>{if(t>60+i*3)c.drawImage(itemIcon(it),CX-r.items.length*9.5+i*19,176)});
   if(r.newUnlocks.length){txt(c,'UNLOCKED',CX,198,{align:'center',col:'#ffd23f'});wrapText(c,r.newUnlocks.map(a=>tr(a.name)).join(' · '),420,12).slice(0,2).forEach((l,i)=>txt(c,l,CX,209+i*11,{align:'center',font:F_X,size:12,col:'#ffe9a0'}))}
+  if(r.banked&&t>40)txt(c,tr('+{0} pins to the merch table',r.banked),W-16,6,{align:'right',font:F_X,size:12,col:'#ffd23f',alpha:Math.min(1,(t-40)/20)});
   if(t>60){
     for(const[rc,l,hot]of[[SHARE_BTN,'SHARE',true],[DONE_BTN,'CONTINUE',false]]){c.fillStyle=hot?'rgba(255,79,123,.22)':'rgba(255,255,255,.06)';c.fillRect(...rc);c.strokeStyle=hot?'#ff4f7b':'#5a4a68';c.strokeRect(rc[0]+.5,rc[1]+.5,rc[2]-1,rc[3]-1);txt(c,l,rc[0]+rc[2]/2,rc[1]+5,{align:'center',col:'#fff'})}
     if(G.shareMsg)txt(c,G.shareMsg,CX,H-42,{align:'center',font:F_X,size:12,col:'#7ff5e6'});
   }
 }
 const END_TEXT={kill:['You won.',"It didn't feel like winning.",'The room went quiet.','You walked home in the rain.'],hug:['You stopped.','It stopped too.','You sat with it until morning.','It was still there. That was okay.']};
-function updEnding(){G.endT++;updateParticles();const n=END_TEXT[G.run.win].length;if(G.endT>n*140+140||(G.endT>90&&Input.pressed('ok')))toSummary()}
+function updEnding(){G.endT++;updateParticles();const n=END_TEXT[G.run.win].length;
+  if(G.endT>n*140+140||(G.endT>90&&(Input.pressed('ok')||Input.clicks.length))){if(G.run.mode==='story'&&TEXTS[G.run.win])openPhone(G.run.win,{dark:true,then:toSummary});else toSummary()}}
 function renderEnding(c){
   const hug=G.run.win==='hug',t=G.endT;
   c.fillStyle=hug?'#e8e2ec':'#030104';c.fillRect(0,0,W,H);
@@ -3951,6 +4086,8 @@ function step(){
     case'select':updSelect();break;
     case'setup':updSetup();break;
     case'modes':updModes();break;
+    case'merch':updMerch();break;
+    case'phone':updPhone();break;
     case'journal':updJournal();break;
     case'options':updOptions();break;
     case'play':updPlay();break;
@@ -3969,6 +4106,8 @@ function render(){
   else if(s==='select')renderSelect(B);
   else if(s==='setup')renderSetup(B);
   else if(s==='modes')renderModes(B);
+  else if(s==='merch')renderMerch(B);
+  else if(s==='phone'&&G.phone&&G.phone.dark)renderPhone(B);
   else if(s==='journal')renderJournal(B);
   else if(s==='summary')renderSummary(B);
   else if(s==='ending')renderEnding(B);
@@ -3978,6 +4117,7 @@ function render(){
     if(s==='bossintro')renderBossIntro(B);
     if(s==='pause')renderPause(B);
     if(s==='options')renderOptions(B);
+    if(s==='phone')renderPhone(B);
     if(s==='dying'){B.fillStyle=`rgba(0,0,0,${Math.min(.7,G.dieT/120)})`;B.fillRect(0,0,W,H);if(G.dieT>40)txt(B,'...',CX,CY,{align:'center',font:F_T,size:24,alpha:Math.min(1,(G.dieT-40)/40)})}
   }
   const v=View,x=v.ctx;
@@ -3998,7 +4138,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.01-1714';
+const BUILD='2026.10.01-1721';
 const Updater={
   ready:false,
   check(){
