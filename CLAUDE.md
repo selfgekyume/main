@@ -16,3 +16,7 @@ Each folder is a standalone browser game published with GitHub Pages and played 
   or room state that should survive the app closing needs adding there.
 - Saves live in the browser's `localStorage` under `sorrowbloom.v1`. Keep the save format backward compatible so
   updates never wipe progress.
+- Sound is all synthesized in `AU` (no audio files). Effects are recipes in `SFX`, played with `AU.play(name,{x})`, where
+  `x` pans the sound to where it happened and `AU.gaps` limits how often a sound repeats. `AU.play` swallows errors, so
+  test a new recipe by calling `SFX[name](AU,t,o)` directly. Drums are rendered once into samples by `AU.drumKit()`;
+  guitars and bass are plucked-string buffers from `AU.ksBuf`. Keep steady noise (hiss, hum) out of the mix: players hear it.
