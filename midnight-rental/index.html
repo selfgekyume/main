@@ -10,6 +10,8 @@
   --tape:#1f2fd6;
   --tape-deep:#0a1170;
   --mark:#ffd23f;
+  --rec:#ff3b30;
+  --stamp:#ffb347;
   --panel:rgba(5,7,18,.88);
   --font-osd:"VT323", ui-monospace, "Courier New", monospace;
   --font-title:"Silkscreen", "VT323", ui-monospace, monospace;
@@ -22,15 +24,33 @@ body{background:var(--bg);color:var(--osd);font-family:var(--font-osd);font-size
 .scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.18) 3px);mix-blend-mode:multiply}
 .osd{position:fixed;text-shadow:2px 2px 0 #000,0 0 6px rgba(160,190,255,.45);letter-spacing:.04em;pointer-events:none;line-height:1}
 #osd-tl{top:calc(env(safe-area-inset-top,0px) + 16px);left:20px;font-size:30px}
-#osd-tl small{display:block;font-size:20px;color:var(--osd-dim);margin-top:6px;max-width:44vw}
-#osd-tr{top:calc(env(safe-area-inset-top,0px) + 16px);right:20px;text-align:right;max-width:46vw;font-size:22px}
+#osd-tl small{display:block;font-size:20px;color:var(--osd-dim);margin-top:6px;max-width:44vw;line-height:1.05}
+#osd-tr{top:calc(env(safe-area-inset-top,0px) + 16px);right:20px;text-align:right;max-width:46vw;font-size:22px;line-height:1.05}
 #osd-tr .lbl{color:var(--mark);font-size:18px;display:block;margin-bottom:4px;letter-spacing:.12em}
-#osd-tr .inv{color:var(--osd-dim);font-size:18px;display:block;margin-top:6px}
+#osd-tr .sub{color:var(--osd-dim);font-size:18px;display:block;margin-top:6px}
 #osd-br{bottom:calc(env(safe-area-inset-bottom,0px) + 16px);right:20px;font-size:26px;font-variant-numeric:tabular-nums}
 #cross{position:fixed;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;background:var(--osd);box-shadow:0 0 0 1px #000;pointer-events:none}
 #prompt{position:fixed;left:50%;bottom:22%;transform:translateX(-50%);font-size:26px;background:rgba(0,0,0,.55);padding:4px 12px;white-space:nowrap}
+#subtitle{position:fixed;left:50%;bottom:30%;transform:translateX(-50%);font-size:24px;text-align:center;max-width:min(80vw,700px);line-height:1.1}
+#subtitle b{color:var(--mark);font-weight:400}
 #toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);font-size:30px;color:var(--mark);text-align:center;max-width:min(90vw,820px);white-space:pre-line;line-height:1.1}
-#menu-btn{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:16px;pointer-events:auto;font-size:22px}
+.hud-btns{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:16px;display:flex;gap:10px;pointer-events:auto}
+.hud-btns button{font-size:22px;text-shadow:2px 2px 0 #000}
+
+/* camcorder */
+#cam{position:fixed;inset:0;pointer-events:none}
+#hud.cam-on #osd-tl,#hud.cam-on #osd-tr,#hud.cam-on #prompt{visibility:hidden}
+#cam .c{position:absolute;width:56px;height:40px;border:3px solid var(--osd);filter:drop-shadow(2px 2px 0 #000)}
+#cam .tl{top:8%;left:6%;border-right:0;border-bottom:0}
+#cam .tr{top:8%;right:6%;border-left:0;border-bottom:0}
+#cam .bl{bottom:10%;left:6%;border-right:0;border-top:0}
+#cam .br{bottom:10%;right:6%;border-left:0;border-top:0}
+#cam .rec{position:absolute;top:calc(8% + 12px);left:calc(6% + 18px);font-size:30px;color:var(--rec);text-shadow:2px 2px 0 #000}
+#cam .meta{position:absolute;top:calc(8% + 12px);right:calc(6% + 18px);font-size:24px;text-align:right;text-shadow:2px 2px 0 #000;line-height:1.1}
+#cam .aim{position:absolute;left:50%;top:50%;width:46px;height:30px;margin:-15px 0 0 -23px;border:2px solid rgba(238,243,255,.7)}
+#cam .help{position:absolute;bottom:calc(10% + 12px);left:50%;transform:translateX(-50%);font-size:20px;color:var(--osd-dim);text-shadow:1px 1px 0 #000;white-space:nowrap}
+#flash{position:fixed;inset:0;background:#fff;pointer-events:none;opacity:0;transition:opacity .35s}
+#flash.on{opacity:.85;transition:none}
 
 /* dialogue */
 #dialog{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:translateX(-50%);width:min(760px,calc(100% - 32px));background:var(--panel);border:2px solid var(--osd);box-shadow:4px 4px 0 #000;padding:14px 18px 16px;display:flex;flex-direction:column;gap:10px}
@@ -43,26 +63,34 @@ body{background:var(--bg);color:var(--osd);font-family:var(--font-osd);font-size
 #d-input:focus{outline:2px solid var(--mark);outline-offset:1px}
 
 button{font:inherit;color:var(--osd);background:transparent;border:0;cursor:pointer;text-align:left;padding:2px 4px;font-size:24px}
-button:hover,button:focus-visible{color:#000;background:var(--osd);outline:none}
+button:hover,button:focus-visible{color:#000;background:var(--osd);outline:none;text-shadow:none}
 button:disabled{opacity:.4;cursor:default;background:transparent;color:var(--osd)}
 .choice::before{content:"\25B8  "}
 .btn-box{border:2px solid var(--osd);padding:6px 16px;text-align:center}
+.btn-sm{border:1px solid var(--osd-dim);padding:2px 10px;font-size:20px}
 
 /* full screens */
-.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow:auto}
-.screen-in{width:min(640px,100%);display:flex;flex-direction:column;gap:18px}
+.screen{position:fixed;inset:0;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow:auto}
+.screen-in{width:min(680px,100%);display:flex;flex-direction:column;gap:18px;margin:auto}
 #title{background:linear-gradient(to bottom,rgba(5,6,12,.1),rgba(5,6,12,.72) 60%)}
 .logo{font-family:var(--font-title);font-weight:700;font-size:clamp(34px,8vw,64px);line-height:.95;letter-spacing:.02em;text-shadow:3px 3px 0 var(--tape),6px 6px 0 #000;text-wrap:balance}
 .lede{font-size:26px;line-height:1.15;max-width:34ch;text-shadow:2px 2px 0 #000}
 .field{display:flex;flex-direction:column;gap:6px}
-.field label{font-size:20px;color:var(--osd-dim);letter-spacing:.08em;text-transform:uppercase}
+.field label,.label{font-size:20px;color:var(--osd-dim);letter-spacing:.08em;text-transform:uppercase}
 .field input{background:rgba(0,0,0,.7);color:var(--osd);border:2px solid var(--osd-dim);font:inherit;font-size:24px;padding:6px 10px}
 .field input:focus{outline:none;border-color:var(--mark)}
 .row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
-.status{font-size:20px;color:var(--osd-dim);text-shadow:1px 1px 0 #000}
+.status{font-size:20px;color:var(--osd-dim);text-shadow:1px 1px 0 #000;line-height:1.15}
 .status b{color:var(--mark);font-weight:400}
 .keys{font-size:19px;color:var(--osd-dim);line-height:1.3;text-shadow:1px 1px 0 #000}
 .keys kbd{font:inherit;color:var(--osd);border:1px solid var(--osd-dim);padding:0 5px}
+
+/* tape shelf */
+.shelf{display:flex;flex-direction:column;gap:6px}
+.spine{display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.55);border-left:6px solid var(--spine,#888);padding:6px 10px;min-width:0}
+.spine .t{flex:1;min-width:0;line-height:1.05}
+.spine .t b{display:block;font-weight:400;font-size:22px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.spine .t span{font-size:18px;color:var(--osd-dim)}
 
 #loading,#ending{background:var(--tape)}
 #loading .screen-in,#ending .screen-in{text-shadow:2px 2px 0 var(--tape-deep)}
@@ -70,12 +98,18 @@ button:disabled{opacity:.4;cursor:default;background:transparent;color:var(--osd
 .blink{animation:blink 1s steps(2) infinite}
 @keyframes blink{50%{opacity:0}}
 #end-text{font-size:28px;line-height:1.2;white-space:pre-wrap;min-height:5em}
-#pause{background:rgba(5,6,12,.72)}
+#pause,#album{background:rgba(5,6,12,.86)}
+.strip{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.strip img{height:84px;border:2px solid var(--osd);flex:none}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px}
+.grid figure{margin:0;display:flex;flex-direction:column;gap:6px;min-width:0}
+.grid img{width:100%;border:2px solid var(--osd);image-rendering:pixelated}
+.grid figcaption{font-size:18px;color:var(--osd-dim);line-height:1.1}
 
-#touch{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0px) + 70px)}
+#touch{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0px) + 70px);display:flex;flex-direction:column;gap:12px}
 #touch button{width:76px;height:76px;border:2px solid var(--osd);text-align:center;background:rgba(0,0,0,.4);border-radius:50%}
 @media (prefers-reduced-motion:reduce){.blink{animation:none}}
-@media (max-width:560px){body{font-size:20px}#osd-tl{font-size:24px}#osd-tr{font-size:19px}#osd-br{font-size:20px}#d-text{font-size:22px}}
+@media (max-width:560px){body{font-size:20px}#osd-tl{font-size:24px}#osd-tr{font-size:19px}#osd-br{font-size:20px}#d-text{font-size:22px}#cam .help{white-space:normal;width:80%;text-align:center}}
 </style>
 
 <canvas id="game"></canvas>
@@ -83,14 +117,23 @@ button:disabled{opacity:.4;cursor:default;background:transparent;color:var(--osd
 
 <div id="hud" hidden>
   <div id="osd-tl" class="osd">PLAY &#9654;<small id="tape-name"></small></div>
-  <div id="osd-tr" class="osd"><span class="lbl">OBJECTIVE</span><span id="obj"></span><span class="inv" id="inv"></span></div>
+  <div id="osd-tr" class="osd"><span class="lbl">OBJECTIVE</span><span id="obj"></span><span class="sub" id="inv"></span><span class="sub" id="where"></span></div>
   <div id="osd-br" class="osd"></div>
   <div id="cross"></div>
+  <div id="cam" hidden>
+    <div class="c tl"></div><div class="c tr"></div><div class="c bl"></div><div class="c br"></div>
+    <div class="rec"><span class="blink">&#9679;</span> REC</div>
+    <div class="meta" id="cam-meta"></div>
+    <div class="aim"></div>
+    <div class="help" id="cam-help">CLICK / SPACE: TAKE PHOTO &middot; WHEEL: ZOOM &middot; C: LOWER CAMERA</div>
+  </div>
   <div id="prompt" class="osd" hidden></div>
+  <div id="subtitle" class="osd" hidden></div>
   <div id="toast" class="osd" hidden></div>
-  <button id="menu-btn" class="osd" type="button">&#10074;&#10074; MENU</button>
-  <div id="touch" hidden><button id="use-btn" type="button">USE</button></div>
+  <div class="hud-btns"><button id="menu-btn" type="button">&#10074;&#10074; MENU</button><button id="cam-btn" type="button">&#9673; CAMERA</button></div>
+  <div id="touch" hidden><button id="snap-btn" type="button" hidden>SNAP</button><button id="use-btn" type="button">USE</button></div>
 </div>
+<div id="flash"></div>
 
 <div id="dialog" hidden>
   <div id="d-name"></div>
@@ -114,9 +157,15 @@ button:disabled{opacity:.4;cursor:default;background:transparent;color:var(--osd
     <div class="row">
       <button id="play-btn" class="btn-box" type="button">&#9654; PLAY NEW TAPE</button>
       <button id="replay-btn" class="btn-box" type="button" hidden>&#8634; REWIND LAST TAPE</button>
+      <button class="btn-sm voice-btn" type="button"></button>
     </div>
     <div class="status" id="ai-status">Checking the tape deck...</div>
-    <div class="keys"><kbd>WASD</kbd> walk &middot; <kbd>Mouse</kbd> look &middot; <kbd>Shift</kbd> run &middot; <kbd>E</kbd> or click to talk / pick up &middot; <kbd>Esc</kbd> menu &middot; <kbd>M</kbd> mute<br>On a phone: drag the left side to walk, the right side to look.</div>
+    <div class="shelf" id="shelf-wrap" hidden>
+      <div class="label">Your shelf</div>
+      <div class="shelf" id="shelf"></div>
+      <div class="status" id="shelf-note"></div>
+    </div>
+    <div class="keys"><kbd>WASD</kbd> walk &middot; <kbd>Mouse</kbd> look &middot; <kbd>Shift</kbd> run &middot; <kbd>E</kbd> or click to talk, open doors, pick up &middot; <kbd>C</kbd> camcorder &middot; <kbd>P</kbd> photos &middot; <kbd>Esc</kbd> menu &middot; <kbd>M</kbd> mute<br>On a phone: drag the left side to walk, the right side to look.</div>
   </div>
 </section>
 
@@ -135,9 +184,22 @@ button:disabled{opacity:.4;cursor:default;background:transparent;color:var(--osd
     <div id="pause-sum" class="lede"></div>
     <div class="row">
       <button id="resume-btn" class="btn-box" type="button">&#9654; RESUME</button>
+      <button id="photos-btn" class="btn-box" type="button">PHOTOS</button>
+      <button id="shelve-btn" class="btn-box" type="button">&#9733; SAVE TO SHELF</button>
+    </div>
+    <div class="row">
       <button id="rewind-btn" class="btn-box" type="button">&#8634; REWIND</button>
       <button id="eject-btn" class="btn-box" type="button">&#9167; EJECT</button>
+      <button class="btn-sm voice-btn" type="button"></button>
     </div>
+  </div>
+</section>
+
+<section id="album" class="screen" hidden>
+  <div class="screen-in" style="width:min(980px,100%)">
+    <div class="row" style="justify-content:space-between"><div class="big">PHOTOS</div><button id="album-back" class="btn-box" type="button">&#9664; BACK</button></div>
+    <div class="status" id="album-note"></div>
+    <div class="grid" id="album-grid"></div>
   </div>
 </section>
 
@@ -146,8 +208,11 @@ button:disabled{opacity:.4;cursor:default;background:transparent;color:var(--osd
     <div class="big">END OF TAPE</div>
     <div id="end-title" style="font-size:26px;color:var(--mark)"></div>
     <div id="end-text"></div>
+    <div class="strip" id="end-strip"></div>
     <div class="row">
       <button id="end-new" class="btn-box" type="button">&#9654; PLAY NEW TAPE</button>
+      <button id="end-shelve" class="btn-box" type="button">&#9733; SAVE TO SHELF</button>
+      <button id="end-photos" class="btn-box" type="button">PHOTOS</button>
       <button id="end-rewind" class="btn-box" type="button">&#8634; REWIND</button>
     </div>
   </div>
@@ -158,38 +223,47 @@ button:disabled{opacity:.4;cursor:default;background:transparent;color:var(--osd
 (() => {
 "use strict";
 const $ = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
 
-/* ---------- random helpers ---------- */
+/* ---------- helpers ---------- */
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
 const pick = (r,a) => a[Math.floor(r()*a.length)];
 const rr = (r,a,b) => a + (b-a)*r();
 const shuffle = (r,a) => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
-const hashStr = s => { let h=2166136261; for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);} return h>>>0; };
+const hashStr = s => { let h=2166136261; for(const c of String(s)){h^=c.charCodeAt(0);h=Math.imul(h,16777619);} return h>>>0; };
 const HEX = /^#[0-9a-fA-F]{6}$/;
 const str = (v,n) => typeof v==='string' ? v.trim().slice(0,n) : '';
+const hex = (v,f) => HEX.test(v) ? v : f;
 const lsGet = k => { try { return localStorage.getItem(k); } catch(e){ return null; } };
 const lsSet = (k,v) => { try { localStorage.setItem(k,v); } catch(e){} };
+const clamp = (v,a,b) => Math.max(a, Math.min(b, v));
 
-/* ---------- world vocab ---------- */
+/* ---------- vocabulary ---------- */
 const TIMES = {
-  day:  {sky:'#9fc3e0', near:14, far:72, hemi:.95, sun:'#fff4dd', sunI:.7, lantern:0,   mix:.5,  night:false},
-  dusk: {sky:'#c47a68', near:8,  far:50, hemi:.72, sun:'#ff9a5a', sunI:.5, lantern:.7,  mix:.45, night:false},
-  night:{sky:'#0c1330', near:3,  far:32, hemi:.38, sun:'#6a7ab8', sunI:.18,lantern:1.4, mix:.22, night:true},
-  dawn: {sky:'#d6a8bf', near:8,  far:56, hemi:.78, sun:'#ffd0b0', sunI:.5, lantern:.3,  mix:.45, night:false},
+  day:  {sky:'#9fc3e0', near:16, far:80, hemi:.95, sun:'#fff4dd', sunI:.7, lantern:0,   mix:.5,  night:false},
+  dusk: {sky:'#c47a68', near:9,  far:56, hemi:.72, sun:'#ff9a5a', sunI:.5, lantern:.7,  mix:.45, night:false},
+  night:{sky:'#0c1330', near:4,  far:36, hemi:.38, sun:'#6a7ab8', sunI:.18,lantern:1.4, mix:.22, night:true},
+  dawn: {sky:'#d6a8bf', near:9,  far:62, hemi:.78, sun:'#ffd0b0', sunI:.5, lantern:.3,  mix:.45, night:false},
 };
 const WEATHERS = ['clear','rain','snow','fireflies','fog'];
 const HATS = ['none','cap','tall','bow','antenna','beanie'];
+const HAIRS = ['bald','short','long','bun','spiky','curly'];
+const BUILDS = ['thin','average','round'];
+const OUTFITS = ['plain','dress','coat','overalls'];
+const VOICES = ['deep','gravelly','soft','bright','high','squeaky'];
+const SKINS = ['#f0d0b0','#e0b090','#c08860','#8a5a3a','#5a3a28','#d8c8b0','#b8c8a0','#e0b0b8'];
+const HAIRCOLS = ['#1a1410','#3a2418','#7a4a28','#c8a060','#e8e0d0','#a83a2a','#5a5a60','#3a5aa8'];
 const SETTINGS = {
-  town:       {ground:'grass', gcol:['#4d6b3c','#5b6e45'], path:'asphalt', structs:['house','shop','shop'], props:['lamp','tree','bench','car','mailbox','bush'], n:8, np:26, edge:'tree'},
-  forest:     {ground:'grass', gcol:['#3d5a34','#4a5e3a'], path:'dirt',    structs:['cabin','tent','tent'], props:['pine','pine','tree','rock','log','campfire'], n:5, np:70, edge:'pine'},
-  motel:      {ground:'asphalt',gcol:['#6a6660','#5c5a58'],path:null,      structs:['motel','shop'], props:['car','car','lamp','cactus','box','bush'], n:3, np:24, edge:'bush'},
-  seaside:    {ground:'sand',  gcol:['#c9b48a','#d4c09a'], path:'planks',  structs:['shack','shack','tower'], props:['post','boat','rock','umbrella','box'], n:6, np:28, edge:'rock', water:true},
-  snowvillage:{ground:'snow',  gcol:['#dfe6ef','#e8ecf2'], path:'dirt',    structs:['cabin','house'], props:['pine','pine','snowman','lamp','rock'], n:7, np:40, edge:'pine'},
-  carnival:   {ground:'dirt',  gcol:['#7a6248','#6e5a44'], path:null,      structs:['tent','stall','stall','ferris'], props:['lamp','balloon','box','bench'], n:9, np:24, edge:'fence'},
-  farm:       {ground:'grass', gcol:['#5e7a3e','#6d7e44'], path:'dirt',    structs:['barn','tower','shack'], props:['hay','hay','fence','tree','crop','crop'], n:4, np:40, edge:'fence'},
-  suburb:     {ground:'grass', gcol:['#557a42','#4f7040'], path:'asphalt', structs:['house','house'], props:['tree','mailbox','car','lamp','bush','bush'], n:9, np:30, edge:'bush'},
+  town:       {ground:'grass', gcol:['#4d6b3c','#5b6e45'], path:'asphalt', cross:true, structs:['house','shop','shop','house'], props:['tree','bench','car','mailbox','bush','hydrant','trash','phonebooth'], lamps:true, n:14, np:60, edge:'tree'},
+  forest:     {ground:'grass', gcol:['#3d5a34','#4a5e3a'], path:'dirt',    cross:false, structs:['cabin','tent','tent','shack'], props:['pine','pine','pine','tree','rock','log','campfire','bush'], n:8, np:170, edge:'pine'},
+  motel:      {ground:'asphalt',gcol:['#6a6660','#5c5a58'],path:'asphalt', cross:true, structs:['motel','shop','house','shack'], props:['car','car','cactus','box','bush','vending','trash','phonebooth'], lamps:true, n:8, np:50, edge:'bush'},
+  seaside:    {ground:'sand',  gcol:['#c9b48a','#d4c09a'], path:'planks',  cross:true, structs:['shack','shack','tower','house','shop'], props:['post','boat','rock','umbrella','box','trash'], n:11, np:60, edge:'rock', water:true},
+  snowvillage:{ground:'snow',  gcol:['#dfe6ef','#e8ecf2'], path:'dirt',    cross:true, structs:['cabin','house','shop','cabin'], props:['pine','pine','snowman','rock','bush'], lamps:true, n:13, np:90, edge:'pine'},
+  carnival:   {ground:'dirt',  gcol:['#7a6248','#6e5a44'], path:'dirt',    cross:true, structs:['tent','stall','stall','ferris','tent','shack'], props:['balloon','box','bench','trash','vending'], lamps:true, n:16, np:50, edge:'fence'},
+  farm:       {ground:'grass', gcol:['#5e7a3e','#6d7e44'], path:'dirt',    cross:true, structs:['barn','tower','shack','house'], props:['hay','hay','fence','tree','crop','crop','crop'], n:7, np:90, edge:'fence'},
+  suburb:     {ground:'grass', gcol:['#557a42','#4f7040'], path:'asphalt', cross:true, structs:['house','house','house','shop'], props:['tree','mailbox','car','bush','bush','hydrant','trash'], lamps:true, n:16, np:60, edge:'bush'},
 };
-const SET_WORDS = {town:'small town street',forest:'woods and campsite',motel:'roadside motel lot',seaside:'beach and pier',snowvillage:'snowy village',carnival:'night carnival',farm:'farm',suburb:'suburban cul-de-sac'};
+const SET_WORDS = {town:'small town with streets and shops',forest:'woods with cabins and a campsite',motel:'roadside motel and a few buildings',seaside:'beach town with shacks and a lighthouse',snowvillage:'snowy village',carnival:'night carnival with tents',farm:'farm with a barn and silo',suburb:'suburban neighborhood'};
 const PAINT = [['red','#a8453a'],['mint','#7fb89a'],['yellow','#d8b64a'],['blue','#4d6fa8'],['pink','#d08aa0'],['white','#d8d4c8'],['green','#5f8a4a'],['orange','#c8773a'],['lilac','#9a86b8'],['brown','#7a5a40'],['teal','#3f8f8f']];
 
 /* ---------- offline tape parts ---------- */
@@ -211,25 +285,27 @@ const ENDINGS = [
   'It turns out the {item} was never the point. {C} says so, anyway, and then hums the rest of the night away. You leave {place} feeling lighter than when you arrived.',
   'In the morning nobody in {place} remembers you, except {B}, who leaves a note on your windshield that just says THANK YOU in crayon.',
 ];
-const FLAVOR = ['The streetlights hum a different song on Tuesdays.',"I haven't blinked since 1994. Don't tell anyone.",'Did you hear that? No? Good. Me neither.','My cousin is a vending machine. We don\'t talk anymore.','This place is smaller than it looks and bigger than it feels.','You have a very trustworthy face. Like a lamp.','Sometimes the sky here buffers.','I used to be taller. Long story. Not a good one.','If you see a dog wearing a hat, say hello for me.','Everyone here is somebody\'s favorite person.'];
+const FLAVOR = ['The streetlights hum a different song on Tuesdays.',"I haven't blinked since 1994. Don't tell anyone.",'Did you hear that? No? Good. Me neither.',"My cousin is a vending machine. We don't talk anymore.",'This place is smaller than it looks and bigger than it feels.','You have a very trustworthy face. Like a lamp.','Sometimes the sky here buffers.','I used to be taller. Long story. Not a good one.','If you see a dog wearing a hat, say hello for me.',"Everyone here is somebody's favorite person.",'Some of these houses are bigger on the inside. Nobody talks about it.'];
+const BARKS = ['Hm?','Oh. Hello.','Evening.','Nice night for it.','Mind the puddles.','Is it Tuesday?','Hi there.','Lovely weather. Probably.','Oh! You startled me.','Hello, stranger.'];
+const LOCKED = ['DO NOT DISTURB. Someone inside is practicing the trombone.','Locked. A note says BACK IN 5 MIN. It is dated 1987.','You knock. Someone knocks back, politely, and then nothing.','Locked. You hear a television laughing at something.','The door is painted on.'];
 
 /* ---------- story generation ---------- */
-function localStory(seed, vibe){
+function randomLook(r){
+  return {shirt:pick(r,PAINT)[1], pants:pick(r,['#2a3a5a','#3a3a3a','#5a4a3a','#6a6a5a','#2a2a2a','#5a3a5a']), skin:pick(r,SKINS), hair:pick(r,HAIRS), hairColor:pick(r,HAIRCOLS),
+    hat:r()<.45?pick(r,HATS):'none', build:pick(r,BUILDS), outfit:pick(r,OUTFITS), height:+rr(r,.78,1.25).toFixed(2)};
+}
+function localStory(seed){
   const r = mulberry32(seed);
   const setting = pick(r, Object.keys(SETTINGS));
   const place = pick(r, PLACES[setting]);
   const names = shuffle(r, NAMES), roles = shuffle(r, ROLES), pers = shuffle(r, PERSONAS);
   const nChars = 3 + (r()<.5?1:0);
   const chars = [];
-  for(let i=0;i<nChars;i++){
-    chars.push({id:'c'+(i+1), name:names[i], role:roles[i], personality:pers[i],
-      look:{body:pick(r,PAINT)[1], head:pick(r,['#e8c8a8','#c89878','#8a6048','#d8d0c0','#b8c8a0','#e0b0b8']), hat:pick(r,HATS), height:+rr(r,.8,1.3).toFixed(2)},
-      greeting:''});
-  }
+  for(let i=0;i<nChars;i++) chars.push({id:'c'+(i+1), name:names[i], role:roles[i], personality:pers[i], look:randomLook(r), voice:pick(r,VOICES), where:i===0?'outside':(r()<.45?'inside':'outside'), greeting:''});
   const its = shuffle(r, ITEMS);
   const two = r()<.4;
-  const items = [{id:'i1', name:its[0][0], description:its[0][1]}];
-  if(two) items.push({id:'i2', name:its[1][0], description:its[1][1]});
+  const items = [{id:'i1', name:its[0][0], description:its[0][1], where:r()<.6?'inside':'outside'}];
+  if(two) items.push({id:'i2', name:its[1][0], description:its[1][1], where:r()<.6?'inside':'outside'});
   const fill = s => s.replace(/\{A\}/g,chars[0].name).replace(/\{B\}/g,chars[1].name).replace(/\{C\}/g,chars[2].name)
     .replace(/\{place\}/g,place).replace(/\{item\}/g,items[0].name).replace(/\{Item\}/g,items[0].name.replace(/\b\w/g,c=>c.toUpperCase()));
   const intro = fill(pick(r,PREMISES));
@@ -241,18 +317,19 @@ function localStory(seed, vibe){
   ];
   if(two){ steps.push({type:'find', target:'i2', text:`Find the ${items[1].name}`}); steps.push({type:'give', target:'c1', item:'i2', text:`Bring the ${items[1].name} to ${chars[0].name}`}); }
   else steps.push({type:'talk', target:'c3', text:`Tell ${chars[2].name} what happened`});
-  const sky = pick(r,['#9fc3e0','#c47a68','#0c1330','#d6a8bf','#8a7ab0','#6aa0a0']);
   return {
     title: fill(pick(r,TITLES)), place, tagline:'', setting, time:pick(r,Object.keys(TIMES)), weather:pick(r,WEATHERS),
-    colors:{sky, ground:pick(r,SETTINGS[setting].gcol), accent:pick(r,PAINT)[1]},
+    colors:{sky:pick(r,['#9fc3e0','#c47a68','#0c1330','#d6a8bf','#8a7ab0','#6aa0a0']), ground:pick(r,SETTINGS[setting].gcol), accent:pick(r,PAINT)[1]},
     intro, characters:chars, items, steps, ending: fill(pick(r,ENDINGS)), ai:false,
   };
 }
+const charName = (S,id) => (S.characters.find(c=>c.id===id)||{}).name || 'someone';
+const itemName = (S,id) => (S.items.find(c=>c.id===id)||{}).name || 'thing';
 
 function normalizeStory(s, seed){
   if(!s || typeof s!=='object') return null;
   const r = mulberry32(seed+7);
-  const out = {ai:true};
+  const out = {ai: s.ai === false ? false : true};
   out.title = str(s.title,60) || 'Untitled Tape';
   out.place = str(s.place,40) || 'somewhere';
   out.tagline = str(s.tagline,140);
@@ -260,23 +337,25 @@ function normalizeStory(s, seed){
   out.time = TIMES[s.time] ? s.time : 'dusk';
   out.weather = WEATHERS.includes(s.weather) ? s.weather : 'clear';
   const c = s.colors || {};
-  out.colors = {sky:HEX.test(c.sky)?c.sky:TIMES[out.time].sky, ground:HEX.test(c.ground)?c.ground:SETTINGS[out.setting].gcol[0], accent:HEX.test(c.accent)?c.accent:'#d8b64a'};
+  out.colors = {sky:hex(c.sky,TIMES[out.time].sky), ground:hex(c.ground,SETTINGS[out.setting].gcol[0]), accent:hex(c.accent,'#d8b64a')};
   out.intro = str(s.intro,500);
   out.ending = str(s.ending,600);
   const idMap = {};
   out.characters = (Array.isArray(s.characters)?s.characters:[]).slice(0,4).map((ch,i) => {
-    const id='c'+(i+1); if(ch && ch.id) idMap[ch.id]=id;
-    const lk = (ch&&ch.look)||{};
-    return {id, name:str(ch&&ch.name,28)||pick(r,NAMES), role:str(ch&&ch.role,60)||pick(r,ROLES), personality:str(ch&&ch.personality,160)||pick(r,PERSONAS),
-      greeting:str(ch&&ch.greeting,220), look:{body:HEX.test(lk.body)?lk.body:pick(r,PAINT)[1], head:HEX.test(lk.head)?lk.head:'#e0c0a0', hat:HATS.includes(lk.hat)?lk.hat:'none', height:Math.min(1.4,Math.max(.7,+lk.height||1))}};
+    ch = ch || {};
+    const id='c'+(i+1); if(ch.id) idMap[ch.id]=id;
+    const lk = ch.look || {}, rl = randomLook(r);
+    return {id, name:str(ch.name,28)||pick(r,NAMES), role:str(ch.role,60)||pick(r,ROLES), personality:str(ch.personality,160)||pick(r,PERSONAS),
+      greeting:str(ch.greeting,220), voice:VOICES.includes(ch.voice)?ch.voice:pick(r,VOICES), where: i===0 ? 'outside' : (ch.where==='inside'?'inside':ch.where==='outside'?'outside':(r()<.4?'inside':'outside')),
+      look:{shirt:hex(lk.shirt||lk.body,rl.shirt), pants:hex(lk.pants,rl.pants), skin:hex(lk.skin||lk.head,rl.skin), hair:HAIRS.includes(lk.hair)?lk.hair:rl.hair, hairColor:hex(lk.hairColor,rl.hairColor),
+        hat:HATS.includes(lk.hat)?lk.hat:'none', build:BUILDS.includes(lk.build)?lk.build:rl.build, outfit:OUTFITS.includes(lk.outfit)?lk.outfit:rl.outfit, height:clamp(+lk.height||1,.7,1.4)}};
   });
   if(out.characters.length<2) return null;
-  out.items = (Array.isArray(s.items)?s.items:[]).slice(0,3).map((it,i) => { const id='i'+(i+1); if(it&&it.id) idMap[it.id]=id; return {id, name:str(it&&it.name,40)||'odd object', description:str(it&&it.description,160)}; });
+  out.items = (Array.isArray(s.items)?s.items:[]).slice(0,3).map((it,i) => { it = it||{}; const id='i'+(i+1); if(it.id) idMap[it.id]=id; return {id, name:str(it.name,40)||'odd object', description:str(it.description,160), where:it.where==='outside'?'outside':it.where==='inside'?'inside':(r()<.6?'inside':'outside')}; });
   if(!out.items.length) return null;
   const has = id => out.characters.some(x=>x.id===id) || out.items.some(x=>x.id===id);
   const map = id => idMap[id] || (has(id)?id:null);
-  const steps = [];
-  const found = new Set();
+  const steps = [], found = new Set();
   for(const st of (Array.isArray(s.steps)?s.steps:[]).slice(0,6)){
     if(!st) continue;
     const t = map(st.target), text = str(st.text,70);
@@ -292,40 +371,41 @@ function normalizeStory(s, seed){
   out.steps = steps;
   return out;
 }
-const charName = (S,id) => (S.characters.find(c=>c.id===id)||{}).name || 'someone';
-const itemName = (S,id) => (S.items.find(c=>c.id===id)||{}).name || 'thing';
 
 const INSPIRE = ['lost luggage','a retirement party','a haunted jukebox that only plays polka','time running backwards','a bake sale','the last bus','a missing parrot','a wedding','a talent show','a comet','a broken ferris wheel','an eclipse','a pie contest','a runaway snowplow','a family reunion','a stolen moon','a cursed but friendly hat','insomnia','a lighthouse with no light','a very old dog','a mix tape','the town mascot quitting','an apology nobody made','a garage sale','a pen pal','a lunar tide','a lost tooth','a flooded bowling alley','a chess rivalry','a puppet show'];
 const TONES = ['whimsical','melancholy but warm','absurd comedy','dreamlike and surreal','cozy mystery','bittersweet','deadpan weird','small-town soap opera'];
-
 function storyPrompt(seed, vibe){
   const r = mulberry32(seed);
   const words = shuffle(r,INSPIRE).slice(0,3).join(', ');
   const tone = pick(r,TONES);
   const setHint = vibe ? '' : `Prefer the "${pick(r,Object.keys(SETTINGS))}" setting unless another fits your idea much better.`;
-  return `You are writing one short story for a first-person, low-poly PS1-era indie game, in the visual style of Puppet Combo (VHS grain, fog, crude puppet-like people, small odd places). It must NOT be horror or scary: make it ${tone}. Every tape should feel completely unlike any other. Seed ${seed}.
+  return `You are writing one short story for a first-person, low-poly PS1-era indie game, in the visual style of Puppet Combo (VHS grain, fog, odd puppet-like people, small strange places). It must NOT be horror or scary: make it ${tone}. Every tape should feel completely unlike any other. Seed ${seed}.
 ${vibe ? `The player wrote this on the tape label, build the story around it: "${vibe}"` : `Loose inspiration (use or twist freely): ${words}.`}
 ${setHint}
 
 The 3D world is built from a fixed kit, so "setting" must be one of: ${Object.entries(SET_WORDS).map(([k,v])=>`${k} (${v})`).join(', ')}.
-The player can only: walk around, talk to characters, pick up items, and hand items to characters. Design the quest from those actions only.
+Most buildings can be entered and have rooms (kitchens, bedrooms, back rooms...). Characters and items can be "inside" a building or "outside".
+The player can only: walk around, go in and out of buildings, talk to characters, pick up items, hand items to characters, and take photos. Design the quest from those actions only.
 
 Reply with ONLY one JSON object in exactly this shape:
 {"title":"tape title, max 6 words","place":"name of the place","tagline":"one intriguing line","setting":"town","time":"day|dusk|night|dawn","weather":"clear|rain|snow|fireflies|fog","colors":{"sky":"#rrggbb","ground":"#rrggbb","accent":"#rrggbb"},
 "intro":"2-3 sentences in second person setting up the situation",
-"characters":[{"id":"c1","name":"...","role":"short role","personality":"how they talk, one sentence","greeting":"their first line to the player, max 25 words","look":{"body":"#rrggbb","head":"#rrggbb","hat":"none|cap|tall|bow|antenna|beanie","height":1.0}}],
-"items":[{"id":"i1","name":"short item name","description":"one odd sentence"}],
+"characters":[{"id":"c1","name":"...","role":"short role","personality":"how they talk, one sentence","greeting":"their first line to the player, max 25 words","voice":"deep|gravelly|soft|bright|high|squeaky","where":"outside|inside","look":{"shirt":"#rrggbb","pants":"#rrggbb","skin":"#rrggbb","hair":"bald|short|long|bun|spiky|curly","hairColor":"#rrggbb","hat":"none|cap|tall|bow|antenna|beanie","build":"thin|average|round","outfit":"plain|dress|coat|overalls","height":1.0}}],
+"items":[{"id":"i1","name":"short item name","description":"one odd sentence","where":"inside|outside"}],
 "steps":[{"type":"talk","target":"c1","text":"Talk to ..."},{"type":"find","target":"i1","text":"Find ..."},{"type":"give","target":"c2","item":"i1","text":"Bring ... to ..."}],
 "ending":"3 sentences in second person, a satisfying strange ending"}
-Rules: 3 or 4 characters, 1 or 2 items, 3 to 5 steps. The first step is a talk. Every give must come after the find for that item. Step text under 50 characters. Characters' heights between 0.7 and 1.4. Colors should suit the time of day. Keep names and dialogue specific and memorable.`;
+Rules: 3 or 4 characters, 1 or 2 items, 3 to 5 steps. The first step is a talk with c1, and c1 is outside. Every give must come after the find for that item. Step text under 50 characters. Heights between 0.7 (child) and 1.4 (very tall). Colors should suit the time of day. Keep names and dialogue specific and memorable.`;
 }
 
-/* ---------- Claude connection ---------- */
-let sample = null, aiOK = false, aiChecked = false;
+/* ---------- Claude capabilities ---------- */
+let sample = null, aiOK = false, aiChecked = false, imagesOK = false, downloads = null;
+const use = name => (window.claude && window.claude.use) ? window.claude.use(name).catch(() => null) : Promise.resolve(null);
 (async () => {
-  try { if(window.claude && window.claude.use) sample = await window.claude.use('sample'); } catch(e){ sample = null; }
+  sample = await use('sample');
   aiOK = !!sample; aiChecked = true; updateAiStatus();
+  if(sample && sample.limits){ try{ const l = await sample.limits(); imagesOK = !!(l && l.images); }catch(e){} }
 })();
+use('downloads').then(d => { downloads = d; });
 setTimeout(() => { if(!aiChecked){ aiChecked = true; updateAiStatus(); } }, 11000);
 function updateAiStatus(){
   const el = $('#ai-status');
@@ -395,20 +475,21 @@ addEventListener('resize', resize); resize();
 
 /* ---------- textures & materials ---------- */
 const TEX = {};
+function canvasTex(c){ const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false; t.wrapS = t.wrapT = THREE.RepeatWrapping; return t; }
 function getTex(kind){
   if(TEX[kind]) return TEX[kind];
   const c = document.createElement('canvas'); c.width = c.height = 32;
   const x = c.getContext('2d'); const r = mulberry32(hashStr(kind));
-  const px = (i,j,v) => { v=Math.max(0,Math.min(255,v|0)); x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(i,j,1,1); };
+  const px = (i,j,v) => { v=clamp(v|0,0,255); x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(i,j,1,1); };
   const noise = (b,a) => { for(let i=0;i<32;i++) for(let j=0;j<32;j++) px(i,j,b+(r()-.5)*a); };
-  const rect = (v,X,Y,W,H) => { x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(X,Y,W,H); };
+  const rect = (v,X,Y,W,H) => { x.fillStyle=`rgb(${v|0},${v|0},${v|0})`; x.fillRect(X,Y,W,H); };
   switch(kind){
     case 'grass': noise(200,50); for(let k=0;k<70;k++){const i=r()*32|0,j=r()*32|0; px(i,j,135); px(i,(j+1)%32,160);} break;
     case 'dirt': noise(190,70); break;
     case 'sand': noise(228,30); break;
     case 'snow': noise(246,14); break;
     case 'asphalt': noise(175,60); for(let k=0;k<30;k++) px(r()*32|0,r()*32|0,240); break;
-    case 'planks': noise(205,30); for(let j=0;j<32;j+=8) rect(120,0,j,32,1); for(let k=0;k<5;k++) px(r()*32|0,r()*32|0,110); break;
+    case 'planks': noise(205,30); for(let j=0;j<32;j+=8) rect(120,0,j,32,1); for(let j=0;j<32;j+=8) rect(140,(j*7)%32,j,1,8); for(let k=0;k<5;k++) px(r()*32|0,r()*32|0,110); break;
     case 'brick': rect(150,0,0,32,32); for(let row=0;row<4;row++){ const off=row%2?8:0; for(let b=-1;b<2;b++) rect(185+(r()-.5)*40, b*16+off+1, row*8+1, 14, 6); } break;
     case 'siding': noise(228,14); for(let j=0;j<32;j+=4) rect(160,0,j+3,32,1); break;
     case 'shingle': rect(130,0,0,32,32); for(let row=0;row<4;row++) for(let b=0;b<6;b++) rect(200+(r()-.5)*50, b*8-(row%2)*4, row*8, 7, 7); break;
@@ -416,16 +497,17 @@ function getTex(kind){
     case 'water': noise(205,26); for(let k=0;k<18;k++) rect(255, r()*32|0, r()*32|0, 3, 1); break;
     case 'bark': noise(170,40); for(let i=0;i<32;i+=3) rect(120,i,0,1,32); break;
     case 'leaf': noise(190,80); break;
+    case 'tile': for(let i=0;i<4;i++) for(let j=0;j<4;j++) rect(((i+j)%2?150:238)+(r()-.5)*14, i*8, j*8, 8, 8); for(let k=0;k<32;k+=8){ rect(120,k,0,1,32); rect(120,0,k,32,1); } break;
+    case 'carpet': noise(205,36); for(let i=0;i<32;i+=4) for(let j=(i/4%2)*2;j<32;j+=4) px(i,j,165); break;
+    case 'wallpaper': noise(226,10); for(let i=0;i<32;i+=8){ rect(200,i,0,2,32); } for(let j=4;j<32;j+=8) for(let i=4;i<32;i+=8){ rect(185,i+1,j,1,3); rect(185,i,j+1,3,1); } break;
+    case 'cloth': for(let i=0;i<32;i++) for(let j=0;j<32;j++) px(i,j,(i%2^j%2)?215:195 + (r()-.5)*20); break;
     default: noise(218,28);
   }
-  const t = new THREE.CanvasTexture(c);
-  t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
-  t.wrapS = t.wrapT = THREE.RepeatWrapping;
-  return (TEX[kind] = t);
+  return (TEX[kind] = canvasTex(c));
 }
 let MATS = {};
 function mat(color, kind, o={}){
-  const k = [color,kind,o.basic?1:0,o.rep||1,o.side||0].join('|');
+  const k = [color,kind,o.basic?1:0,o.rep||1,o.side?1:0].join('|');
   if(MATS[k]) return MATS[k];
   const p = {color:new THREE.Color(color)};
   if(kind){ const t = getTex(kind).clone(); t.needsUpdate = true; t.repeat.set(o.rep||1, o.rep||1); p.map = t; }
@@ -433,39 +515,61 @@ function mat(color, kind, o={}){
   if(o.side) m.side = THREE.DoubleSide;
   return (MATS[k] = m);
 }
+function uvScale(geo, sx, sy){ const uv = geo.attributes.uv; for(let i=0;i<uv.count;i++) uv.setXY(i, uv.getX(i)*sx, uv.getY(i)*sy); return geo; }
 
-/* ---------- world state ---------- */
-let scene = null, S = null, seedNow = 0;
-let rects = [], circles = [], interactables = [], animated = [], structures = [];
-let lantern = null, weather = null, water = null, bounds = null;
-const player = {x:0, z:30, yaw:0, pitch:0, bob:0};
-const inv = new Set(), usedItems = new Set();
-let stepIdx = 0, playerLog = [], pendingEnding = false;
-
-function disposeScene(){
-  if(!scene) return;
-  const ms = new Set(Object.values(MATS));
-  scene.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material) [].concat(o.material).forEach(m => ms.add(m)); });
-  ms.forEach(m => { if(m.map) m.map.dispose(); m.dispose(); });
-  MATS = {};
+// shared animated TV static
+const tvCanvas = document.createElement('canvas'); tvCanvas.width = 32; tvCanvas.height = 24;
+const tvTex = canvasTex(tvCanvas);
+let tvTimer = 0;
+function updateTV(dt){
+  tvTimer -= dt; if(tvTimer > 0) return; tvTimer = .07;
+  const x = tvCanvas.getContext('2d'), img = x.createImageData(32,24);
+  for(let i=0;i<img.data.length;i+=4){ const v = Math.random()*200+30; img.data[i]=v*.85; img.data[i+1]=v*.9; img.data[i+2]=v; img.data[i+3]=255; }
+  x.putImageData(img,0,0); tvTex.needsUpdate = true;
+}
+function paintingTex(r){
+  const c = document.createElement('canvas'); c.width = 32; c.height = 24; const x = c.getContext('2d');
+  const col = () => pick(r,PAINT)[1];
+  const kind = Math.floor(r()*4);
+  if(kind===0){ x.fillStyle = col(); x.fillRect(0,0,32,14); x.fillStyle = col(); x.fillRect(0,14,32,10); x.fillStyle = '#ffe9a0'; x.fillRect(20,4,5,5); }
+  else if(kind===1){ x.fillStyle = col(); x.fillRect(0,0,32,24); x.fillStyle = '#e0b090'; x.fillRect(10,4,12,14); x.fillStyle = '#111'; x.fillRect(13,9,2,2); x.fillRect(18,9,2,2); x.fillRect(14,14,5,1); x.fillStyle = col(); x.fillRect(8,18,16,6); }
+  else if(kind===2){ x.fillStyle = col(); x.fillRect(0,0,32,24); for(let i=0;i<4;i++){ x.fillStyle = col(); x.fillRect(r()*24|0, r()*16|0, 4+r()*10|0, 4+r()*8|0); } }
+  else { x.fillStyle = '#20304a'; x.fillRect(0,0,32,24); x.fillStyle = '#e8e0c0'; x.beginPath(); x.arc(16,10,6,0,7); x.fill(); x.fillStyle = '#20304a'; x.beginPath(); x.arc(19,8,5,0,7); x.fill(); x.fillStyle = col(); x.fillRect(0,19,32,5); }
+  const t = canvasTex(c); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t;
 }
 
-function mesh(geo, m, x=0, y=0, z=0, parent){ const o = new THREE.Mesh(geo, m); o.position.set(x,y,z); (parent||scene).add(o); return o; }
-const BOX = (w,h,d) => new THREE.BoxGeometry(w,h,d);
+/* ---------- zones ---------- */
+let S = null, seedNow = 0, zones = [], Z = null, OUT = null, BZ = null, ENT = {};
+const player = {x:0, z:50, yaw:0, pitch:0, bob:0};
+const player0 = {x:0, z:50};
+const inv = new Set(), usedItems = new Set();
+let stepIdx = 0, playerLog = [], pendingEnding = false, photos = [], shelvedThisTape = false;
 
+function newZone(name, indoor){
+  return {name, label:name, indoor, scene:new THREE.Scene(), rects:[], circles:[], interactables:[], animated:[], npcs:[], bounds:null, rooms:[], built:!indoor, far:indoor?30:80};
+}
+function disposeWorld(){
+  const ms = new Set(Object.values(MATS));
+  for(const z of zones) z.scene.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material) [].concat(o.material).forEach(m => ms.add(m)); });
+  ms.forEach(m => { if(m.map && m.map !== tvTex) m.map.dispose(); m.dispose(); });
+  MATS = {}; zones = [];
+}
+function mesh(geo, m, x=0, y=0, z=0, parent){ const o = new THREE.Mesh(geo, m); o.position.set(x,y,z); (parent||BZ.scene).add(o); return o; }
+const BOX = (w,h,d) => new THREE.BoxGeometry(w,h,d);
 function roof(g, w, d, h, y, m){
   const geo = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4); geo.rotateY(Math.PI/4);
   const o = mesh(geo, m, 0, y + h/2, 0, g); o.scale.set(w, h, d); return o;
 }
 function windowMat(){ return mat(S && TIMES[S.time].night ? '#ffd27a' : (S&&S.time==='dusk' ? '#e8a060' : '#2a3548'), null, {basic:true}); }
+const toWorld = (x, z, rot, lx, lz) => [x + lx*Math.cos(rot) + lz*Math.sin(rot), z - lx*Math.sin(rot) + lz*Math.cos(rot)];
 
-/* structure builders: return {group, w, d, label} with local footprint w x d, front facing +z */
-function buildStructure(type, r){
+/* exterior structures: front faces local +z. doors: local [x,z] on the front face */
+function buildStructure(type, r, paint){
   const g = new THREE.Group();
-  const [pname, pcol] = pick(r, PAINT);
+  const [pname, pcol] = paint;
   const accent = S.colors.accent;
-  let w, d, label;
-  const door = (dw, dh, z) => mesh(BOX(dw,dh,.12), mat('#3a2a22','planks'), 0, dh/2, z, g);
+  let w, d, label, doors = [], enter = null;
+  const door = (dw, dh, x, z) => { const o = mesh(BOX(dw,dh,.12), mat('#3a2a22','planks'), x, dh/2, z, g); return o; };
   const win = (x, y, z, ww=.9, wh=.8) => mesh(BOX(ww,wh,.1), windowMat(), x, y, z, g);
   switch(type){
     case 'house': case 'barn': {
@@ -474,9 +578,10 @@ function buildStructure(type, r){
       const col = barn ? pick(r,['#9a3a2e','#8a4a3a','#a0503a']) : pcol;
       mesh(BOX(w,h,d), mat(col, barn?'planks':pick(r,['siding','brick','planks']), {rep:2}), 0, h/2, 0, g);
       roof(g, w+.8, d+.8, barn?3.4:rr(r,1.6,2.6), h, mat(pick(r,['#5a4a48','#3e4450','#6a3a30','#4a5a4a']),'shingle',{rep:3}));
-      door(barn?2.6:1, barn?3.2:2, d/2+.05);
-      if(!barn){ win(-w/3, h*.6, d/2+.06); win(w/3, h*.6, d/2+.06); win(w/2+.06, h*.6, 0).rotation.y = Math.PI/2; }
-      label = barn ? 'the barn' : `the ${pname} house`;
+      door(barn?2.6:1, barn?3.2:2, 0, d/2+.05); doors.push([0, d/2]);
+      if(!barn){ win(-w/3, h*.6, d/2+.06); win(w/3, h*.6, d/2+.06); win(w/2+.06, h*.6, 0).rotation.y = Math.PI/2; win(-w/2-.06, h*.6, 0).rotation.y = Math.PI/2;
+        mesh(BOX(1.6,.12,1), mat('#7a7a72','noise'), 0, .06, d/2+.5, g); }
+      label = barn ? 'the barn' : `the ${pname} house`; enter = barn ? 'barn' : 'house';
       break;
     }
     case 'shop': {
@@ -484,8 +589,8 @@ function buildStructure(type, r){
       mesh(BOX(w,h,d), mat(pcol,'brick',{rep:2}), 0, h/2, 0, g);
       mesh(BOX(w+.3,.3,d+.3), mat('#5a5048','noise'), 0, h+.15, 0, g);
       const aw = mesh(BOX(w*.9,.12,1.4), mat(accent,'stripe',{rep:2}), 0, h*.72, d/2+.6, g); aw.rotation.x = .35;
-      win(-w/4, h*.42, d/2+.06, w*.35, 1.3); door(1.1, 2.1, d/2+.05).position.x = w/4;
-      label = `the ${pname} shop`;
+      win(-w/4, h*.42, d/2+.06, w*.35, 1.3); door(1.1, 2.1, w/4, d/2+.05); doors.push([w/4, d/2]);
+      label = `the ${pname} shop`; enter = 'shop';
       break;
     }
     case 'cabin': case 'shack': {
@@ -493,16 +598,16 @@ function buildStructure(type, r){
       mesh(BOX(w,h,d), mat(type==='cabin'?'#8a6a4a':pcol,'planks',{rep:2}), 0, h/2, 0, g);
       if(type==='cabin') roof(g, w+.8, d+.8, 1.8, h, mat('#4a3a34','shingle',{rep:3}));
       else { const rf = mesh(BOX(w+.6,.2,d+.8), mat('#6a6a6a','noise'), 0, h+.25, 0, g); rf.rotation.x = .12; }
-      door(1, 2, d/2+.05); win(w/3, h*.6, d/2+.06, .7, .7);
-      label = type==='cabin' ? 'the log cabin' : `the ${pname} shack`;
+      door(1, 2, 0, d/2+.05); doors.push([0, d/2]); win(w/3, h*.6, d/2+.06, .7, .7);
+      label = type==='cabin' ? `the ${pname} cabin` : `the ${pname} shack`; enter = type;
       break;
     }
     case 'tent': {
-      const rad = rr(r,2,3); w = d = rad*2;
-      const t = mesh(new THREE.ConeGeometry(rad, rr(r,3,4.5), 6, 1, true), mat(r()<.5?accent:pcol,'stripe',{rep:3, side:true}), 0, 1.9, 0, g);
-      t.position.y = t.geometry.parameters.height/2;
-      mesh(new THREE.SphereGeometry(.15,4,3), mat(accent,null,{basic:true}), 0, t.geometry.parameters.height+.1, 0, g);
-      label = `the ${pname} tent`;
+      const rad = rr(r,2,3); w = d = rad*2; const th = rr(r,3,4.5);
+      mesh(new THREE.ConeGeometry(rad, th, 6, 1, true), mat(r()<.5?accent:pcol,'stripe',{rep:3, side:true}), 0, th/2, 0, g);
+      mesh(new THREE.SphereGeometry(.15,4,3), mat(accent,null,{basic:true}), 0, th+.1, 0, g);
+      const flap = mesh(new THREE.ConeGeometry(.7,1.8,3), mat('#1a1414',null), 0, .9, rad*.86, g); flap.scale.z = .2;
+      doors.push([0, rad*.9]); label = `the ${pname} tent`; enter = 'tent';
       break;
     }
     case 'stall': {
@@ -517,10 +622,10 @@ function buildStructure(type, r){
     case 'tower': {
       w = d = 4; const h = rr(r,8,12);
       const stripe = S.setting === 'seaside';
-      mesh(new THREE.CylinderGeometry(1.4,1.9,h,8), mat(stripe?'#e8e0d8':'#b8b8b0', stripe?'stripe':'siding', {rep:2}), 0, h/2, 0, g).rotation.z = 0;
+      mesh(new THREE.CylinderGeometry(1.4,1.9,h,8), mat(stripe?'#e8e0d8':'#b8b8b0', stripe?'stripe':'siding', {rep:2}), 0, h/2, 0, g);
       if(stripe){ mesh(new THREE.CylinderGeometry(1.1,1.1,1.2,8), mat('#ffe9a0',null,{basic:true}), 0, h+.6, 0, g); mesh(new THREE.ConeGeometry(1.4,1.2,8), mat('#a8453a','noise'), 0, h+1.8, 0, g); label = 'the lighthouse'; }
       else { mesh(new THREE.SphereGeometry(1.4,8,4,0,Math.PI*2,0,Math.PI/2), mat('#8a8a88','noise'), 0, h, 0, g); label = 'the silo'; }
-      door(1, 2, 1.75);
+      door(1, 2, 0, 1.78); doors.push([0, 1.8]); enter = 'tower';
       break;
     }
     case 'motel': {
@@ -528,26 +633,25 @@ function buildStructure(type, r){
       mesh(BOX(w,h,d), mat(pcol,'siding',{rep:3}), 0, h/2, 0, g);
       mesh(BOX(w+1,.25,d+1.6), mat('#5a5048','noise'), 0, h+.12, .3, g);
       const n = Math.floor(w/3);
-      for(let i=0;i<n;i++){ const px = -w/2 + 1.5 + i*3; door(1,2.1,d/2+.05).position.x = px; win(px+.95, 1.6, d/2+.06, .7, .7); }
+      for(let i=0;i<n;i++){ const px = -w/2 + 1.5 + i*3; door(1,2.1,px,d/2+.05); win(px+.95, 1.6, d/2+.06, .7, .7); doors.push([px, d/2]); }
       mesh(BOX(.25,6,.25), mat('#6a6a6a','noise'), w/2+1.5, 3, d/2+1, g);
       mesh(BOX(2.6,1.4,.3), mat(accent,null,{basic:true}), w/2+1.5, 6.3, d/2+1, g);
-      label = 'the motel office';
+      label = 'the motel'; enter = 'motel';
       break;
     }
     case 'ferris': {
       w = 4; d = 14;
       const wheel = new THREE.Group(); wheel.position.set(0,8,0); g.add(wheel);
-      const tm = mat(accent,null,{basic:true});
-      mesh(new THREE.TorusGeometry(6,.15,4,16), tm, 0,0,0, wheel).rotation.y = Math.PI/2;
+      mesh(new THREE.TorusGeometry(6,.15,4,16), mat(accent,null,{basic:true}), 0,0,0, wheel).rotation.y = Math.PI/2;
       for(let i=0;i<8;i++){ const a = i/8*Math.PI*2; const sp = mesh(BOX(.1,12,.1), mat('#d8d4c8','noise'), 0,0,0, wheel); sp.rotation.x = a;
         const cab = mesh(BOX(1,1,1), mat(pick(r,PAINT)[1],'noise'), 0, Math.cos(a)*6, Math.sin(a)*6, wheel); cab.userData.cab = true; }
       for(const s of [-1,1]){ const leg = mesh(BOX(.25,9,.25), mat('#8a8a88','noise'), 0, 4, s*2.2, g); leg.rotation.x = s*.25; }
-      animated.push(dt => { wheel.rotation.x += dt*.12; wheel.children.forEach(c => { if(c.userData.cab) c.rotation.x = -wheel.rotation.x; }); });
+      BZ.animated.push(dt => { wheel.rotation.x += dt*.12; wheel.children.forEach(c => { if(c.userData.cab) c.rotation.x = -wheel.rotation.x; }); });
       label = 'the ferris wheel';
       break;
     }
   }
-  return {group:g, w, d, label};
+  return {group:g, w, d, label, doors, enter};
 }
 
 /* props: return {obj, rad} rad = collision radius (0 = walk through) */
@@ -570,7 +674,7 @@ function buildProp(type, r){
     case 'mailbox': mesh(BOX(.1,1,.1), mat('#5a4a3a','planks'), 0,.5,0,g); mesh(BOX(.35,.35,.6), mat(pick(r,PAINT)[1],'noise'), 0,1.1,0,g); rad=.2; break;
     case 'log': { const o = mesh(new THREE.CylinderGeometry(.3,.3,2.4,6), mat('#6a4a34','bark'), 0,.3,0,g); o.rotation.z = Math.PI/2; rad=.9; break; }
     case 'campfire': { for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; mesh(new THREE.DodecahedronGeometry(.2,0), mat('#6a6a6a','noise'), Math.cos(a)*.6,.1,Math.sin(a)*.6,g); }
-      const f = mesh(new THREE.ConeGeometry(.35,.9,4), mat('#ffa040',null,{basic:true}), 0,.45,0,g); animated.push((dt,t)=>{ f.scale.y = .8+Math.sin(t*13)*.2; f.rotation.y += dt*3; });
+      const f = mesh(new THREE.ConeGeometry(.35,.9,4), mat('#ffa040',null,{basic:true}), 0,.45,0,g); BZ.animated.push((dt,t)=>{ f.scale.y = .8+Math.sin(t*13)*.2; f.rotation.y += dt*3; });
       g.userData.fire = true; rad=.7; break; }
     case 'cactus': mesh(BOX(.4,2,.4), mat('#4a7a4a','noise'), 0,1,0,g); mesh(BOX(.3,.8,.3), mat('#4a7a4a','noise'), .4,1.2,0,g); rad=.3; break;
     case 'box': mesh(BOX(.9,.9,.9), mat('#9a7a50','planks'), 0,.45,0,g); if(r()<.5) mesh(BOX(.7,.7,.7), mat('#9a7a50','planks'), .1,1.25,0,g); rad=.6; break;
@@ -579,11 +683,15 @@ function buildProp(type, r){
     case 'umbrella': mesh(BOX(.08,2.2,.08), mat('#d8d4c8','noise'), 0,1.1,0,g); mesh(new THREE.ConeGeometry(1.3,.5,8), mat(S.colors.accent,'stripe',{rep:2}), 0,2.3,0,g); rad=.15; break;
     case 'snowman': mesh(new THREE.SphereGeometry(.55,6,4), mat('#f0f0f4','snow'), 0,.5,0,g); mesh(new THREE.SphereGeometry(.4,6,4), mat('#f0f0f4','snow'), 0,1.25,0,g);
       mesh(new THREE.SphereGeometry(.28,6,4), mat('#f0f0f4','snow'), 0,1.8,0,g); mesh(new THREE.ConeGeometry(.06,.3,4), mat('#e07a30',null), 0,1.8,.35,g).rotation.x = Math.PI/2; rad=.5; break;
-    case 'balloon': { const col = pick(r,PAINT)[1]; const b = mesh(new THREE.SphereGeometry(.35,5,4), mat(col,null,{basic:true}), 0,2.6,0,g); mesh(BOX(.02,2.2,.02), mat('#ffffff',null,{basic:true}), 0,1.2,0,g);
-      const ph = r()*6; animated.push((dt,t)=>{ b.position.y = 2.6+Math.sin(t*1.3+ph)*.12; }); break; }
+    case 'balloon': { const b = mesh(new THREE.SphereGeometry(.35,5,4), mat(pick(r,PAINT)[1],null,{basic:true}), 0,2.6,0,g); mesh(BOX(.02,2.2,.02), mat('#ffffff',null,{basic:true}), 0,1.2,0,g);
+      const ph = r()*6; BZ.animated.push((dt,t)=>{ b.position.y = 2.6+Math.sin(t*1.3+ph)*.12; }); break; }
     case 'hay': { const o = mesh(new THREE.CylinderGeometry(.7,.7,1.3,8), mat('#c8a850','grass'), 0,.7,0,g); o.rotation.z = Math.PI/2; rad=.8; break; }
-    case 'fence': for(let i=-1;i<=1;i++) mesh(BOX(.12,1,.12), mat('#8a7050','planks'), i*1.2,.5,0,g); mesh(BOX(2.6,.12,.08), mat('#8a7050','planks'), 0,.8,0,g); mesh(BOX(2.6,.12,.08), mat('#8a7050','planks'), 0,.45,0,g); rad=0; g.userData.fence = true; break;
-    case 'crop': for(let i=0;i<5;i++) mesh(BOX(.2,rr(r,.5,1),.2), mat('#6a9a3a','leaf'), i*.5-1,.4,0,g); rad=0; break;
+    case 'fence': for(let i=-1;i<=1;i++) mesh(BOX(.12,1,.12), mat('#8a7050','planks'), i*1.2,.5,0,g); mesh(BOX(2.6,.12,.08), mat('#8a7050','planks'), 0,.8,0,g); mesh(BOX(2.6,.12,.08), mat('#8a7050','planks'), 0,.45,0,g); break;
+    case 'crop': for(let i=0;i<5;i++) mesh(BOX(.2,rr(r,.5,1),.2), mat('#6a9a3a','leaf'), i*.5-1,.4,0,g); break;
+    case 'hydrant': mesh(new THREE.CylinderGeometry(.16,.18,.7,6), mat('#c83a2a','noise'), 0,.35,0,g); mesh(new THREE.SphereGeometry(.17,6,3,0,Math.PI*2,0,Math.PI/2), mat('#c83a2a',null), 0,.7,0,g); mesh(BOX(.5,.1,.1), mat('#c83a2a',null), 0,.45,0,g); rad=.25; break;
+    case 'trash': mesh(new THREE.CylinderGeometry(.3,.26,.9,7), mat('#5a6a5a','siding'), 0,.45,0,g); mesh(new THREE.CylinderGeometry(.33,.33,.08,7), mat('#4a5a4a',null), 0,.94,0,g); rad=.35; break;
+    case 'phonebooth': mesh(BOX(1,2.3,1), mat(pick(r,['#a8453a','#4d6fa8','#7a7a7a']),'noise'), 0,1.15,0,g); mesh(BOX(.8,1.4,.04), mat(night?'#ffe8b0':'#8aa0b8',null,{basic:true}), 0,1.3,.51,g); mesh(BOX(1.05,.2,1.05), mat('#e8e0d0',null,{basic:night}), 0,2.25,0,g); rad=.7; break;
+    case 'vending': { const col = pick(r,PAINT)[1]; mesh(BOX(1,1.9,.8), mat(col,'noise'), 0,.95,0,g); mesh(BOX(.6,1.1,.04), mat('#e8f0ff',null,{basic:true}), -.12,1.15,.41,g); mesh(BOX(.2,.6,.04), mat('#2a2a2a',null), .32,1.2,.41,g); rad=.7; break; }
   }
   return {obj:g, rad};
 }
@@ -595,258 +703,743 @@ function textSign(lines, accent){
   x.font = '10px monospace'; x.fillText(lines[0], 64, 18);
   let fs = 16; x.font = `bold ${fs}px monospace`; while(x.measureText(lines[1]).width > 118 && fs > 8){ fs--; x.font = `bold ${fs}px monospace`; }
   x.fillText(lines[1], 64, 38);
-  const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
-  return t;
+  const t = canvasTex(c); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t;
 }
 
-/* puppet faces */
-function faceTex(skin, r){
-  const c = document.createElement('canvas'); c.width = c.height = 16; const x = c.getContext('2d');
-  x.fillStyle = skin; x.fillRect(0,0,16,16);
-  const dot = (X,Y,W,H,col) => { x.fillStyle = col; x.fillRect(X,Y,W,H); };
-  const eyes = Math.floor(r()*4), mouth = Math.floor(r()*4);
-  if(eyes===0){ dot(4,5,2,2,'#111'); dot(10,5,2,2,'#111'); }
-  else if(eyes===1){ dot(3,4,4,4,'#fff'); dot(9,4,4,4,'#fff'); dot(5,6,2,2,'#111'); dot(9,5,2,2,'#111'); }
-  else if(eyes===2){ dot(4,6,3,1,'#111'); dot(9,6,3,1,'#111'); }
-  else { dot(3,4,3,3,'#222'); dot(10,4,3,3,'#222'); dot(4,5,1,1,'#fff'); dot(11,5,1,1,'#fff'); }
-  if(mouth===0) dot(5,11,6,1,'#5a1a1a');
-  else if(mouth===1){ dot(5,10,1,1,'#5a1a1a'); dot(6,11,4,1,'#5a1a1a'); dot(10,10,1,1,'#5a1a1a'); }
-  else if(mouth===2) dot(7,10,2,3,'#3a0a0a');
-  else { for(let i=0;i<6;i++) dot(5+i,10+(i%2),1,1,'#5a1a1a'); }
-  if(r()<.5){ dot(2,9,2,1,'rgba(220,90,90,.6)'); dot(12,9,2,1,'rgba(220,90,90,.6)'); }
-  const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
-  return t;
+/* ---------- humanoid puppets ---------- */
+function faceTextures(skin, r){
+  const eyes = Math.floor(r()*5), mouth = Math.floor(r()*4), brow = Math.floor(r()*3);
+  const blush = r()<.5, freck = r()<.25, eyeCol = pick(r,['#141414','#3a2414','#24486a','#285a34']);
+  const draw = open => {
+    const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d');
+    const d = (X,Y,W,H,col) => { x.fillStyle = col; x.fillRect(X,Y,W,H); };
+    d(0,0,32,32,skin); d(0,26,32,6,'rgba(0,0,0,.12)'); d(0,0,3,32,'rgba(0,0,0,.08)'); d(29,0,3,32,'rgba(0,0,0,.08)');
+    if(eyes===0){ d(9,12,3,3,eyeCol); d(20,12,3,3,eyeCol); }
+    else if(eyes===1){ d(7,11,6,5,'#fff'); d(19,11,6,5,'#fff'); d(9,12,3,3,eyeCol); d(21,12,3,3,eyeCol); }
+    else if(eyes===2){ d(8,13,6,1,'#141414'); d(18,13,6,1,'#141414'); d(8,12,6,1,'rgba(0,0,0,.2)'); d(18,12,6,1,'rgba(0,0,0,.2)'); }
+    else if(eyes===3){ d(8,11,5,5,'#1a1a1a'); d(19,11,5,5,'#1a1a1a'); d(9,12,1,1,'#fff'); d(20,12,1,1,'#fff'); }
+    else { d(6,12,3,3,'#fff'); d(23,12,3,3,'#fff'); d(7,13,1,1,eyeCol); d(24,13,1,1,eyeCol); }
+    if(brow===1){ d(7,8,6,2,'#2a1a10'); d(19,8,6,2,'#2a1a10'); }
+    else if(brow===2){ d(8,8,5,1,'#2a1a10'); d(19,7,5,1,'#2a1a10'); }
+    d(15,15,2,4,'rgba(0,0,0,.18)');
+    if(open){ d(12,21,8,5,'#3a0a0a'); d(13,21,6,1,'#f0e8e0'); d(14,24,4,2,'#a83a3a'); }
+    else if(mouth===0) d(12,22,8,1,'#5a1a1a');
+    else if(mouth===1){ d(11,21,1,1,'#5a1a1a'); d(12,22,8,1,'#5a1a1a'); d(20,21,1,1,'#5a1a1a'); }
+    else if(mouth===2) d(14,22,4,2,'#4a1010');
+    else { d(12,22,7,1,'#5a1a1a'); d(19,21,2,1,'#5a1a1a'); }
+    if(blush){ d(5,17,4,2,'rgba(220,90,90,.45)'); d(23,17,4,2,'rgba(220,90,90,.45)'); }
+    if(freck) for(let i=0;i<6;i++) d(7+(i%3)*2+(i>2?13:0), 16+(i%2), 1, 1, 'rgba(90,50,30,.6)');
+    const t = canvasTex(c); t.wrapS = t.wrapT = THREE.ClampToEdgeWrapping; return t;
+  };
+  return [draw(false), draw(true)];
 }
-function buildNPC(ch, r){
-  const g = new THREE.Group(); const L = ch.look, h = L.height;
-  const body = mesh(new THREE.CylinderGeometry(.28,.4,.95*h,6), mat(L.body,'noise'), 0,.48*h,0,g);
-  const skin = mat(L.head,'noise');
-  const face = psx(new THREE.MeshLambertMaterial({color:'#ffffff', map:faceTex(L.head, r)}));
-  const headY = .95*h + .27;
-  const head = mesh(BOX(.5,.5,.46), [skin,skin,skin,skin,face,skin], 0, headY, 0, g);
-  for(const s of [-1,1]){ const a = mesh(BOX(.13,.6*h,.13), mat(L.body,'noise'), s*.38, .62*h, 0, g); a.rotation.z = s*.12; }
-  const hatCol = S.colors.accent;
-  switch(L.hat){
-    case 'cap': mesh(BOX(.54,.14,.5), mat(hatCol,'noise'), 0,headY+.3,0,g); mesh(BOX(.5,.05,.3), mat(hatCol,'noise'), 0,headY+.24,.36,g); break;
-    case 'tall': mesh(new THREE.CylinderGeometry(.22,.22,.55,6), mat('#1e1e24','noise'), 0,headY+.52,0,g); mesh(new THREE.CylinderGeometry(.36,.36,.05,6), mat('#1e1e24','noise'), 0,headY+.26,0,g); break;
-    case 'bow': mesh(BOX(.18,.14,.1), mat(hatCol,null), -.12,headY+.3,.05,g); mesh(BOX(.18,.14,.1), mat(hatCol,null), .12,headY+.3,.05,g); break;
-    case 'antenna': mesh(BOX(.03,.4,.03), mat('#888',null), 0,headY+.45,0,g); mesh(new THREE.SphereGeometry(.07,4,3), mat(hatCol,null,{basic:true}), 0,headY+.68,0,g); break;
-    case 'beanie': mesh(new THREE.SphereGeometry(.3,6,3,0,Math.PI*2,0,Math.PI/2), mat(hatCol,'stripe'), 0,headY+.2,0,g); break;
+function buildHuman(ch, r){
+  const L = ch.look;
+  const root = new THREE.Group(); root.scale.setScalar(L.height);
+  const bw = {thin:.85, average:1, round:1.3}[L.build] || 1;
+  const shirt = mat(L.shirt,'cloth'), pants = mat(L.pants,'cloth'), skin = mat(L.skin,'noise'), shoes = mat('#241c18',null), hairM = mat(L.hairColor,'noise');
+  const longSleeve = r()<.5;
+  const hip = new THREE.Group(); hip.position.y = .8; root.add(hip);
+  mesh(BOX(.3*bw,.16,.2*bw), pants, 0,0,0, hip);
+  const legs = [], knees = [], arms = [], elbows = [];
+  for(const s of [-1,1]){
+    const lp = new THREE.Group(); lp.position.set(s*.085*bw,-.04,0); hip.add(lp);
+    mesh(BOX(.13*Math.sqrt(bw),.4,.14*Math.sqrt(bw)), L.outfit==='dress'?skin:pants, 0,-.2,0, lp);
+    const kn = new THREE.Group(); kn.position.y = -.4; lp.add(kn);
+    mesh(BOX(.11,.36,.12), L.outfit==='dress'?skin:pants, 0,-.18,0, kn);
+    mesh(BOX(.12,.07,.22), shoes, 0,-.37,.04, kn);
+    legs.push(lp); knees.push(kn);
   }
-  return {group:g, head, body};
+  if(L.outfit==='dress') mesh(new THREE.CylinderGeometry(.16*bw,.32*bw,.5,7), shirt, 0,-.17,0, hip);
+  const torso = new THREE.Group(); torso.position.y = .07; hip.add(torso);
+  const chest = mesh(new THREE.CylinderGeometry(.19*bw,.16*bw,.5,6), shirt, 0,.25,0, torso); chest.scale.z = .72;
+  if(bw > 1.2) mesh(new THREE.SphereGeometry(.17*bw,6,4), shirt, 0,.16,.06, torso).scale.set(1,.9,.75);
+  if(L.outfit==='coat'){ const c = mesh(BOX(.42*bw,.78,.3*bw), mat(L.pants,'cloth'), 0,.1,0, torso); c.material = mat(L.shirt==='#d8d4c8'?'#5a4a3a':shadeHex(L.shirt,-.35),'cloth'); }
+  if(L.outfit==='overalls'){ mesh(BOX(.26*bw,.26,.04), pants, 0,.24,.12*bw, torso); for(const s of [-1,1]) mesh(BOX(.04,.26,.03), pants, s*.1*bw,.4,.11*bw, torso); }
+  const neck = mesh(new THREE.CylinderGeometry(.05,.06,.1,5), skin, 0,.54,0, torso);
+  for(const s of [-1,1]){
+    const ap = new THREE.Group(); ap.position.set(s*(.2*bw+.03),.47,0); torso.add(ap);
+    mesh(BOX(.1,.3,.1), shirt, 0,-.15,0, ap);
+    const el = new THREE.Group(); el.position.y = -.3; ap.add(el);
+    mesh(BOX(.085,.27,.085), longSleeve?shirt:skin, 0,-.13,0, el);
+    mesh(BOX(.08,.09,.06), skin, 0,-.31,0, el);
+    ap.rotation.z = s*.08; arms.push(ap); elbows.push(el);
+  }
+  const headG = new THREE.Group(); headG.position.y = .58; torso.add(headG);
+  const [fc, fo] = faceTextures(L.skin, r);
+  const faceC = psx(new THREE.MeshLambertMaterial({map:fc})), faceO = psx(new THREE.MeshLambertMaterial({map:fo}));
+  const head = mesh(BOX(.25,.28,.25), [skin,skin,skin,skin,faceC,skin], 0,.15,0, headG);
+  mesh(BOX(.045,.07,.06), skin, 0,.13,.14, headG);
+  for(const s of [-1,1]) mesh(BOX(.03,.07,.05), skin, s*.135,.14,0, headG);
+  const top = .3;
+  switch(L.hair){
+    case 'short': mesh(BOX(.27,.07,.27), hairM, 0,top,0, headG); mesh(BOX(.27,.18,.06), hairM, 0,.2,-.13, headG); break;
+    case 'long': mesh(BOX(.27,.07,.27), hairM, 0,top,0, headG); mesh(BOX(.28,.42,.07), hairM, 0,.1,-.135, headG); for(const s of [-1,1]) mesh(BOX(.04,.34,.2), hairM, s*.14,.14,-.03, headG); break;
+    case 'bun': mesh(BOX(.27,.07,.27), hairM, 0,top,0, headG); mesh(new THREE.SphereGeometry(.09,5,4), hairM, 0,.36,-.1, headG); break;
+    case 'spiky': mesh(BOX(.27,.05,.27), hairM, 0,top-.01,0, headG); for(let i=0;i<5;i++) mesh(new THREE.ConeGeometry(.05,.14,4), hairM, -.09+i*.045, top+.08, (i%2)*.06-.03, headG); break;
+    case 'curly': for(let i=0;i<7;i++){ const a = i/7*Math.PI*2; mesh(new THREE.DodecahedronGeometry(.075,0), hairM, Math.cos(a)*.11, top-.01+(i%2)*.03, Math.sin(a)*.11-.02, headG); } break;
+  }
+  const hatCol = S.colors.accent;
+  const hy = L.hair==='bald' ? top-.01 : top+.03;
+  switch(L.hat){
+    case 'cap': mesh(BOX(.29,.1,.29), mat(hatCol,'noise'), 0,hy+.03,0, headG); mesh(BOX(.26,.03,.16), mat(hatCol,'noise'), 0,hy-.01,.2, headG); break;
+    case 'tall': mesh(new THREE.CylinderGeometry(.13,.13,.34,6), mat('#1e1e24','noise'), 0,hy+.18,0, headG); mesh(new THREE.CylinderGeometry(.22,.22,.03,6), mat('#1e1e24','noise'), 0,hy+.01,0, headG); break;
+    case 'bow': mesh(BOX(.1,.08,.05), mat(hatCol,null), -.07,hy+.02,.06, headG); mesh(BOX(.1,.08,.05), mat(hatCol,null), .07,hy+.02,.06, headG); break;
+    case 'antenna': mesh(BOX(.02,.25,.02), mat('#888',null), 0,hy+.12,0, headG); mesh(new THREE.SphereGeometry(.045,4,3), mat(hatCol,null,{basic:true}), 0,hy+.26,0, headG); break;
+    case 'beanie': mesh(new THREE.SphereGeometry(.16,6,3,0,Math.PI*2,0,Math.PI/2), mat(hatCol,'stripe'), 0,hy-.04,0, headG); break;
+  }
+  return {root, hip, torso, chest, headG, head, legs, knees, arms, elbows, faceC, faceO};
+}
+function shadeHex(h, k){ const c = new THREE.Color(h); c.multiplyScalar(1+k); return '#'+c.getHexString(); }
+
+/* ---------- interiors ---------- */
+const ROOM_SETS = {
+  house:['kitchen','bedroom','bathroom','study','bedroom','closet'], shop:['back room','office','storeroom'], cabin:['bedroom','kitchen','storeroom'],
+  shack:['storeroom'], barn:['tack room'], office:['back office'], motelroom:[], tower:[], tent:[],
+};
+const ROOM_SIZE_RANK = {kitchen:3, bedroom:2, study:2, 'back room':2, office:1, storeroom:1, 'tack room':1, 'back office':1, bathroom:0, closet:-1};
+const ENTRY_ROOM = {house:'living room', shop:'shop floor', cabin:'main room', shack:'main room', barn:'barn floor', office:'lobby', motelroom:'motel room', tower:'ground floor', tent:'tent'};
+const FLOORS = {kitchen:'tile', bathroom:'tile', 'living room':'planks', bedroom:'carpet', study:'planks', closet:'planks', 'shop floor':'tile', 'back room':'planks', office:'carpet', storeroom:'planks',
+  'barn floor':'dirt', 'tack room':'planks', lobby:'carpet', 'back office':'carpet', 'motel room':'carpet', 'main room':'planks', 'ground floor':'tile', tent:'carpet'};
+const FURN = {
+  'living room':['rug*','sofa','armchair','tv','lamp','bookshelf','plant','painting~','clock~'],
+  kitchen:['counter','counter','fridge','stove','table*','plant','clock~'],
+  bedroom:['rug*','bed','nightstand','wardrobe','dresser','painting~','lamp'],
+  bathroom:['tub','toilet','sinkstand','mirror~'],
+  study:['desk','bookshelf','bookshelf','armchair','globe','painting~'],
+  closet:['shelf','box','box'], storeroom:['shelf','box','box','box','shelf'],
+  'shop floor':['aisle*','aisle*','counter','shelf','shelf','plant','painting~'],
+  'back room':['box','box','shelf','desk','box'], office:['desk','shelf','plant','painting~','clock~'],
+  'motel room':['rug*','bed','nightstand','dresser_tv','armchair','painting~','lamp'],
+  lobby:['counter','plant','armchair','armchair','rack','painting~','clock~'], 'back office':['desk','shelf','box'],
+  'barn floor':['hay','hay','hay','cart','stall','stall','box','box'], 'tack room':['shelf','box','hay'],
+  'main room':['rug*','table*','armchair','stove','shelf','bed','painting~'],
+  'ground floor':['stairs*','box','shelf','lamp'], tent:['rug*','table_ball*','cushion','cushion','lantern','lantern'],
+};
+
+function planInterior(kind, r){
+  const SZ = {house:[12,15,10,12,3], shop:[11,14,8,10,2], cabin:[8,10,7,9,2], shack:[6,7.5,5,6.5,1], barn:[14,17,11,13,1], motelroom:[6.5,6.5,9,9,0], office:[8,9,7,8,1], tower:[7,7,7,7,0], tent:[6,6,6,6,0]}[kind];
+  const W = Math.round(rr(r,SZ[0],SZ[1])*2)/2, D = Math.round(rr(r,SZ[2],SZ[3])*2)/2;
+  const X0=-W/2, X1=W/2, Z0=-D/2, Z1=D/2;
+  const walls=[], doors=[], leaves=[];
+  const ex = Math.round(rr(r, X0+1.5, X1-1.5)*2)/2;
+  doors.push({axis:'h', x:ex, z:Z1, entrance:true});
+  const near = (a,b) => Math.abs(a-b) < .01;
+  const clashV = (s,za,zb) => doors.some(o => o.axis==='h' && (near(o.z,za)||near(o.z,zb)) && Math.abs(o.x-s) < 1.4);
+  const clashH = (t,xa,xb) => doors.some(o => o.axis==='v' && (near(o.x,xa)||near(o.x,xb)) && Math.abs(o.z-t) < 1.4);
+  const split = (x0,z0,x1,z1,dep) => {
+    const w = x1-x0, d = z1-z0, canV = w >= 6.6, canH = d >= 6.6;
+    if(dep<=0 || (!canV && !canH) || (dep<SZ[4] && r()<.18)){ leaves.push({x0,z0,x1,z1}); return; }
+    const vert = canV && (!canH || w > d*1.1 || (d <= w*1.1 && r()<.5));
+    for(let k=0;k<12;k++){
+      if(vert){
+        const s = Math.round(rr(r,x0+3.2,x1-3.2)*2)/2; if(clashV(s,z0,z1)) continue;
+        walls.push({axis:'v', x0:s, z0, x1:s, z1}); doors.push({axis:'v', x:s, z:rr(r,z0+.9,z1-.9)});
+        split(x0,z0,s,z1,dep-1); split(s,z0,x1,z1,dep-1); return;
+      } else {
+        const t = Math.round(rr(r,z0+3.2,z1-3.2)*2)/2; if(clashH(t,x0,x1)) continue;
+        walls.push({axis:'h', x0, z0:t, x1, z1:t}); doors.push({axis:'h', x:rr(r,x0+.9,x1-.9), z:t});
+        split(x0,z0,x1,t,dep-1); split(x0,t,x1,z1,dep-1); return;
+      }
+    }
+    leaves.push({x0,z0,x1,z1});
+  };
+  if(kind==='motelroom'){
+    const t = Z0+2.8; walls.push({axis:'h', x0:X0, z0:t, x1:X1, z1:t}); doors.push({axis:'h', x:rr(r,X0+.9,X0+2), z:t});
+    leaves.push({x0:X0,z0:Z0,x1:X1,z1:t,kind:'bathroom'}, {x0:X0,z0:t,x1:X1,z1:Z1,kind:'motel room'});
+  } else split(X0,Z0,X1,Z1,SZ[4]);
+  const entry = leaves.find(l => ex >= l.x0-.01 && ex <= l.x1+.01 && near(l.z1, Z1)) || leaves[0];
+  if(!entry.kind) entry.kind = ENTRY_ROOM[kind];
+  const rest = leaves.filter(l => !l.kind).sort((a,b) => (b.x1-b.x0)*(b.z1-b.z0) - (a.x1-a.x0)*(a.z1-a.z0));
+  const names = ROOM_SETS[kind].slice(0, rest.length).sort((a,b) => (ROOM_SIZE_RANK[b]||0) - (ROOM_SIZE_RANK[a]||0));
+  rest.forEach((l,i) => { l.kind = names[i] || 'storeroom'; });
+  const seen = {};
+  for(const l of leaves){ seen[l.kind] = (seen[l.kind]||0) + 1; if(seen[l.kind] > 1) l.kind = (l.kind==='bedroom' ? 'second bedroom' : 'other ' + l.kind); l.floor = FLOORS[l.kind.replace(/^(second|other) /,'')] || 'planks'; l.furn = l.kind.replace(/^(second|other) /,''); }
+  return {W, D, X0, X1, Z0, Z1, walls, doors, rooms:leaves, ex};
+}
+const roomAt = (zone, x, z) => zone.rooms.find(l => x >= l.x0 && x <= l.x1 && z >= l.z0 && z <= l.z1);
+
+function makeInterior(kind, label, r, extra={}){
+  const zone = newZone(label, true);
+  zone.kind = kind; zone.seed = Math.floor(r()*2**31); zone.extra = extra;
+  const P = zone.plan = planInterior(kind, mulberry32(zone.seed));
+  zone.rooms = P.rooms;
+  zone.bounds = {minX:P.X0+.25, maxX:P.X1-.25, minZ:P.Z0+.25, maxZ:P.Z1-.25};
+  zone.spawn = {x:P.ex, z:P.Z1-1.1, yaw:0};
+  zones.push(zone);
+  return zone;
+}
+function interiorSpot(zone, r, avoid=1.3){
+  const P = zone.plan;
+  const rooms = zone.rooms.filter(l => (l.x1-l.x0)*(l.z1-l.z0) >= 8);
+  for(let k=0;k<80;k++){
+    const l = pick(r, rooms.length ? rooms : zone.rooms);
+    const x = rr(r, l.x0+1, l.x1-1), z = rr(r, l.z0+1, l.z1-1);
+    if(P.doors.some(d => Math.hypot(d.x-x, d.z-z) < avoid)) continue;
+    if(Math.hypot(x-zone.spawn.x, z-zone.spawn.z) < 1.8) continue;
+    if(zone.circles.some(c => Math.hypot(c.x-x, c.z-z) < c.r+1)) continue;
+    return {x, z};
+  }
+  return {x:zone.spawn.x, z:zone.spawn.z-1.5};
+}
+
+function furniture(name, r, P){
+  const g = new THREE.Group(); let w=1, d=1, solid=true, wall=false;
+  const add = (W,H,Dd,col,kind,x,y,z) => mesh(BOX(W,H,Dd), mat(col,kind), x,y,z,g);
+  const chair = (x,z,ry) => { const c = new THREE.Group(); c.position.set(x,0,z); c.rotation.y = ry; g.add(c);
+    mesh(BOX(.42,.06,.42), mat(P.wood,'planks'), 0,.45,0,c); mesh(BOX(.42,.5,.06), mat(P.wood,'planks'), 0,.72,-.19,c);
+    for(const [a,b] of [[-.18,-.18],[.18,-.18],[-.18,.18],[.18,.18]]) mesh(BOX(.05,.45,.05), mat(P.wood,null), a,.22,b,c); };
+  switch(name){
+    case 'sofa': w=2.2; d=.9; add(2.2,.45,.9,P.fabric,'cloth',0,.22,0); add(2.2,.6,.22,P.fabric,'cloth',0,.62,-.34); add(.22,.32,.9,P.fabric,'cloth',-1,.6,0); add(.22,.32,.9,P.fabric,'cloth',1,.6,0); add(.55,.12,.5,P.accent,'cloth',-.5,.5,.05); break;
+    case 'armchair': w=.95; d=.9; add(.9,.42,.85,P.fabric2,'cloth',0,.21,0); add(.9,.62,.2,P.fabric2,'cloth',0,.64,-.33); add(.16,.28,.85,P.fabric2,'cloth',-.37,.56,0); add(.16,.28,.85,P.fabric2,'cloth',.37,.56,0); break;
+    case 'tv': w=1.1; d=.55; add(1.1,.5,.5,P.wood,'planks',0,.25,0); add(.8,.6,.5,'#2a2a2e','noise',0,.8,0); mesh(new THREE.PlaneGeometry(.62,.46), tvMaterial(), 0,.82,.26,g); add(.02,.3,.02,'#aaa',null,-.2,1.25,0).rotation.z = .4; add(.02,.3,.02,'#aaa',null,.2,1.25,0).rotation.z = -.4; break;
+    case 'dresser_tv': w=1.3; d=.55; add(1.3,.85,.55,P.wood,'planks',0,.42,0); add(.7,.5,.45,'#2a2a2e','noise',0,1.1,0); mesh(new THREE.PlaneGeometry(.54,.38), tvMaterial(), 0,1.12,.23,g); break;
+    case 'rug': { w = rr(r,2,3); d = rr(r,1.5,2.4); const m = mesh(new THREE.PlaneGeometry(w,d), mat(P.accent,'stripe',{rep:2}), 0,.012,0,g); m.rotation.x = -Math.PI/2; solid = false; break; }
+    case 'lamp': w=.4; d=.4; add(.05,1.5,.05,'#3a3a3a',null,0,.75,0); mesh(new THREE.ConeGeometry(.26,.32,6,1,true), mat('#ffe2a8',null,{basic:true, side:true}),0,1.55,0,g); add(.3,.04,.3,'#3a3a3a',null,0,.02,0); break;
+    case 'bookshelf': w=1.6; d=.4; add(1.6,2,.4,P.wood,'planks',0,1,0); for(const y of [.25,.7,1.15,1.6]){ let x = -.7; while(x < .6){ const bw = rr(r,.12,.3); add(bw,.32,.3,pick(r,PAINT)[1],null,x+bw/2,y+.16,.06); x += bw + .02; } } break;
+    case 'plant': w=.5; d=.5; mesh(new THREE.CylinderGeometry(.18,.14,.35,6), mat('#a0603a','noise'),0,.17,0,g); mesh(new THREE.DodecahedronGeometry(.36,0), mat('#4a8a3a','leaf'),0,.68,0,g); mesh(new THREE.DodecahedronGeometry(.25,0), mat('#5a9a40','leaf'),.12,.95,.05,g); break;
+    case 'painting': { w=1; d=.06; wall=true; solid=false; const art = psx(new THREE.MeshLambertMaterial({map:paintingTex(r)})); const fm = mat(pick(r,['#6a4a2a','#c8a050','#2a2a2a']),'noise');
+      mesh(BOX(1,.76,.05), [fm,fm,fm,fm,art,fm], 0,0,0,g); break; }
+    case 'clock': { w=.5; d=.06; wall=true; solid=false; const c = mesh(new THREE.CylinderGeometry(.22,.22,.05,10), mat('#f0ece0',null,{basic:true}), 0,0,0,g); c.rotation.x = Math.PI/2;
+      const hh = add(.03,.14,.02,'#111',null,0,.05,.03); const mh = add(.02,.18,.02,'#111',null,0,0,.04); BZ.animated.push((dt,t) => { mh.rotation.z = -t*.5; hh.rotation.z = -t*.04; }); break; }
+    case 'mirror': w=.6; d=.06; wall=true; solid=false; add(.66,.96,.04,'#c8c0b0',null,0,0,0); add(.56,.86,.02,'#a8c8d8',null,0,0,.025).material = mat('#a8c8d8',null,{basic:true}); break;
+    case 'counter': w=2; d=.7; add(2,.9,.7,P.wood,'planks',0,.45,0); add(2.06,.06,.76,P.top,'tile',0,.93,0); if(r()<.6) add(.35,.25,.3,pick(r,['#3a3a3a','#c83a2a','#e0e0d8']),null,rr(r,-.6,.6),1.08,0); break;
+    case 'fridge': w=.8; d=.7; add(.8,1.9,.7,'#e8e8e0','noise',0,.95,0); add(.04,.5,.04,'#888',null,.3,1.25,.36); add(.8,.02,.71,'#999',null,0,1.3,0); break;
+    case 'stove': w=.8; d=.7; add(.8,.92,.7,'#d8d8d0','noise',0,.46,0); for(const [a,b] of [[-.18,-.15],[.18,-.15],[-.18,.15],[.18,.15]]) add(.22,.02,.22,'#1a1a1a',null,a,.93,b); add(.6,.3,.04,'#2a2a2a',null,0,.5,.36); break;
+    case 'table': w=1.9; d=1.9; solid=true; add(1.6,.06,1,P.wood,'planks',0,.76,0); for(const [a,b] of [[-.7,-.4],[.7,-.4],[-.7,.4],[.7,.4]]) add(.07,.74,.07,P.wood,null,a,.37,b);
+      chair(-.35,.75,Math.PI); chair(.35,-.75,0); if(r()<.6) chair(.35,.75,Math.PI); if(r()<.4) add(.2,.2,.2,'#e8e0d0',null,0,.88,0); break;
+    case 'bed': w=1.5; d=2.2; add(1.5,.42,2.1,P.wood,'planks',0,.21,0); add(1.44,.18,2,P.sheet,'cloth',0,.5,.04); add(1.5,1.1,.12,P.wood,'planks',0,.55,-1.05); add(.62,.14,.36,'#f0ece0','cloth',0,.66,-.78); add(1.5,.22,1.25,P.fabric,'stripe',0,.53,.42); break;
+    case 'nightstand': w=.5; d=.5; add(.5,.55,.45,P.wood,'planks',0,.27,0); mesh(new THREE.SphereGeometry(.1,6,4), mat('#ffe0a0',null,{basic:true}),0,.72,0,g); add(.05,.12,.05,'#3a3a3a',null,0,.6,0); break;
+    case 'wardrobe': w=1.2; d=.6; add(1.2,2.1,.6,P.wood,'planks',0,1.05,0); add(.02,1.9,.02,'#222',null,0,1.05,.31); add(.04,.04,.04,'#c8a050',null,-.1,1.1,.32); add(.04,.04,.04,'#c8a050',null,.1,1.1,.32); break;
+    case 'dresser': w=1.2; d=.5; add(1.2,.9,.5,P.wood,'planks',0,.45,0); add(1.1,.02,.02,'#2a2018',null,0,.3,.26); add(1.1,.02,.02,'#2a2018',null,0,.6,.26); if(r()<.5) add(.2,.3,.2,pick(r,PAINT)[1],null,.3,1.05,0); break;
+    case 'toilet': w=.55; d=.75; add(.42,.4,.5,'#f0f0ec','noise',0,.2,.05); add(.46,.48,.18,'#f0f0ec','noise',0,.55,-.26); add(.42,.03,.5,'#e0e0d8',null,0,.42,.05); break;
+    case 'tub': w=1.7; d=.8; add(1.7,.55,.8,'#f0f0ec','noise',0,.27,0); add(1.5,.03,.6,'#7ab0c8',null,0,.5,0).material = mat('#7ab0c8',null,{basic:true}); add(.06,.25,.06,'#aaa',null,-.75,.65,0); break;
+    case 'sinkstand': w=.6; d=.5; add(.14,.8,.14,'#f0f0ec',null,0,.4,0); add(.56,.15,.45,'#f0f0ec','noise',0,.86,0); add(.05,.15,.05,'#aaa',null,0,1,-.15); break;
+    case 'desk': w=1.4; d=1.3; add(1.4,.06,.7,P.wood,'planks',0,.75,-.28); add(.06,.72,.66,P.wood,null,-.66,.36,-.28); add(.06,.72,.66,P.wood,null,.66,.36,-.28); chair(0,.3,Math.PI);
+      add(.3,.02,.22,'#f0ece0',null,-.2,.79,-.2); mesh(new THREE.SphereGeometry(.08,6,4), mat('#ffe0a0',null,{basic:true}),.5,.95,-.45,g); add(.03,.18,.03,'#333',null,.5,.85,-.45); break;
+    case 'globe': w=.4; d=.4; add(.05,.8,.05,P.wood,null,0,.4,0); mesh(new THREE.SphereGeometry(.2,8,6), mat('#4d6fa8','leaf'),0,.95,0,g); break;
+    case 'shelf': w=1.6; d=.45; for(const s of [-1,1]) add(.05,1.8,.45,P.wood,null,s*.78,.9,0); for(const y of [.1,.6,1.1,1.6]){ add(1.56,.04,.45,P.wood,'planks',0,y,0); for(let k=0;k<3;k++) if(r()<.7){ if(r()<.5) add(rr(r,.2,.35),rr(r,.2,.35),.3,pick(r,['#9a7a50','#c8b080','#7a8aa0']),'planks',rr(r,-.55,.55),y+.15,0); else mesh(new THREE.CylinderGeometry(.08,.08,.24,6), mat(pick(r,PAINT)[1],null), rr(r,-.55,.55),y+.14,0,g); } } break;
+    case 'box': { const s = rr(r,.6,.95); w = d = s; add(s,s,s,'#9a7a50','planks',0,s/2,0); if(r()<.4){ const s2 = s*.7; add(s2,s2,s2,'#a88a5a','planks',.05,s+s2/2,0).rotation.y = .3; } break; }
+    case 'aisle': w=2.6; d=.9; add(2.6,1.4,.25,'#c8c8c0','noise',0,.7,0); for(const side of [-1,1]) for(let lv=0;lv<3;lv++){ add(2.5,.04,.32,'#b8b8b0',null,0,.25+lv*.45,side*.28); for(let k=0;k<4;k++) add(.5,.26,.24,pick(r,PAINT)[1],'stripe',-.9+k*.6,.4+lv*.45,side*.28); } break;
+    case 'rack': w=.6; d=.4; add(.6,1.5,.3,'#8a5a3a','planks',0,.75,0); for(let i=0;i<3;i++) for(let k=0;k<2;k++) add(.2,.26,.03,pick(r,PAINT)[1],null,-.13+k*.26,.5+i*.35,.17); break;
+    case 'hay': w=1.3; d=.7; add(1.2,.6,.6,'#c8a850','grass',0,.3,0); if(r()<.5) add(1.2,.6,.6,'#c0a048','grass',.1,.9,0).rotation.y = .2; break;
+    case 'cart': w=1.4; d=2; add(1.2,.4,1.8,'#7a5a3a','planks',0,.65,0); for(const s of [-1,1]){ const wh = mesh(new THREE.CylinderGeometry(.4,.4,.08,8), mat('#4a3a2a','planks'), s*.65,.4,0,g); wh.rotation.z = Math.PI/2; } add(.08,.08,1.2,'#7a5a3a',null,0,.55,1.4); break;
+    case 'stall': w=2.6; d=.25; for(const s of [-1,1]) add(.12,1.3,.12,'#7a5a3a',null,s*1.2,.65,0); for(const y of [.35,.75,1.15]) add(2.5,.14,.06,'#8a6a48','planks',0,y,0); break;
+    case 'stairs': { w=1; d=1; const H = BZ.H || 4; mesh(new THREE.CylinderGeometry(.12,.12,H,6), mat('#5a5a5a','noise'),0,H/2,0,g); const n = Math.floor(H/.25);
+      for(let i=0;i<n;i++){ const st = new THREE.Group(); st.rotation.y = i*.45; st.position.y = .2+i*.25; g.add(st); mesh(BOX(.95,.06,.38), mat('#7a6a5a','planks'), .5,0,0,st); } break; }
+    case 'table_ball': w=1.2; d=1.2; mesh(new THREE.CylinderGeometry(.5,.55,.7,8), mat(P.accent,'cloth'),0,.35,0,g); const ball = mesh(new THREE.SphereGeometry(.17,8,6), mat('#b8e0ff',null,{basic:true}),0,.88,0,g);
+      BZ.animated.push((dt,t) => { const k = .75+Math.sin(t*2)*.25; ball.material.color.setRGB(.72*k,.88*k,1*k); }); break;
+    case 'cushion': w=.7; d=.7; solid=false; add(.7,.16,.7,pick(r,PAINT)[1],'cloth',0,.08,0); break;
+    case 'lantern': w=.3; d=.3; solid=false; add(.22,.32,.22,'#ffd08a',null,0,.2,0).material = mat('#ffd08a',null,{basic:true}); add(.26,.04,.26,'#3a2a1a',null,0,.38,0); break;
+    default: add(.6,.6,.6,'#9a7a50','planks',0,.3,0);
+  }
+  return {g, w, d, solid, wall};
+}
+let tvMat = null;
+function tvMaterial(){ if(!tvMat || !MATS.__tv){ tvMat = psx(new THREE.MeshBasicMaterial({map:tvTex})); MATS.__tv = tvMat; } return tvMat; }
+
+function buildInterior(zone){
+  if(zone.built) return;
+  zone.built = true;
+  const prevBZ = BZ; BZ = zone;
+  const P = zone.plan, r = mulberry32(zone.seed ^ 0x51ed), kind = zone.kind;
+  const tp = TIMES[S.time];
+  const H = BZ.H = kind==='tent' ? 2.6 : kind==='barn' ? 4.4 : kind==='tower' ? 6 : 2.8;
+  const bg = new THREE.Color(kind==='tent' ? '#1a1018' : '#0d0b0c');
+  zone.scene.background = bg; zone.scene.fog = new THREE.Fog(bg, 5, 26);
+  zone.scene.add(new THREE.HemisphereLight('#fff1dc', '#3a3028', kind==='tent' ? .45 : .55));
+  zone.lantern = new THREE.PointLight('#ffd9a0', .45, 7, 1.6); zone.scene.add(zone.lantern);
+  const PAL = {wood:pick(r,['#7a5a3a','#8a6a48','#5a4030','#a07850']), fabric:pick(r,PAINT)[1], fabric2:pick(r,PAINT)[1], accent:pick(r,[S.colors.accent, pick(r,PAINT)[1]]), sheet:pick(r,['#e8e4d8','#c8d8e8','#e8d0d8','#d8e8d0']), top:pick(r,['#e8e0d0','#c8d0d8','#d8c8b8'])};
+  const wallKind = {barn:'planks', cabin:'planks', shack:'planks', tent:'stripe', tower:'brick', shop:pick(r,['brick','wallpaper']), office:'wallpaper', motelroom:'wallpaper', house:pick(r,['wallpaper','wallpaper','siding','planks'])}[kind];
+  const wallCol = kind==='tent' ? S.colors.accent : kind==='barn' ? '#8a5a40' : pick(r,['#c8b89a','#a8b8a0','#c0a8a8','#b0b8c8','#d0c8a8','#9aa8a0','#c8a8b8']);
+  const T = .16;
+  const wm = (len, hh) => mat(wallCol, wallKind);
+  // floors & ceiling
+  for(const l of P.rooms){
+    const w = l.x1-l.x0, d = l.z1-l.z0;
+    const floorCol = {tile:pick(r,['#e0d8c8','#c8d8e0','#e0c8c8']), carpet:pick(r,['#7a4a4a','#4a5a7a','#6a7a4a','#8a7a5a','#5a4a6a']), planks:pick(r,['#9a7048','#a88058','#7a5838']), dirt:'#7a6248'}[l.floor];
+    const f = mesh(uvScale(new THREE.PlaneGeometry(w,d), w/2, d/2), mat(floorCol, l.floor), (l.x0+l.x1)/2, 0, (l.z0+l.z1)/2); f.rotation.x = -Math.PI/2;
+  }
+  const ceil = mesh(uvScale(new THREE.PlaneGeometry(P.W,P.D), P.W/3, P.D/3), mat(kind==='tent'?S.colors.accent:kind==='barn'?'#5a4030':'#d8d4c8', kind==='tent'?'stripe':'noise'), 0, H, 0); ceil.rotation.x = Math.PI/2;
+  // walls
+  const G = .58;
+  const wallLine = (axis, fixed, lo, hi, thick) => {
+    const gaps = P.doors.filter(d => d.axis===axis && Math.abs((axis==='v'?d.x:d.z) - fixed) < .01 && (axis==='v'?d.z:d.x) > lo && (axis==='v'?d.z:d.x) < hi).map(d => axis==='v'?d.z:d.x).sort((a,b)=>a-b);
+    const piece = (p0, p1, y0, y1) => { const len = p1-p0; if(len <= .02) return; const mid = (p0+p1)/2, hh = y1-y0;
+      const geo = uvScale(axis==='v' ? BOX(thick,hh,len) : BOX(len,hh,thick), len/1.6, hh/1.6);
+      mesh(geo, wm(), axis==='v'?fixed:mid, y0+hh/2, axis==='v'?mid:fixed);
+      if(y0 === 0) zone.rects.push(axis==='v' ? {minX:fixed-thick/2, maxX:fixed+thick/2, minZ:p0, maxZ:p1} : {minX:p0, maxX:p1, minZ:fixed-thick/2, maxZ:fixed+thick/2}); };
+    let cur = lo;
+    for(const g of gaps){ piece(cur, g-G, 0, H); piece(g-G, g+G, 2.2, H); cur = g+G; }
+    piece(cur, hi, 0, H);
+  };
+  wallLine('h', P.Z0, P.X0-T, P.X1+T, .3); wallLine('h', P.Z1, P.X0-T, P.X1+T, .3);
+  wallLine('v', P.X0, P.Z0, P.Z1, .3); wallLine('v', P.X1, P.Z0, P.Z1, .3);
+  for(const w of P.walls) w.axis==='v' ? wallLine('v', w.x0, w.z0, w.z1, T) : wallLine('h', w.z0, w.x0, w.x1, T);
+  // door frames on interior doorways
+  for(const d of P.doors){ if(d.entrance) continue; const fm = mat(PAL.wood,'planks');
+    if(d.axis==='v'){ mesh(BOX(T+.04,.08,G*2+.1), fm, d.x, 2.22, d.z); } else mesh(BOX(G*2+.1,.08,T+.04), fm, d.x, 2.22, d.z); }
+  // entrance door (closed slab behind you) + exit
+  mesh(BOX(1.1,2.15,.08), mat('#4a3424','planks'), P.ex, 1.08, P.Z1+.05);
+  mesh(BOX(.06,.06,.08), mat('#c8a050',null), P.ex+.4, 1.05, P.Z1-.02);
+  if(kind!=='tent'){ const mt = mesh(new THREE.PlaneGeometry(1.2,.7), mat(PAL.accent,'cloth'), P.ex, .014, P.Z1-.6); mt.rotation.x = -Math.PI/2; }
+  // decor registry (windows & wall art) and furniture rects
+  const decor = [], furn = [];
+  const junctions = [];
+  for(const w of P.walls){ junctions.push([w.x0,w.z0],[w.x1,w.z1]); }
+  const doorClear = (q, pad) => P.doors.some(d => d.x > q.minX-pad && d.x < q.maxX+pad && d.z > q.minZ-pad && d.z < q.maxZ+pad);
+  const circleHit = (q, pad) => zone.circles.some(c => c.x > q.minX-c.r-pad && c.x < q.maxX+c.r+pad && c.z > q.minZ-c.r-pad && c.z < q.maxZ+c.r+pad);
+  const overlap = (q, list, pad) => list.some(o => q.minX < o.maxX+pad && q.maxX > o.minX-pad && q.minZ < o.maxZ+pad && q.maxZ > o.minZ-pad);
+  const spawnHit = q => zone.spawn.x > q.minX-1 && zone.spawn.x < q.maxX+1 && zone.spawn.z > q.minZ-1 && zone.spawn.z < q.maxZ+1.2;
+  // windows on outer walls
+  if(kind!=='tent'){
+    const paneCol = tp.night ? '#1c2a50' : S.time==='dusk' ? '#e8a080' : S.time==='dawn' ? '#e8c0d0' : '#cfe4f4';
+    const sides = [['h',P.Z0,P.X0,P.X1,1],['v',P.X0,P.Z0,P.Z1,1],['v',P.X1,P.Z0,P.Z1,-1],['h',P.Z1,P.X0,P.X1,-1]];
+    for(const [axis, fixed, lo, hi, dir] of sides){
+      const n = Math.floor((hi-lo)/4);
+      for(let i=0;i<n;i++){
+        const p = lo + (i+.5)*(hi-lo)/n;
+        if(P.doors.some(d => Math.abs((axis==='v'?d.z:d.x)-p) < 1.4 && Math.abs((axis==='v'?d.x:d.z)-fixed) < .01)) continue;
+        if(junctions.some(([jx,jz]) => Math.abs((axis==='v'?jz:jx)-p) < 1 && Math.abs((axis==='v'?jx:jz)-fixed) < .2)) continue;
+        const off = .16*dir;
+        const pane = mesh(BOX(axis==='v'?.02:1.1, 1, axis==='v'?1.1:.02), mat(paneCol,null,{basic:true}), axis==='v'?fixed+off:p, 1.55, axis==='v'?p:fixed+off);
+        mesh(BOX(axis==='v'?.04:1.2, .06, axis==='v'?1.2:.04), mat(PAL.wood,null), pane.position.x, 1.55, pane.position.z);
+        decor.push({x:pane.position.x, z:pane.position.z, axis});
+      }
+    }
+  }
+  // furnish rooms
+  for(const room of P.rooms){
+    const list = FURN[room.furn] || ['box'];
+    for(const raw of list){
+      const center = raw.endsWith('*'), onWall = raw.endsWith('~');
+      const name = raw.replace(/[*~]$/,'');
+      if(r() < .12 && name!=='bed' && name!=='counter') continue;
+      const f = furniture(name, r, PAL);
+      let placed = null;
+      for(let k=0;k<18 && !placed;k++){
+        let x, z, rot, W2, D2;
+        if(center){
+          const cx = (room.x0+room.x1)/2, cz = (room.z0+room.z1)/2;
+          rot = r()<.5 ? 0 : Math.PI/2; W2 = rot ? f.d : f.w; D2 = rot ? f.w : f.d;
+          x = cx + rr(r,-1,1)*Math.max(0, (room.x1-room.x0-W2)/2 - .9); z = cz + rr(r,-1,1)*Math.max(0, (room.z1-room.z0-D2)/2 - .9);
+        } else {
+          const side = Math.floor(r()*4), inset = (onWall ? .1 : .1) + T/2;
+          if(side < 2){ const span = (room.x1-room.x0) - f.w - .4; if(span < 0) continue;
+            x = room.x0+.2+f.w/2+r()*span; z = side===0 ? room.z0+inset+f.d/2 : room.z1-inset-f.d/2; rot = side===0 ? 0 : Math.PI; W2 = f.w; D2 = f.d; }
+          else { const span = (room.z1-room.z0) - f.w - .4; if(span < 0) continue;
+            z = room.z0+.2+f.w/2+r()*span; x = side===2 ? room.x0+inset+f.d/2 : room.x1-inset-f.d/2; rot = side===2 ? Math.PI/2 : -Math.PI/2; W2 = f.d; D2 = f.w; }
+        }
+        const q = {minX:x-W2/2, maxX:x+W2/2, minZ:z-D2/2, maxZ:z+D2/2};
+        if(q.minX < room.x0 || q.maxX > room.x1 || q.minZ < room.z0 || q.maxZ > room.z1) continue;
+        if(onWall){
+          if(doorClear(q, .7) || decor.some(o => Math.hypot(o.x-x, o.z-z) < 1.3)) continue;
+          placed = {x, z, rot}; decor.push({x, z});
+        } else {
+          if(doorClear(q, 1.05) || spawnHit(q) || circleHit(q, .35)) continue;
+          if(name!=='rug' && overlap(q, furn, .12)) continue;
+          if(name==='rug' && overlap(q, furn, -.5)) continue;
+          placed = {x, z, rot};
+          if(name!=='rug') furn.push(q);
+          if(f.solid) zone.rects.push(name==='stairs' ? {minX:x-.6,maxX:x+.6,minZ:z-.6,maxZ:z+.6} : q);
+        }
+      }
+      if(placed){ f.g.position.set(placed.x, onWall ? 1.55 : 0, placed.z); f.g.rotation.y = placed.rot; zone.scene.add(f.g); }
+      else f.g.traverse(o => { if(o.geometry) o.geometry.dispose(); });
+    }
+  }
+  // ceiling lights in the biggest rooms
+  const big = P.rooms.slice().sort((a,b) => (b.x1-b.x0)*(b.z1-b.z0) - (a.x1-a.x0)*(a.z1-a.z0)).slice(0,3);
+  for(const l of big){
+    const cx = (l.x0+l.x1)/2, cz = (l.z0+l.z1)/2;
+    const L = new THREE.PointLight(kind==='tent' ? '#ffb070' : '#ffe2b0', kind==='barn' ? 1.3 : 1.05, kind==='barn' ? 14 : 9, 1.4); L.position.set(cx, H-.4, cz); zone.scene.add(L);
+    if(kind==='tent'){ mesh(new THREE.SphereGeometry(.14,6,4), mat('#ffd08a',null,{basic:true}), cx, H-.5, cz); }
+    else { mesh(BOX(.5,.08,.5), mat('#fff0c8',null,{basic:true}), cx, H-.04, cz); mesh(BOX(.02,.3,.02), mat('#333',null), cx, H-.15, cz); }
+  }
+  if(kind==='tower' && S.setting==='seaside') zone.label = 'the lighthouse';
+  BZ = prevBZ;
 }
 
 /* ---------- world building ---------- */
 function dirWord(x,z){
-  const ns = z < -12 ? 'north' : z > 14 ? 'south' : '';
-  const ew = x > 12 ? 'east' : x < -12 ? 'west' : '';
-  if(!ns && !ew) return 'near the middle';
+  const ns = z < -18 ? 'north' : z > 20 ? 'south' : '';
+  const ew = x > 18 ? 'east' : x < -18 ? 'west' : '';
+  if(!ns && !ew) return 'near the middle of town';
   return 'over on the ' + (ns && ew ? ns+ew : ns || ew) + ' side';
 }
+let structures = [];
+const sLabel = s => s.zone ? s.zone.label : s.label;
 function nearestLabel(x,z){
   let best = null, bd = 1e9;
   for(const s of structures){ const d = (s.x-x)**2 + (s.z-z)**2; if(d<bd){ bd=d; best=s; } }
-  return best && bd < 16*16 ? best.label : null;
+  return best && bd < 18*18 ? sLabel(best) : null;
 }
-function hintFor(x,z){ const l = nearestLabel(x,z); return dirWord(x,z) + (l ? `, by ${l}` : ''); }
+function outdoorHint(x,z){ const l = nearestLabel(x,z); return dirWord(x,z) + (l ? `, by ${l}` : ''); }
+function hintFor(o){
+  if(o.zone && o.zone.indoor){ const room = roomAt(o.zone, o.x, o.z); return `inside ${o.zone.label} (${o.zone.outHint})${room ? ', in the ' + room.kind : ''}`; }
+  return outdoorHint(o.x, o.z);
+}
 
-function buildWorld(story, seed){
-  disposeScene();
-  S = story; seedNow = seed;
+function buildWorld(story, seed, attract){
+  disposeWorld();
+  S = story; seedNow = seed; ENT = {}; structures = [];
   const r = mulberry32(seed ^ 0x9e3779b9);
   const cfg = SETTINGS[S.setting], tp = TIMES[S.time];
-  scene = new THREE.Scene(); rects = []; circles = []; interactables = []; animated = []; structures = [];
-  bounds = {minX:-36, maxX:cfg.water?26:36, minZ:-36, maxZ:34};
+  const O = OUT = newZone('outside', false); zones.push(O); BZ = O; Z = O;
+  O.bounds = {minX:-56, maxX:cfg.water?44:56, minZ:-56, maxZ:54};
+  O.cfg = cfg;
+  O.far = tp.far * (S.weather==='fog' ? .5 : S.weather==='rain' ? .8 : 1);
 
   const sky = new THREE.Color(tp.sky).lerp(new THREE.Color(S.colors.sky), tp.mix);
-  scene.background = sky;
-  scene.fog = new THREE.Fog(sky, tp.near, tp.far * (S.weather==='fog' ? .5 : S.weather==='rain' ? .8 : 1));
-  scene.add(new THREE.HemisphereLight(sky.clone().lerp(new THREE.Color('#ffffff'),.35), new THREE.Color(S.colors.ground).multiplyScalar(.6), tp.hemi));
-  const sun = new THREE.DirectionalLight(tp.sun, tp.sunI); sun.position.set(r()*2-1, 1, r()*2-1); scene.add(sun);
-  lantern = new THREE.PointLight('#ffd9a0', tp.lantern, 10, 1.6); scene.add(lantern);
+  O.scene.background = sky;
+  O.scene.fog = new THREE.Fog(sky, tp.near, O.far);
+  O.scene.add(new THREE.HemisphereLight(sky.clone().lerp(new THREE.Color('#ffffff'),.35), new THREE.Color(S.colors.ground).multiplyScalar(.6), tp.hemi));
+  const sun = new THREE.DirectionalLight(tp.sun, tp.sunI); sun.position.set(r()*2-1, 1, r()*2-1); O.scene.add(sun);
+  O.lantern = new THREE.PointLight('#ffd9a0', tp.lantern, 10, 1.6); O.scene.add(O.lantern);
 
-  // ground
-  const gm = mat(S.colors.ground, cfg.ground, {rep:34});
-  const ground = mesh(new THREE.PlaneGeometry(110,110,24,24), gm); ground.rotation.x = -Math.PI/2;
-  if(cfg.path){ const p = mesh(new THREE.PlaneGeometry(5,76,2,20), mat(cfg.path==='asphalt'?'#4a4a4e':cfg.path==='planks'?'#8a6a4a':'#8a7050', cfg.path, {rep:6}), 0,.02,-1); p.rotation.x = -Math.PI/2; p.material.map.repeat.set(2,24); }
-  if(cfg.water){ water = mesh(new THREE.PlaneGeometry(90,110,8,8), mat('#3a6a8a','water',{rep:20}), 72,-.15,0); water.rotation.x = -Math.PI/2;
-    const wm = water.material; animated.push(dt => { wm.map.offset.x += dt*.02; wm.map.offset.y += dt*.01; }); }
-  else water = null;
+  const ground = mesh(new THREE.PlaneGeometry(150,150,30,30), mat(S.colors.ground, cfg.ground, {rep:46})); ground.rotation.x = -Math.PI/2;
+  const roadCol = cfg.path==='asphalt'?'#4a4a4e':cfg.path==='planks'?'#8a6a4a':'#8a7050';
+  const roads = [];
+  if(cfg.path){
+    const len = O.bounds.maxZ - O.bounds.minZ + 4;
+    const p = mesh(uvScale(new THREE.PlaneGeometry(5.6,len,2,24), 2, len/3), mat(roadCol, cfg.path), 0,.02,(O.bounds.maxZ+O.bounds.minZ)/2); p.rotation.x = -Math.PI/2;
+    roads.push({axis:'z', c:0});
+    if(cfg.cross){ const lx = O.bounds.maxX - O.bounds.minX + 4; const c = mesh(uvScale(new THREE.PlaneGeometry(lx,5.6,24,2), lx/3, 2), mat(roadCol, cfg.path), (O.bounds.maxX+O.bounds.minX)/2,.025,0); c.rotation.x = -Math.PI/2; roads.push({axis:'x', c:0}); }
+    if(cfg.path==='asphalt') for(let z=O.bounds.minZ; z<O.bounds.maxZ; z+=4){ if(Math.abs(z)<4) continue; mesh(BOX(.15,.01,1.6), mat('#d8c860',null), 0,.03,z); }
+  }
+  const onRoad = (x,z,pad) => roads.some(rd => rd.axis==='z' ? Math.abs(x-rd.c) < 2.8+pad : Math.abs(z-rd.c) < 2.8+pad);
+  if(cfg.water){ const water = mesh(new THREE.PlaneGeometry(90,150,8,8), mat('#3a6a8a','water',{rep:24}), 90,-.15,0); water.rotation.x = -Math.PI/2;
+    const wm = water.material; O.animated.push(dt => { wm.map.offset.x += dt*.02; wm.map.offset.y += dt*.01; }); }
   if(tp.night || S.time==='dusk'){
     const n = 400, pos = new Float32Array(n*3);
     for(let i=0;i<n;i++){ const a = r()*Math.PI*2, e = rr(r,.12,1.3), R = 150; pos[i*3]=Math.cos(a)*Math.cos(e)*R; pos[i*3+1]=Math.sin(e)*R; pos[i*3+2]=Math.sin(a)*Math.cos(e)*R; }
     const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(pos,3));
     const st = new THREE.Points(gg, new THREE.PointsMaterial({color:'#ffffff', size:1.2, sizeAttenuation:false, fog:false, transparent:true, opacity:tp.night?.9:.35}));
-    scene.add(st); animated.push((dt) => st.position.set(camera.position.x, 0, camera.position.z));
+    st.frustumCulled = false; O.scene.add(st); O.animated.push(() => st.position.set(camera.position.x, 0, camera.position.z));
   }
 
-  const inRect = (x,z,pad) => rects.some(q => x>q.minX-pad && x<q.maxX+pad && z>q.minZ-pad && z<q.maxZ+pad);
-  const onPath = (x,pad) => cfg.path && Math.abs(x) < 2.5+pad;
+  const inRect = (x,z,pad) => O.rects.some(q => x>q.minX-pad && x<q.maxX+pad && z>q.minZ-pad && z<q.maxZ+pad);
   const nearStart = (x,z,rad) => (x-player0.x)**2 + (z-player0.z)**2 < rad*rad;
+  const keepClear = [];
 
   // welcome sign
-  { const g = new THREE.Group(); g.position.set(cfg.path?4.2:3, 0, 25); g.rotation.y = -.35; scene.add(g);
+  { const g = new THREE.Group(); g.position.set(cfg.path?4.6:3, 0, 45); g.rotation.y = -.35; O.scene.add(g);
     for(const s of [-1,1]) mesh(BOX(.12,2.2,.12), mat('#5a4a3a','planks'), s*1.1,1.1,0,g);
     const sm = psx(new THREE.MeshLambertMaterial({map:textSign(['WELCOME TO', S.place.toUpperCase()], S.colors.accent)}));
-    mesh(BOX(2.8,1.4,.1), [mat('#5a4a3a','planks'),mat('#5a4a3a','planks'),mat('#5a4a3a','planks'),mat('#5a4a3a','planks'),sm,mat('#5a4a3a','planks')], 0,2,0,g);
-    rects.push({minX:g.position.x-1.3, maxX:g.position.x+1.3, minZ:24.6, maxZ:25.4}); }
+    const pm = mat('#5a4a3a','planks');
+    mesh(BOX(2.8,1.4,.1), [pm,pm,pm,pm,sm,pm], 0,2,0,g);
+    O.rects.push({minX:g.position.x-1.3, maxX:g.position.x+1.3, minZ:44.6, maxZ:45.4}); }
 
-  // structures
-  let placed = 0;
-  for(let tries=0; tries<400 && placed<cfg.n; tries++){
-    const type = placed===0 && cfg.structs.includes('motel') ? 'motel' : pick(r, cfg.structs.filter(t=>t!=='motel' || placed===0));
+  // structures along the roads
+  const paints = shuffle(r, PAINT);
+  let placed = 0, motelDone = false, paintIdx = 0;
+  const wantMotel = cfg.structs.includes('motel');
+  for(let tries=0; tries<1400 && placed<cfg.n; tries++){
+    let type = (wantMotel && !motelDone) ? 'motel' : pick(r, cfg.structs.filter(t => t!=='motel'));
     if(type==='ferris' && structures.some(s=>s.type==='ferris')) continue;
     if(type==='tower' && structures.some(s=>s.type==='tower')) continue;
-    const x = type==='motel' ? rr(r,-6,6) : rr(r,bounds.minX+6, bounds.maxX-6);
-    const z = type==='motel' ? rr(r,-24,-16) : rr(r,-30,20);
-    let rot = Math.round(Math.atan2(-x, -z + 4) / (Math.PI/2)) * Math.PI/2;
-    if(cfg.path) rot = x<0 ? Math.PI/2 : -Math.PI/2;
-    if(type==='motel') rot = 0;
-    const st = buildStructure(type, r);
+    const paint = paints[paintIdx % paints.length];
+    const st = buildStructure(type, r, paint);
+    let x, z, rot;
+    if(roads.length && r() < .78){
+      const rd = pick(r, roads), side = r()<.5 ? -1 : 1, along = rr(r, -48, 46), off = 2.8 + 2 + st.d/2 + rr(r,0,5);
+      if(rd.axis==='z'){ x = side*off; z = along; rot = side<0 ? Math.PI/2 : -Math.PI/2; }
+      else { z = side*off; x = along; rot = side<0 ? 0 : Math.PI; }
+    } else {
+      x = rr(r, O.bounds.minX+8, O.bounds.maxX-8); z = rr(r, -50, 40);
+      rot = Math.round(Math.atan2(-x, -z+4) / (Math.PI/2)) * Math.PI/2;
+    }
+    if(type==='motel'){ x = rr(r,-10,10); z = rr(r,-30,-14); x = x < 0 ? Math.min(x, -(3+st.d)) : Math.max(x, 3+st.d); rot = x<0 ? Math.PI/2 : -Math.PI/2; }
     const odd = Math.abs(Math.round(rot/(Math.PI/2)))%2===1;
     const W = odd ? st.d : st.w, D = odd ? st.w : st.d;
     const q = {minX:x-W/2, maxX:x+W/2, minZ:z-D/2, maxZ:z+D/2};
-    const bad = q.minX<bounds.minX+2 || q.maxX>bounds.maxX-2 || q.minZ<bounds.minZ+2 ||
-      rects.some(o => q.minX<o.maxX+3.5 && q.maxX>o.minX-3.5 && q.minZ<o.maxZ+3.5 && q.maxZ>o.minZ-3.5) ||
-      (cfg.path && q.minX < 4 && q.maxX > -4) || nearStart(x,z,9);
+    const bad = q.minX<O.bounds.minX+2 || q.maxX>O.bounds.maxX-2 || q.minZ<O.bounds.minZ+2 || q.maxZ>O.bounds.maxZ-4 ||
+      O.rects.some(o => q.minX<o.maxX+3 && q.maxX>o.minX-3 && q.minZ<o.maxZ+3 && q.maxZ>o.minZ-3) ||
+      roads.some(rd => rd.axis==='z' ? (q.minX < 4.2 && q.maxX > -4.2) : (q.minZ < 4.2 && q.maxZ > -4.2)) || nearStart(x,z,10);
     if(bad){ st.group.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); continue; }
-    st.group.position.set(x,0,z); st.group.rotation.y = rot; scene.add(st.group);
-    rects.push(q); structures.push({x, z, label:st.label, type}); placed++;
+    st.group.position.set(x,0,z); st.group.rotation.y = rot; O.scene.add(st.group);
+    O.rects.push(q); paintIdx++; placed++; if(type==='motel') motelDone = true;
+    const sRec = {x, z, label:st.label, type}; structures.push(sRec);
+    if(attract || !st.enter) continue;
+    // doors & interiors
+    const doorList = st.doors.map(([lx,lz]) => ({lx, lz}));
+    const motelOpen = type==='motel' ? new Set(shuffle(r, doorList.map((_,i)=>i).slice(1)).slice(0,3).concat([0])) : null;
+    doorList.forEach((dd, i) => {
+      const [wx, wz] = toWorld(x, z, rot, dd.lx, dd.lz + .75);
+      keepClear.push({x:wx, z:wz});
+      let zone = null, label = st.label;
+      if(type==='motel'){
+        if(!motelOpen.has(i)){ O.interactables.push({kind:'locked', x:wx, z:wz, label:`Room ${i+1}`, msg:pick(r,LOCKED)}); return; }
+        label = i===0 ? 'the motel office' : `Room ${i+1}`;
+        zone = makeInterior(i===0 ? 'office' : 'motelroom', label, r);
+      } else zone = makeInterior(st.enter==='motel' ? 'office' : st.enter, label, r);
+      zone.typeWord = {house:'house', cabin:'cabin', shack:'shack', tent:'tent', shop:'shop', barn:'barn'}[st.enter] || null;
+      zone.outHint = dirWord(wx, wz);
+      zone.exitTo = {x:wx, z:wz, yaw:rot + Math.PI};
+      if(type!=='motel' || i===0) sRec.zone = zone;
+      O.interactables.push({kind:'door', x:wx, z:wz, zone});
+      zone.interactables.push({kind:'exit', x:zone.spawn.x, z:zone.plan.Z1-.45, zone});
+    });
+  }
+
+  // street lamps
+  let lights = 0;
+  const addLight = (x, y, z, col) => { if(lights >= 6) return; const L = new THREE.PointLight(col, 1.3, 13, 1.4); L.position.set(x,y,z); O.scene.add(L); lights++; };
+  const lit = tp.night || S.time==='dusk';
+  if(cfg.lamps && roads.length){
+    for(let z = 46; z > O.bounds.minZ+4; z -= 15){ for(const s of [-1,1]){ const x = s*3.6; if(inRect(x,z,.6)) continue; const p = buildProp('lamp', r); p.obj.position.set(x,0,z); O.scene.add(p.obj); O.circles.push({x,z,r:.2}); if(lit && s===1) addLight(x, 3.2, z, '#ffd89a'); } }
   }
 
   // edge ring
-  const edgeRad = cfg.edge==='fence' ? 0 : .6;
   for(let i=0;i<4;i++){
-    for(let t=-36; t<=36; t+= cfg.edge==='fence'?2.6:rr(r,2.5,4.5)){
+    for(let t=-60; t<=60; t+= cfg.edge==='fence'?2.6:rr(r,2.5,4.5)){
       let x, z, rot = 0;
-      if(i===0){ x=t; z=bounds.minZ-1.5; } else if(i===1){ x=t; z=bounds.maxZ+1.5; }
-      else if(i===2){ x=bounds.minX-1.5; z=t; rot=Math.PI/2; } else { if(cfg.water) continue; x=bounds.maxX+1.5; z=t; rot=Math.PI/2; }
-      const p = buildProp(cfg.edge, r); p.obj.position.set(x + (cfg.edge==='fence'?0:rr(r,-1,1)), 0, z + (cfg.edge==='fence'?0:rr(r,-1,1))); p.obj.rotation.y = rot; scene.add(p.obj);
-      if(edgeRad && r()<.5){ const p2 = buildProp(cfg.edge, r); p2.obj.position.set(x*1.08+rr(r,-2,2), 0, z*1.08+rr(r,-2,2)); scene.add(p2.obj); }
+      if(i===0){ x=t; z=O.bounds.minZ-1.5; } else if(i===1){ x=t; z=O.bounds.maxZ+1.5; }
+      else if(i===2){ x=O.bounds.minX-1.5; z=t; rot=Math.PI/2; } else { if(cfg.water) continue; x=O.bounds.maxX+1.5; z=t; rot=Math.PI/2; }
+      if(cfg.water && i<2 && x > O.bounds.maxX+2) continue;
+      const fence = cfg.edge==='fence';
+      const p = buildProp(cfg.edge, r); p.obj.position.set(x + (fence?0:rr(r,-1,1)), 0, z + (fence?0:rr(r,-1,1))); p.obj.rotation.y = rot; O.scene.add(p.obj);
+      if(!fence && r()<.5){ const p2 = buildProp(cfg.edge, r); p2.obj.position.set(x*1.06+rr(r,-2,2), 0, z*1.06+rr(r,-2,2)); O.scene.add(p2.obj); }
     }
   }
 
   // props
-  let lights = 0;
-  for(let i=0, tries=0; i<cfg.np && tries<cfg.np*12; tries++){
+  for(let i=0, tries=0; i<cfg.np && tries<cfg.np*14; tries++){
     const type = pick(r, cfg.props);
-    let x = rr(r,bounds.minX+1,bounds.maxX-1), z = rr(r,bounds.minZ+1,bounds.maxZ-1);
-    if(type==='lamp' && cfg.path && r()<.7){ x = (r()<.5?-1:1)*3.2; }
-    if(inRect(x,z,1.2) || (type!=='lamp' && onPath(x,.8)) || nearStart(x,z,4) || circles.some(c=>(c.x-x)**2+(c.z-z)**2 < (c.r+1.2)**2)) continue;
-    const p = buildProp(type, r); p.obj.position.set(x,0,z); p.obj.rotation.y = type==='car' ? pick(r,[0,Math.PI/2,Math.PI]) : r()*Math.PI*2; scene.add(p.obj);
-    if(p.rad){ if(type==='car'){ const o = Math.abs(Math.sin(p.obj.rotation.y))>.5; rects.push({minX:x-(o?1.9:.9), maxX:x+(o?1.9:.9), minZ:z-(o?.9:1.9), maxZ:z+(o?.9:1.9)}); } else circles.push({x,z,r:p.rad}); }
-    if((p.obj.userData.lamp || p.obj.userData.fire) && (tp.night || S.time==='dusk') && lights < 4){
-      const L = new THREE.PointLight(p.obj.userData.fire?'#ff9040':'#ffd89a', 1.3, 12, 1.4); L.position.set(x, p.obj.userData.fire?1:3.2, z); scene.add(L); lights++;
-    }
+    const x = rr(r,O.bounds.minX+1,O.bounds.maxX-1), z = rr(r,O.bounds.minZ+1,O.bounds.maxZ-1);
+    if(inRect(x,z,1.2) || onRoad(x,z,.8) || nearStart(x,z,5) || keepClear.some(k => Math.hypot(k.x-x,k.z-z) < 2.2) || O.circles.some(c=>(c.x-x)**2+(c.z-z)**2 < (c.r+1.2)**2)) continue;
+    const p = buildProp(type, r); p.obj.position.set(x,0,z); p.obj.rotation.y = type==='car' ? pick(r,[0,Math.PI/2,Math.PI]) : r()*Math.PI*2; O.scene.add(p.obj);
+    if(p.rad){ if(type==='car'){ const o = Math.abs(Math.sin(p.obj.rotation.y))>.5; O.rects.push({minX:x-(o?1.9:.9), maxX:x+(o?1.9:.9), minZ:z-(o?.9:1.9), maxZ:z+(o?.9:1.9)}); } else O.circles.push({x,z,r:p.rad}); }
+    if((p.obj.userData.lamp || p.obj.userData.fire) && lit) addLight(x, p.obj.userData.fire?1:3.2, z, p.obj.userData.fire?'#ff9040':'#ffd89a');
     i++;
   }
 
-  // open spot finder
+  // spots
   const spots = [];
   const openSpot = (minD, far, maxD=999) => {
-    for(let k=0;k<300;k++){
-      const x = rr(r,bounds.minX+3,bounds.maxX-3), z = rr(r,bounds.minZ+3,bounds.maxZ-6);
-      if(inRect(x,z,1.5) || nearStart(x,z,far) || !nearStart(x,z,maxD) || circles.some(c=>(c.x-x)**2+(c.z-z)**2 < (c.r+1.2)**2) || spots.some(s=>(s.x-x)**2+(s.z-z)**2 < minD*minD)) continue;
+    for(let k=0;k<400;k++){
+      const x = rr(r,O.bounds.minX+3,O.bounds.maxX-3), z = rr(r,O.bounds.minZ+3,O.bounds.maxZ-6);
+      if(inRect(x,z,1.5) || nearStart(x,z,far) || !nearStart(x,z,maxD) || keepClear.some(k2 => Math.hypot(k2.x-x,k2.z-z) < 2) || O.circles.some(c=>(c.x-x)**2+(c.z-z)**2 < (c.r+1.2)**2) || spots.some(s=>(s.x-x)**2+(s.z-z)**2 < minD*minD)) continue;
       spots.push({x,z}); return {x,z};
     }
     const f = {x:rr(r,-20,20), z:rr(r,-20,10)}; spots.push(f); return f;
   };
+  const interiors = shuffle(r, zones.filter(z => z.indoor));
+  const freeInteriors = interiors.slice();
+  const takeInterior = () => freeInteriors.shift();
 
   // characters
   S.characters.forEach((ch, i) => {
-    const sp = i===0 ? openSpot(6, 7, 18) : openSpot(12, 14);
-    const n = buildNPC(ch, r); n.group.position.set(sp.x, 0, sp.z); n.group.rotation.y = r()*Math.PI*2; scene.add(n.group);
-    const o = {kind:'npc', id:ch.id, char:ch, x:sp.x, z:sp.z, group:n.group, head:n.head, body:n.body, history:[], talks:0, phase:r()*6};
-    circles.push({x:sp.x, z:sp.z, r:.5});
-    interactables.push(o);
+    let zone = O, sp;
+    const iz = (!attract && ch.where==='inside' && i>0) ? takeInterior() : null;
+    if(iz){ zone = iz; sp = interiorSpot(iz, r); if(!iz.owner && iz.typeWord){ iz.owner = ch.name; iz.label = `${ch.name}'s ${iz.typeWord}`; } }
+    else sp = i===0 ? openSpot(6, 7, 20) : openSpot(14, 16);
+    spawnNPC(ch, zone, sp.x, sp.z, r);
   });
   // items
   S.items.forEach(it => {
-    const sp = openSpot(10, 16);
-    const g = new THREE.Group(); g.position.set(sp.x, 0, sp.z); scene.add(g);
-    const gem = mesh(new THREE.OctahedronGeometry(.22,0), mat(S.colors.accent,null,{basic:true}), 0,.9,0,g);
-    const ring = mesh(new THREE.TorusGeometry(.4,.03,3,10), mat('#ffffff',null,{basic:true}), 0,.9,0,g);
-    mesh(BOX(.5,.5,.5), mat('#6a5a48','planks'), 0,.25,0,g);
-    const o = {kind:'item', id:it.id, item:it, x:sp.x, z:sp.z, group:g, gem, ring};
-    animated.push((dt,t) => { if(!g.visible) return; gem.rotation.y += dt*2; gem.position.y = .95 + Math.sin(t*2)*.08; ring.rotation.x = t; ring.rotation.y = t*.7; });
-    circles.push({x:sp.x, z:sp.z, r:.4, item:it.id});
-    interactables.push(o);
+    let zone = O, sp;
+    const iz = (!attract && it.where==='inside') ? (freeInteriors.length ? takeInterior() : (interiors.length ? pick(r, interiors) : null)) : null;
+    if(iz){ zone = iz; sp = interiorSpot(iz, r); } else sp = openSpot(12, 18);
+    spawnItem(it, zone, sp.x, sp.z);
   });
-  for(const o of interactables) o.hint = hintFor(o.x, o.z);
 
   // weather
-  weather = null;
+  O.weather = null;
   const wtype = S.weather;
   if(wtype==='rain' || wtype==='snow' || wtype==='fireflies'){
-    const N = wtype==='rain' ? 1400 : wtype==='snow' ? 900 : 90;
+    const N = wtype==='rain' ? 1400 : wtype==='snow' ? 900 : 110;
     const pos = new Float32Array(N*3);
     for(let i=0;i<N;i++){ pos[i*3]=rr(r,-22,22); pos[i*3+1]=wtype==='fireflies'?rr(r,.3,3):rr(r,0,16); pos[i*3+2]=rr(r,-22,22); }
-    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(pos,3));
-    const pm = new THREE.PointsMaterial({color: wtype==='rain'?'#9fb0c8':wtype==='snow'?'#ffffff':'#fff08a', size: wtype==='rain'?.07:wtype==='snow'?.13:.16, transparent:true, opacity:wtype==='rain'?.7:1});
-    const pts = new THREE.Points(gg, pm); pts.frustumCulled = false; scene.add(pts);
-    weather = {pts, pos, N, type:wtype, ph:new Float32Array(N).map(()=>r()*6)};
+    const gg = new THREE.BufferGeometry();
+    let pts;
+    if(wtype==='rain'){
+      const lp = new Float32Array(N*6); gg.setAttribute('position', new THREE.BufferAttribute(lp,3));
+      pts = new THREE.LineSegments(gg, new THREE.LineBasicMaterial({color:'#9fb0c8', transparent:true, opacity:.55}));
+    } else {
+      gg.setAttribute('position', new THREE.BufferAttribute(pos,3));
+      pts = new THREE.Points(gg, new THREE.ShaderMaterial({
+        uniforms:{col:{value:new THREE.Color(wtype==='snow'?'#ffffff':'#fff08a')}, fogFar:{value:O.far*.6}},
+        vertexShader:'uniform float fogFar; varying float vA; void main(){ vec4 mv = modelViewMatrix*vec4(position,1.); gl_Position = projectionMatrix*mv; float d = -mv.z; gl_PointSize = clamp(90./d, 1., 3.); vA = clamp(1.-d/fogFar, 0., 1.); }',
+        fragmentShader:'uniform vec3 col; varying float vA; void main(){ gl_FragColor = vec4(col, vA); }',
+        transparent:true, depthWrite:false}));
+    }
+    pts.frustumCulled = false; O.scene.add(pts);
+    O.weather = {pts, pos, N, type:wtype, ph:new Float32Array(N).map(()=>r()*6)};
   }
-
   player.x = player0.x; player.z = player0.z; player.yaw = 0; player.pitch = -.03;
+  setZoneCamera(O);
 }
-const player0 = {x:0, z:30};
+
+function spawnNPC(ch, zone, x, z, r){
+  const prev = BZ; BZ = zone;
+  const h = buildHuman(ch, r);
+  h.root.position.set(x, 0, z); h.root.rotation.y = r()*Math.PI*2; zone.scene.add(h.root);
+  const circ = {x, z, r:.42};
+  zone.circles.push(circ);
+  const o = {kind:'npc', id:ch.id, char:ch, x, z, zone, parts:h, group:h.root, circ, home:{x,z}, goal:null, timer:rr(r,1,5), history:[], talks:0, phase:r()*6,
+    walkP:0, moving:false, speaking:false, talking:false, barkT:0, voice:null};
+  zone.interactables.push(o); zone.npcs.push(o); ENT[ch.id] = o;
+  BZ = prev;
+}
+function spawnItem(it, zone, x, z){
+  const prev = BZ; BZ = zone;
+  const g = new THREE.Group(); g.position.set(x, 0, z); zone.scene.add(g);
+  const gem = mesh(new THREE.OctahedronGeometry(.2,0), mat(S.colors.accent,null,{basic:true}), 0,.95,0,g);
+  const ring = mesh(new THREE.TorusGeometry(.36,.025,3,10), mat('#ffffff',null,{basic:true}), 0,.95,0,g);
+  mesh(BOX(.5,.55,.5), mat('#6a5a48','planks'), 0,.27,0,g);
+  const o = {kind:'item', id:it.id, item:it, x, z, zone, group:g};
+  zone.animated.push((dt,t) => { if(!g.visible) return; gem.rotation.y += dt*2; gem.position.y = 1 + Math.sin(t*2)*.07; ring.rotation.x = t; ring.rotation.y = t*.7; });
+  zone.circles.push({x, z, r:.4, item:it.id});
+  zone.interactables.push(o); ENT[it.id] = o;
+  BZ = prev;
+}
+
+function setZoneCamera(zone){ camera.far = zone.far + 6; camera.updateProjectionMatrix(); }
+let fadeT = 1;
+function goZone(zone, x, z, yaw){
+  if(zone.indoor) buildInterior(zone);
+  Z = zone; player.x = x; player.z = z; player.yaw = yaw; player.pitch = 0;
+  setZoneCamera(zone); fadeT = .1; sfx.door(); sfx.setIndoor(zone.indoor);
+  refreshHUD();
+}
 
 /* ---------- movement & collision ---------- */
 const keys = {};
 const joy = {x:0, y:0};
-function collide(x, z){
-  const R = .38;
-  for(const q of rects){
+function collide(x, z, R=.36, self){
+  for(const q of Z.rects){
     if(x>q.minX-R && x<q.maxX+R && z>q.minZ-R && z<q.maxZ+R){
       const dl = x-(q.minX-R), dr = (q.maxX+R)-x, dt = z-(q.minZ-R), db = (q.maxZ+R)-z;
       const m = Math.min(dl,dr,dt,db);
       if(m===dl) x = q.minX-R; else if(m===dr) x = q.maxX+R; else if(m===dt) z = q.minZ-R; else z = q.maxZ+R;
     }
   }
-  for(const c of circles){
+  for(const c of Z.circles){
+    if(c === self) continue;
     if(c.item && (inv.has(c.item) || usedItems.has(c.item))) continue;
     const dx = x-c.x, dz = z-c.z, d = Math.hypot(dx,dz), m = c.r + R;
     if(d < m && d > 1e-4){ x = c.x + dx/d*m; z = c.z + dz/d*m; }
   }
-  x = Math.max(bounds.minX, Math.min(bounds.maxX, x));
-  z = Math.max(bounds.minZ, Math.min(bounds.maxZ, z));
-  return [x, z];
+  const b = Z.bounds;
+  return [clamp(x, b.minX, b.maxX), clamp(z, b.minZ, b.maxZ)];
 }
 let stepTimer = 0;
+function surfaceAt(x, z){
+  if(Z.indoor){ const room = roomAt(Z, x, z); return room ? room.floor : 'planks'; }
+  const cfg = OUT.cfg;
+  if(cfg.path && (Math.abs(x) < 2.8 || (cfg.cross && Math.abs(z) < 2.8))) return cfg.path;
+  return cfg.ground;
+}
 function updatePlayer(dt){
   let f = 0, s = 0;
   if(keys.KeyW || keys.ArrowUp) f += 1; if(keys.KeyS || keys.ArrowDown) f -= 1;
   if(keys.KeyD || keys.ArrowRight) s += 1; if(keys.KeyA || keys.ArrowLeft) s -= 1;
   f += -joy.y; s += joy.x;
   const len = Math.hypot(f, s);
-  const moving = len > .05;
-  if(moving){
+  if(len > .05){
     if(len > 1){ f /= len; s /= len; }
-    const sp = (keys.ShiftLeft || keys.ShiftRight ? 6.2 : 3.6) * dt;
+    const run = keys.ShiftLeft || keys.ShiftRight;
+    const sp = (run ? 6.2 : 3.6) * (camOn ? .6 : 1) * (Z.indoor ? .85 : 1) * dt;
     const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw), rx = Math.cos(player.yaw), rz = -Math.sin(player.yaw);
     [player.x, player.z] = collide(player.x + (fx*f + rx*s)*sp, player.z + (fz*f + rz*s)*sp);
-    player.bob += dt * (keys.ShiftLeft||keys.ShiftRight ? 13 : 9);
-    stepTimer -= dt; if(stepTimer <= 0){ stepTimer = keys.ShiftLeft||keys.ShiftRight ? .3 : .45; sfx.step(); }
+    player.bob += dt * (run ? 13 : 9);
+    stepTimer -= dt; if(stepTimer <= 0){ stepTimer = run ? .3 : .46; sfx.step(surfaceAt(player.x, player.z)); }
   }
 }
 
+/* ---------- NPC behaviour ---------- */
+function npcUpdate(o, dt, t){
+  const P = o.parts;
+  const dx = player.x - o.x, dz = player.z - o.z, d = Math.hypot(dx, dz);
+  const engaged = o.talking || (d < 3 && (state==='play' || state==='dialog'));
+  // wander outdoors
+  if(!o.zone.indoor && !engaged){
+    o.timer -= dt;
+    if(!o.goal && o.timer <= 0){
+      const a = Math.random()*Math.PI*2, rad = 1.5 + Math.random()*3.5;
+      const gx = o.home.x + Math.cos(a)*rad, gz = o.home.z + Math.sin(a)*rad;
+      const [cx, cz] = collide(gx, gz, .45, o.circ);
+      if(Math.hypot(cx-gx, cz-gz) < .05) o.goal = {x:gx, z:gz}; else o.timer = 1;
+    }
+  } else if(engaged) o.goal = null;
+  o.moving = false;
+  if(o.goal){
+    const gx = o.goal.x - o.x, gz = o.goal.z - o.z, gd = Math.hypot(gx, gz);
+    if(gd < .15){ o.goal = null; o.timer = 2 + Math.random()*6; }
+    else {
+      const step = Math.min(gd, dt*1.05);
+      const [nx, nz] = collide(o.x + gx/gd*step, o.z + gz/gd*step, .42, o.circ);
+      if(Math.hypot(nx-o.x, nz-o.z) < step*.3){ o.goal = null; o.timer = 2; }
+      o.x = nx; o.z = nz; o.circ.x = nx; o.circ.z = nz; o.moving = true;
+      turnTo(o, Math.atan2(gx, gz), dt*4);
+    }
+  }
+  if(engaged) turnTo(o, Math.atan2(dx, dz), dt*(o.talking ? 6 : 2.5));
+  o.group.position.set(o.x, 0, o.z);
+  // walk cycle
+  const k = Math.min(1, dt*8);
+  if(o.moving){
+    o.walkP += dt*7.5;
+    const sw = Math.sin(o.walkP);
+    P.legs[0].rotation.x = sw*.55; P.legs[1].rotation.x = -sw*.55;
+    P.knees[0].rotation.x = Math.max(0, -Math.sin(o.walkP - .6))*.8; P.knees[1].rotation.x = Math.max(0, Math.sin(o.walkP - .6))*.8;
+    P.arms[0].rotation.x = -sw*.45; P.arms[1].rotation.x = sw*.45;
+    P.elbows[0].rotation.x = -.3; P.elbows[1].rotation.x = -.3;
+    P.hip.position.y = .8 + Math.abs(Math.cos(o.walkP))*.03;
+  } else {
+    for(const L of P.legs) L.rotation.x *= 1-k;
+    for(const K of P.knees) K.rotation.x *= 1-k;
+    P.hip.position.y += (.8 - P.hip.position.y)*k;
+    if(o.talking && o.speaking){
+      P.arms[1].rotation.x += ((-.55 + Math.sin(t*3.1+o.phase)*.3) - P.arms[1].rotation.x)*k;
+      P.elbows[1].rotation.x += ((-.9 + Math.sin(t*4.3)*.25) - P.elbows[1].rotation.x)*k;
+      P.arms[0].rotation.x += ((Math.sin(t*1.7)*.1) - P.arms[0].rotation.x)*k;
+      P.elbows[0].rotation.x += (-.15 - P.elbows[0].rotation.x)*k;
+    } else {
+      P.arms[0].rotation.x += (Math.sin(t*1.1+o.phase)*.05 - P.arms[0].rotation.x)*k;
+      P.arms[1].rotation.x += (Math.sin(t*1.1+o.phase+1)*.05 - P.arms[1].rotation.x)*k;
+      P.elbows[0].rotation.x += (-.12 - P.elbows[0].rotation.x)*k; P.elbows[1].rotation.x += (-.12 - P.elbows[1].rotation.x)*k;
+    }
+  }
+  P.chest.scale.x = 1 + Math.sin(t*2 + o.phase)*.02;
+  // head look
+  let hy = 0, hx = 0;
+  if(d < 7){
+    const want = Math.atan2(dx, dz) - o.group.rotation.y;
+    hy = clamp(Math.atan2(Math.sin(want), Math.cos(want)), -1, 1);
+    hx = clamp(-Math.atan2(1.62 - 1.5*o.char.look.height, Math.max(d,.5)), -.4, .4);
+  } else hy = Math.sin(t*.4 + o.phase)*.3;
+  if(o.speaking){ hx += Math.sin(t*5.2)*.05; P.headG.rotation.z = Math.sin(t*2.3)*.06; } else P.headG.rotation.z = Math.sin(t*1.1 + o.phase)*.04;
+  P.headG.rotation.y += (hy - P.headG.rotation.y)*Math.min(1, dt*5);
+  P.headG.rotation.x += (hx - P.headG.rotation.x)*Math.min(1, dt*5);
+  // mouth flap
+  const open = o.speaking && (Math.sin(t*19 + o.phase) + Math.sin(t*11.3)) > .2;
+  P.head.material[4] = open ? P.faceO : P.faceC;
+  // ambient bark
+  o.barkT -= dt;
+  if(state==='play' && d < 3.8 && o.barkT <= 0 && !o.talking && dialogNPC !== o){
+    o.barkT = 45; const line = pick(Math.random, BARKS);
+    showSubtitle(o, line); voice.speak(o, line, true);
+  }
+}
+function turnTo(o, want, k){ let diff = want - o.group.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); o.group.rotation.y += diff * Math.min(1, k); }
+
 /* ---------- per-frame world ---------- */
 let target = null;
+const DIRS = ['NORTH','NORTHEAST','EAST','SOUTHEAST','SOUTH','SOUTHWEST','WEST','NORTHWEST'];
 function updateWorld(dt, t){
-  camera.position.set(player.x, 1.62 + Math.sin(player.bob)*.045, player.z);
+  camera.position.set(player.x, 1.62 + Math.sin(player.bob)*.04, player.z);
   camera.rotation.set(player.pitch, player.yaw, Math.sin(player.bob*.5)*.006);
-  if(lantern) lantern.position.set(player.x, 2, player.z);
-  for(const a of animated) a(dt, t);
-  for(const o of interactables){
-    if(o.kind !== 'npc') continue;
-    const dx = player.x - o.x, dz = player.z - o.z, d = Math.hypot(dx, dz);
-    o.body.scale.y = 1 + Math.sin(t*2 + o.phase)*.025;
-    if(d < 8){ const want = Math.atan2(dx, dz); let diff = want - o.group.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); o.group.rotation.y += diff * Math.min(1, dt*3); }
-    else o.group.rotation.y += Math.sin(t*.3 + o.phase)*dt*.2;
-    o.head.rotation.z = Math.sin(t*1.1 + o.phase)*.06;
-  }
-  if(weather){
-    const {pos, N, type, ph} = weather;
+  const wantFov = camOn ? camZoom : 68;
+  if(Math.abs(camera.fov - wantFov) > .05){ camera.fov += (wantFov - camera.fov)*Math.min(1, dt*8); camera.updateProjectionMatrix(); }
+  if(Z.lantern) Z.lantern.position.set(player.x, 2, player.z);
+  for(const a of Z.animated) a(dt, t);
+  for(const o of Z.npcs) npcUpdate(o, dt, t);
+  updateTV(dt);
+  const W = Z.weather;
+  if(W){
+    const {pos, N, type, ph} = W;
     for(let i=0;i<N;i++){
       let x = pos[i*3], y = pos[i*3+1], z = pos[i*3+2];
       if(type==='rain') y -= dt*22; else if(type==='snow'){ y -= dt*1.4; x += Math.sin(t+ph[i])*dt*.4; }
@@ -856,30 +1449,38 @@ function updateWorld(dt, t){
       if(rx > 22) x -= 44; else if(rx < -22) x += 44;
       if(rz > 22) z -= 44; else if(rz < -22) z += 44;
       pos[i*3]=x; pos[i*3+1]=y; pos[i*3+2]=z;
+      if(type==='rain'){ const lp = W.pts.geometry.attributes.position.array; lp[i*6]=x; lp[i*6+1]=y; lp[i*6+2]=z; lp[i*6+3]=x+.03; lp[i*6+4]=y+.55; lp[i*6+5]=z; }
     }
-    weather.pts.geometry.attributes.position.needsUpdate = true;
+    W.pts.geometry.attributes.position.needsUpdate = true;
   }
-  // target
   target = null;
   if(state === 'play'){
     const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
     let best = 1e9;
-    for(const o of interactables){
+    for(const o of Z.interactables){
       if(o.kind==='item' && !o.group.visible) continue;
       const dx = o.x - player.x, dz = o.z - player.z, d = Math.hypot(dx, dz);
-      if(d > 3.2) continue;
+      const reach = o.kind==='npc' ? 3.2 : 2.6;
+      if(d > reach) continue;
       const dot = (dx*fx + dz*fz) / Math.max(d, .01);
-      if(dot < .5 && d > 1.2) continue;
+      if(dot < .45 && d > 1.1) continue;
       const sc = d * (1.6 - dot);
       if(sc < best){ best = sc; target = o; }
     }
   }
   const pr = $('#prompt');
-  if(state==='play' && !target && !touchMode && document.pointerLockElement !== canvas){ pr.textContent = 'CLICK TO LOOK AROUND'; pr.hidden = false; }
+  if(state==='play' && !target && !touchMode && document.pointerLockElement !== canvas && !camOn){ pr.textContent = 'CLICK TO LOOK AROUND'; pr.hidden = false; }
   else if(target && state==='play'){
-    pr.textContent = (touchMode ? 'USE: ' : '[E] ') + (target.kind==='npc' ? 'Talk to ' + target.char.name : 'Pick up the ' + target.item.name);
-    pr.hidden = false;
+    const verb = target.kind==='npc' ? 'Talk to ' + target.char.name : target.kind==='item' ? 'Pick up the ' + target.item.name
+      : target.kind==='door' ? 'Enter ' + target.zone.label : target.kind==='exit' ? 'Go outside' : 'Knock on ' + target.label;
+    pr.textContent = (touchMode ? 'USE: ' : '[E] ') + verb; pr.hidden = false;
   } else pr.hidden = true;
+  if(state==='play'){
+    const a = Math.atan2(-Math.sin(player.yaw), Math.cos(player.yaw));
+    const idx = ((Math.round((-a + Math.PI*2) / (Math.PI/4)) % 8) + 8) % 8;
+    const room = Z.indoor ? roomAt(Z, player.x, player.z) : null;
+    $('#where').textContent = Z.indoor ? `${Z.label.toUpperCase()}${room ? ' · ' + room.kind.toUpperCase() : ''}` : `FACING ${DIRS[idx]}`;
+  }
 }
 
 /* ---------- quest ---------- */
@@ -891,6 +1492,8 @@ function refreshHUD(){
 }
 let toastT = null;
 function toast(msg, ms=2600){ const el = $('#toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(()=>{ el.hidden = true; }, ms); }
+let subT = null;
+function showSubtitle(o, line){ const el = $('#subtitle'); el.innerHTML = ''; const b = document.createElement('b'); b.textContent = o.char.name + ': '; el.append(b, line); el.hidden = false; clearTimeout(subT); subT = setTimeout(() => { el.hidden = true; }, 2600); }
 function completeStep(){
   const st = curStep(); if(!st) return;
   stepIdx++; sfx.chime();
@@ -911,44 +1514,98 @@ function pickUp(o){
 }
 function interact(){
   if(state !== 'play' || !target) return;
-  if(target.kind === 'item') pickUp(target); else openDialog(target);
+  const o = target;
+  if(o.kind === 'item') pickUp(o);
+  else if(o.kind === 'npc') openDialog(o);
+  else if(o.kind === 'door') goZone(o.zone, o.zone.spawn.x, o.zone.spawn.z, o.zone.spawn.yaw);
+  else if(o.kind === 'exit') goZone(OUT, o.zone.exitTo.x, o.zone.exitTo.z, o.zone.exitTo.yaw);
+  else if(o.kind === 'locked'){ sfx.knock(); toast(o.label.toUpperCase() + '\n' + o.msg, 3200); }
 }
 
+/* ---------- voices ---------- */
+const voice = (() => {
+  const can = 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined';
+  let voices = [], broken = false, current = null;
+  const load = () => { try{ const v = speechSynthesis.getVoices(); const en = v.filter(x => /^en/i.test(x.lang)); voices = en.length ? en : v; }catch(e){} };
+  if(can){ load(); try{ speechSynthesis.onvoiceschanged = load; }catch(e){} }
+  const saved = lsGet('mr_voice');
+  let mode = saved && ['spoken','babble','off'].includes(saved) ? saved : (can ? 'spoken' : 'babble');
+  const params = o => {
+    if(o.voice) return o.voice;
+    const h = hashStr(o.char.name + o.char.role);
+    const base = {deep:.55, gravelly:.7, soft:.95, bright:1.2, high:1.45, squeaky:1.85}[o.char.voice] || 1;
+    const ht = o.char.look.height;
+    const pitch = clamp(base * (ht < .9 ? 1.25 : ht > 1.2 ? .85 : 1), .3, 2);
+    o.voice = {pitch, rate: o.char.voice==='gravelly' ? .88 : o.char.voice==='squeaky' ? 1.12 : .92 + (h%20)/100, vIdx:h, babble:120 + pitch*150};
+    return o.voice;
+  };
+  const babble = (o, text) => {
+    const p = params(o); const n = Math.min(40, Math.max(2, Math.round(text.length/3.2)));
+    o.speaking = true; current = o;
+    let i = 0; const iv = setInterval(() => { if(current !== o || i >= n){ clearInterval(iv); if(current === o) o.speaking = false; return; } sfx.syllable(p.babble * (0.85 + Math.random()*.4)); i++; }, 72);
+  };
+  return {
+    get mode(){ return mode; },
+    label(){ return 'VOICES: ' + (mode==='spoken' ? 'SPOKEN' : mode==='babble' ? 'BABBLE' : 'OFF'); },
+    cycle(){ mode = mode==='spoken' ? 'babble' : mode==='babble' ? 'off' : (can && !broken ? 'spoken' : 'babble'); lsSet('mr_voice', mode); this.stop(); },
+    stop(){ if(current) current.speaking = false; current = null; if(can) try{ speechSynthesis.cancel(); }catch(e){} },
+    speak(o, text, quiet){
+      this.stop();
+      if(mode === 'off' || sfx.muted) return;
+      if(mode === 'babble' || broken || !can){ babble(o, text); return; }
+      const p = params(o);
+      try{
+        const u = new SpeechSynthesisUtterance(text.replace(/[*_~]/g,''));
+        if(voices.length) u.voice = voices[p.vIdx % voices.length];
+        u.pitch = p.pitch; u.rate = p.rate; u.volume = quiet ? .55 : .95;
+        let started = false; current = o;
+        u.onstart = () => { started = true; if(current === o) o.speaking = true; };
+        u.onend = u.onerror = () => { o.speaking = false; if(current === o) current = null; };
+        speechSynthesis.speak(u);
+        setTimeout(() => { if(!started && current === o){ broken = true; mode = 'babble'; updateVoiceBtns(); try{ speechSynthesis.cancel(); }catch(e){} babble(o, text); } }, 1500);
+      }catch(e){ broken = true; babble(o, text); }
+    },
+  };
+})();
+function updateVoiceBtns(){ $$('.voice-btn').forEach(b => { b.textContent = voice.label(); }); }
+$$('.voice-btn').forEach(b => b.addEventListener('click', () => { voice.cycle(); updateVoiceBtns(); }));
+updateVoiceBtns();
+
 /* ---------- dialogue ---------- */
-let dlgNPC = null, dlgBusy = false, dlgCtl = null, typing = null;
-function typeText(text, voice){
+let dialogNPC = null, dlgBusy = false, dlgCtl = null, typing = null;
+function typeText(text){
   const el = $('#d-text'); el.textContent = '';
   return new Promise(res => {
-    let i = 0; const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let i = 0;
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches){ el.textContent = text; res(); return; }
     const done = () => { clearInterval(iv); el.textContent = text; typing = null; res(); };
-    if(reduce){ el.textContent = text; res(); return; }
-    const iv = setInterval(() => { i += 1; el.textContent = text.slice(0, i); if(i%3===0) sfx.blip(voice); if(i >= text.length) done(); }, 22);
+    const iv = setInterval(() => { i += 1; el.textContent = text.slice(0, i); if(i >= text.length) done(); }, voice.mode==='spoken' ? 38 : 24);
     typing = done;
   });
 }
 function setChoices(list){
   const box = $('#d-choices'); box.textContent = '';
-  for(const c of list){
-    const b = document.createElement('button'); b.type = 'button'; b.className = 'choice'; b.textContent = c;
-    b.onclick = () => playerSays(c); box.appendChild(b);
-  }
-  const bye = document.createElement('button'); bye.type = 'button'; bye.className = 'choice'; bye.textContent = 'Leave'; bye.onclick = closeDialog; box.appendChild(bye);
+  const add = (label, fn, cls='choice') => { const b = document.createElement('button'); b.type = 'button'; b.className = cls; b.textContent = label; b.onclick = fn; box.appendChild(b); return b; };
+  for(const c of list) add(c, () => playerSays(c));
+  if(aiOK && imagesOK && photos.length) add('[Show them your latest photo]', showPhoto);
+  add('Leave', closeDialog);
   $('#d-form').hidden = !aiOK;
   const first = box.querySelector('button'); if(first && !touchMode) first.focus({preventScroll:true});
 }
 function worldBrief(){
-  const lines = interactables.map(o => o.kind==='npc'
-    ? `- ${o.char.name} (${o.char.role}) is ${o.hint}.`
-    : `- the ${o.item.name} ${inv.has(o.id) ? 'is being carried by the player' : usedItems.has(o.id) ? 'has already been delivered' : 'is lying ' + o.hint}.`);
-  return lines.join('\n');
+  return Object.values(ENT).map(o => o.kind==='npc'
+    ? `- ${o.char.name} (${o.char.role}) is ${hintFor(o)}.`
+    : `- the ${o.item.name} ${inv.has(o.id) ? 'is being carried by the player' : usedItems.has(o.id) ? 'has already been delivered' : 'is lying ' + hintFor(o)}.`).join('\n');
 }
 function npcPrompt(npc, event){
   const c = npc.char, st = curStep();
   const others = S.characters.filter(x => x.id !== c.id).map(x => `${x.name} (${x.role})`).join(', ');
   const hist = npc.history.slice(-10).map(h => (h.who==='p' ? 'PLAYER: ' : c.name.toUpperCase()+': ') + h.text).join('\n');
+  const here = npc.zone.indoor ? `You are ${hintFor(npc)}.` : `You are outside, ${hintFor(npc)}.`;
   return `You voice one character in a short first-person PS1-style story game called "${S.title}", set in ${S.place} (a ${SET_WORDS[S.setting]}, ${S.time}, weather: ${S.weather}). The tone is gentle, strange and a little funny, never scary.
 Premise: ${S.intro}
-You are ${c.name}, ${c.role}. Personality: ${c.personality}. ${c.greeting ? `Your first line was meant to be: "${c.greeting}"` : ''}
+You are ${c.name}, ${c.role}. Personality: ${c.personality}. Voice: ${c.voice}. ${c.greeting ? `Your first line was meant to be: "${c.greeting}"` : ''}
+${here}
 Other people here: ${others}.
 Where things are right now:
 ${worldBrief()}
@@ -956,27 +1613,24 @@ The player's current goal: ${st ? st.text : 'the story is finished; just chat an
 ${event ? 'WHAT JUST HAPPENED: ' + event : ''}
 ${hist ? 'Conversation so far:\n' + hist : 'The player just walked up to you. This is the start of the conversation.'}
 
-Write ${c.name}'s next line: 1 to 3 short sentences, in character, specific and a little odd, like dialogue in an old low-budget game. If the player seems stuck, nudge them toward their goal using the locations above (describe places, not coordinates). Never mention being an AI or a game.
+Write ${c.name}'s next line: 1 to 3 short sentences, in character, specific and a little odd, like spoken dialogue in an old low-budget game (it will be read aloud by a text-to-speech voice, so no stage directions, asterisks or emoji). If the player seems stuck, nudge them toward their goal using the locations above (describe places and rooms, not coordinates). Never mention being an AI or a game.
 Then give 3 short things the player could say back (max 8 words each), each taking the talk somewhere different.
 Reply with only JSON: {"line":"...","choices":["...","...","..."]}`;
 }
 function localLine(npc, event){
   const c = npc.char, st = curStep(), r = Math.random;
   if(event==='gave') return `The ${itemName(S, npc.lastGiven)}! ${pick(r,["I could cry. I won't. But I could.","I'm going to keep this somewhere safe. Maybe in my hat.","You don't know what this means. Honestly, neither do I, but it means a lot."])}`;
-  if(event==='quest') {
-    const nx = curStep();
-    return `${pick(r,["I was hoping you'd come.","Finally, someone who listens.","Oh good. You're real."])} ${npc.firstQuest ? S.intro : ''} ${nx ? pick(r,['Could you help? ','Will you do something for me? ','Please. ']) + nx.text + '.' : ''}`.trim();
-  }
+  if(event==='quest'){ const nx = curStep(); return `${pick(r,["I was hoping you'd come.","Finally, someone who listens.","Oh good. You're real."])} ${npc.firstQuest ? S.intro : ''} ${nx ? pick(r,['Could you help? ','Will you do something for me? ','Please. ']) + nx.text + '.' : ''}`.trim(); }
   if(npc.talks===1 && c.greeting && !npc.greeted){ npc.greeted = true; return c.greeting; }
   if(st && r() < .75){
-    if(st.type==='talk' && st.target!==c.id){ const o = interactables.find(x=>x.id===st.target); return `${o.char.name}? ${pick(r,['Last I saw,','I think they were','Try looking'])} ${o.hint}.`; }
-    if(st.type==='find'){ const o = interactables.find(x=>x.id===st.target); return `The ${o.item.name}? ${pick(r,['I saw something shiny','Something was glowing','There was a funny little box'])} ${o.hint}.`; }
-    if(st.type==='give' && st.target===c.id){ const o = interactables.find(x=>x.id===st.item); return inv.has(st.item) ? `Is that... do you have it?` : `Still no ${o.item.name}? Look ${o.hint}.`; }
-    if(st.type==='give'){ const t = interactables.find(x=>x.id===st.target); return `${t.char.name} is ${t.hint}. ${pick(r,['They seemed worried.','Go on.','Say hi for me.'])}`; }
+    if(st.type==='talk' && st.target!==c.id){ const o = ENT[st.target]; return `${o.char.name}? ${pick(r,['Last I saw, they were','I think they were','Try looking'])} ${hintFor(o)}.`; }
+    if(st.type==='find'){ const o = ENT[st.target]; return `The ${o.item.name}? ${pick(r,['I saw something shiny','Something was glowing','There was a funny little box'])} ${hintFor(o)}.`; }
+    if(st.type==='give' && st.target===c.id){ const o = ENT[st.item]; return inv.has(st.item) ? `Is that... do you have it?` : `Still no ${o.item.name}? Look ${hintFor(o)}.`; }
+    if(st.type==='give'){ const t = ENT[st.target]; return `${t.char.name} is ${hintFor(t)}. ${pick(r,['They seemed worried.','Go on.','Say hi for me.'])}`; }
   }
   return pick(r, FLAVOR);
 }
-async function npcSpeak(npc, event, localEvent){
+async function npcSpeak(npc, event, localEvent, images){
   dlgBusy = true; $('#d-choices').textContent = ''; $('#d-form').hidden = true;
   const el = $('#d-text');
   let line = '', choices = null;
@@ -984,30 +1638,38 @@ async function npcSpeak(npc, event, localEvent){
     el.textContent = '...';
     dlgCtl = new AbortController();
     try{
-      const res = await sample.json(npcPrompt(npc, event), {modelTier:'quick', cache:false, signal:dlgCtl.signal});
+      const opts = {modelTier:'quick', cache:false, signal:dlgCtl.signal};
+      if(images) opts.images = images;
+      const res = await sample.json(npcPrompt(npc, event), opts);
       line = str(res && res.line, 400);
       if(res && Array.isArray(res.choices)) choices = res.choices.map(x => str(x, 60)).filter(Boolean).slice(0,3);
-    }catch(e){ aiFailed(e); if(e && e.code==='cancelled'){ dlgBusy = false; return; } }
+    }catch(e){ aiFailed(e); if(e && e.code==='cancelled'){ dlgBusy = false; return; } if(e && e.code==='images_unavailable') imagesOK = false; }
   }
-  if(dlgNPC !== npc) { dlgBusy = false; return; }
-  if(!line) line = localLine(npc, localEvent);
+  if(dialogNPC !== npc){ dlgBusy = false; return; }
+  if(!line) line = images ? pick(Math.random, ["Oh, that's a good one. You got my bad side, though.","Huh. I didn't know the sky could do that.","I'm going to remember this photo for at least a week."]) : localLine(npc, localEvent);
   npc.history.push({who:'n', text:line});
-  await typeText(line, npc.voice);
+  voice.speak(npc, line);
+  await typeText(line);
   if(!choices || !choices.length) choices = pick(Math.random, [["Any idea where I should go?","Tell me about this place.","What's your deal?"],["Where is everyone?","Can I help?","You seem nice."],["What should I do next?","Tell me something weird.","How long have you lived here?"]]);
   dlgBusy = false;
-  if(dlgNPC === npc) setChoices(choices);
+  if(dialogNPC === npc) setChoices(choices);
 }
 function playerSays(text){
-  if(dlgBusy || !dlgNPC) return;
+  if(dlgBusy || !dialogNPC) return;
   const t = str(text, 140); if(!t) return;
-  dlgNPC.history.push({who:'p', text:t}); playerLog.push(`to ${dlgNPC.char.name}: "${t}"`);
-  npcSpeak(dlgNPC, '', '');
+  dialogNPC.history.push({who:'p', text:t}); playerLog.push(`to ${dialogNPC.char.name}: "${t}"`);
+  npcSpeak(dialogNPC, '', '');
+}
+function showPhoto(){
+  if(dlgBusy || !dialogNPC || !photos.length) return;
+  const p = photos[photos.length-1];
+  dialogNPC.history.push({who:'p', text:'(shows you a photo they took)'}); playerLog.push(`showed ${dialogNPC.char.name} a photo of ${p.where}`);
+  npcSpeak(dialogNPC, `The player shows you a photo they just took with their camcorder (attached; taken ${p.where}). React to what is actually in the photo, in character.`, '', dataUrlToBlob(p.url));
 }
 function openDialog(npc){
-  state = 'dialog'; exitLock(); dlgNPC = npc; npc.talks++;
-  $('#dialog').hidden = false; $('#cross').hidden = true; $('#prompt').hidden = true;
-  $('#d-name').innerHTML = ''; $('#d-name').append(npc.char.name.toUpperCase()); const sp = document.createElement('span'); sp.textContent = npc.char.role; $('#d-name').append(sp);
-  if(npc.voice == null) npc.voice = 180 + (hashStr(npc.char.name) % 260);
+  state = 'dialog'; exitLock(); setCam(false); dialogNPC = npc; npc.talks++; npc.talking = true;
+  $('#dialog').hidden = false; $('#cross').hidden = true; $('#prompt').hidden = true; $('#subtitle').hidden = true;
+  const nm = $('#d-name'); nm.textContent = npc.char.name.toUpperCase(); const sp = document.createElement('span'); sp.textContent = npc.char.role; nm.append(sp);
   const st = curStep();
   let event = '', localEvent = '';
   if(st && st.type==='give' && st.target===npc.id){
@@ -1026,7 +1688,9 @@ function openDialog(npc){
 function closeDialog(){
   if(dlgCtl) dlgCtl.abort();
   if(typing) typing();
-  dlgNPC = null; dlgBusy = false;
+  voice.stop();
+  if(dialogNPC) dialogNPC.talking = false;
+  dialogNPC = null; dlgBusy = false;
   $('#dialog').hidden = true; $('#cross').hidden = false;
   if(pendingEnding){ startEnding(); return; }
   state = 'play'; requestLock();
@@ -1034,13 +1698,147 @@ function closeDialog(){
 $('#d-text').addEventListener('click', () => { if(typing) typing(); });
 $('#d-form').addEventListener('submit', e => { e.preventDefault(); const v = $('#d-input').value; $('#d-input').value = ''; playerSays(v); });
 
+/* ---------- camcorder & photos ---------- */
+let camOn = false, camZoom = 50, snapPending = false;
+const MAX_PHOTOS = 24;
+function setCam(on){
+  if(on && state !== 'play') return;
+  camOn = on; $('#hud').classList.toggle('cam-on', on); $('#cam').hidden = !on; $('#cross').hidden = on || state==='dialog';
+  $('#snap-btn').hidden = !(on && touchMode);
+  $('#cam-help').textContent = touchMode ? 'TAP SNAP TO TAKE A PHOTO' : 'CLICK / SPACE: TAKE PHOTO · WHEEL: ZOOM · C: LOWER CAMERA';
+  updateCamMeta();
+  if(on) sfx.beep();
+}
+function updateCamMeta(){ $('#cam-meta').innerHTML = `SP &#9646;&#9646;&#9646;&#9647;<br>PHOTO ${String(photos.length).padStart(2,'0')}/${MAX_PHOTOS}<br>ZOOM ${(68/camZoom).toFixed(1)}x`; }
+function snap(){
+  if(!camOn || state !== 'play') return;
+  if(photos.length >= MAX_PHOTOS){ toast('TAPE FULL. DELETE SOME PHOTOS FROM THE MENU.'); return; }
+  snapPending = true;
+}
+function placeDesc(){
+  if(Z.indoor){ const room = roomAt(Z, player.x, player.z); return `inside ${Z.label}${room ? ', ' + room.kind : ''}`; }
+  return outdoorHint(player.x, player.z).replace(/^over on /,'on ');
+}
+function capturePhoto(){
+  snapPending = false;
+  try{
+    const w = 640, h = Math.round(640 * canvas.height / canvas.width);
+    const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d');
+    x.imageSmoothingEnabled = false; x.drawImage(canvas, 0, 0, w, h);
+    x.font = 'bold 22px "VT323", monospace'; x.textAlign = 'right'; x.fillStyle = '#000'; x.fillText($('#osd-br').textContent, w-14, h-14); x.fillStyle = '#ffb347'; x.fillText($('#osd-br').textContent, w-16, h-16);
+    const url = c.toDataURL('image/jpeg', .82);
+    photos.push({url, where:placeDesc(), stamp:$('#osd-br').textContent});
+    const f = $('#flash'); f.classList.add('on'); requestAnimationFrame(() => requestAnimationFrame(() => f.classList.remove('on')));
+    sfx.shutter(); updateCamMeta();
+    toast(`PHOTO ${photos.length} SAVED TO THIS TAPE`, 1400);
+  }catch(e){ toast('THE CAMERA JAMMED. TRY AGAIN.'); }
+}
+function dataUrlToBlob(url){
+  const [head, body] = url.split(','); const mime = (head.match(/data:([^;]+)/)||[])[1] || 'image/jpeg';
+  const bin = atob(body), arr = new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], {type:mime});
+}
+let albumReturn = 'pause';
+function openAlbum(from){
+  albumReturn = from; hideScreens(); $('#album').hidden = false; state = 'album';
+  renderAlbum();
+}
+function renderAlbum(){
+  const grid = $('#album-grid'); grid.textContent = '';
+  $('#album-note').textContent = photos.length ? `${photos.length} of ${MAX_PHOTOS} photos on this tape.` + (downloads ? ' Save any you like to your device.' : ' Photos stay with this tape until you eject it.') : 'No photos yet. Press C while playing to raise the camcorder.';
+  photos.forEach((p, i) => {
+    const fig = document.createElement('figure');
+    const img = document.createElement('img'); img.src = p.url; img.alt = `Photo ${i+1}, ${p.where}`;
+    const cap = document.createElement('figcaption'); cap.textContent = `#${i+1} · ${p.where}`;
+    const row = document.createElement('div'); row.className = 'row';
+    if(downloads){ const sv = document.createElement('button'); sv.type = 'button'; sv.className = 'btn-sm'; sv.textContent = 'SAVE'; sv.onclick = () => savePhoto(i, sv); row.append(sv); }
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'btn-sm'; del.textContent = 'DELETE';
+    del.onclick = () => { if(del.dataset.sure){ photos.splice(i,1); renderAlbum(); } else { del.dataset.sure = '1'; del.textContent = 'REALLY DELETE?'; } };
+    row.append(del);
+    fig.append(img, cap, row); grid.append(fig);
+  });
+}
+async function savePhoto(i, btn){
+  const p = photos[i]; if(!p || !downloads) return;
+  const name = `midnight-rental-${S.title.toLowerCase().replace(/[^a-z0-9]+/g,'-').slice(0,40)}-${i+1}.jpg`;
+  btn.disabled = true;
+  try{ await downloads.save({filename:name, data:dataUrlToBlob(p.url)}); btn.textContent = 'SAVED'; }
+  catch(e){ btn.disabled = false; btn.textContent = e && e.code==='declined' ? 'SAVE' : 'COULD NOT SAVE'; }
+}
+$('#album-back').addEventListener('click', () => { $('#album').hidden = true; if(albumReturn==='ending'){ state = 'ending'; $('#ending').hidden = false; renderStrip(); } else { state = 'pause'; $('#pause').hidden = false; refreshPause(); } });
+
+/* ---------- tape shelf (saved favourites) ---------- */
+const shelf = {
+  db:null, uid:null, items:[], ready:false,
+  async init(){
+    const db = await use('db'), user = db ? await use('user') : null;
+    if(db && user){ try{ const id = await user.id(); if(id){ this.db = db; this.uid = id; } }catch(e){} }
+    await this.load();
+  },
+  col(){ return this.db.collection(`data/users/${this.uid}/tapes`); },
+  local(){ try{ const a = JSON.parse(lsGet('mr_shelf') || '[]'); return Array.isArray(a) ? a : []; }catch(e){ return []; } },
+  async load(){
+    let items = [];
+    if(this.db){ try{ const snap = await this.col().limit(40).get(); items = snap.docs.map(d => Object.assign({id:d.id}, d.data())); }catch(e){ this.db = null; } }
+    if(!this.db) items = this.local();
+    this.items = items.filter(x => x && typeof x.story === 'string').sort((a,b) => (b.savedAt||0) - (a.savedAt||0));
+    this.ready = true; renderShelf();
+  },
+  async save(story, seed){
+    const rec = {title:str(story.title,60), place:str(story.place,40), setting:story.setting, accent:story.colors.accent, savedAt:Date.now(), seed, story:JSON.stringify(story)};
+    try{
+      if(this.db) await this.col().add(rec);
+      else { const a = this.local(); rec.id = 'l' + Date.now(); a.unshift(rec); lsSet('mr_shelf', JSON.stringify(a.slice(0,30))); }
+      await this.load(); return true;
+    }catch(e){ return false; }
+  },
+  async remove(id){
+    try{ if(this.db) await this.col().doc(id).delete(); else lsSet('mr_shelf', JSON.stringify(this.local().filter(x => x.id !== id))); }catch(e){}
+    await this.load();
+  },
+};
+function renderShelf(){
+  const wrap = $('#shelf-wrap'), list = $('#shelf'); list.textContent = '';
+  wrap.hidden = !shelf.items.length;
+  for(const it of shelf.items){
+    const row = document.createElement('div'); row.className = 'spine'; row.style.setProperty('--spine', HEX.test(it.accent) ? it.accent : '#888');
+    const t = document.createElement('div'); t.className = 't';
+    const b = document.createElement('b'); b.textContent = it.title || 'Untitled Tape';
+    const s = document.createElement('span'); s.textContent = `${it.place || ''} · ${SET_WORDS[it.setting] ? it.setting : 'tape'} · ${new Date(it.savedAt||0).toLocaleDateString()}`;
+    t.append(b, s);
+    const play = document.createElement('button'); play.type = 'button'; play.className = 'btn-sm'; play.textContent = '▶ PLAY';
+    play.onclick = () => { let st = null; try{ const raw = JSON.parse(it.story); st = normalizeStory(raw, +it.seed||1); if(st) st.ai = raw.ai !== false; }catch(e){} if(st) beginTape(st, (+it.seed>>>0) || 1); else toast('THAT TAPE IS UNREADABLE.'); };
+    const del = document.createElement('button'); del.type = 'button'; del.className = 'btn-sm'; del.textContent = 'REMOVE';
+    del.onclick = () => { if(del.dataset.sure) shelf.remove(it.id); else { del.dataset.sure = '1'; del.textContent = 'REALLY?'; } };
+    row.append(t, play, del); list.append(row);
+  }
+  $('#shelf-note').textContent = shelf.db ? 'Saved to your claude.ai account.' : 'Saved in this browser only.';
+}
+async function shelveTape(btn){
+  if(shelvedThisTape || !lastTape){ btn.textContent = '★ ON YOUR SHELF'; return; }
+  btn.disabled = true; btn.textContent = 'SAVING...';
+  const ok = await shelf.save(lastTape.S, lastTape.seed);
+  btn.disabled = false;
+  if(ok){ shelvedThisTape = true; btn.textContent = '★ ON YOUR SHELF'; } else btn.textContent = 'COULD NOT SAVE. TRY AGAIN';
+}
+$('#shelve-btn').addEventListener('click', e => shelveTape(e.currentTarget));
+$('#end-shelve').addEventListener('click', e => shelveTape(e.currentTarget));
+
 /* ---------- ending ---------- */
 let endCtl = null;
+function renderStrip(){
+  const strip = $('#end-strip'); strip.textContent = '';
+  photos.forEach((p,i) => { const im = document.createElement('img'); im.src = p.url; im.alt = `Photo ${i+1}`; strip.append(im); });
+  strip.hidden = !photos.length;
+  $('#end-photos').hidden = !photos.length;
+  $('#end-shelve').textContent = shelvedThisTape ? '★ ON YOUR SHELF' : '★ SAVE TO SHELF';
+}
 async function startEnding(){
   if(state === 'ending') return;
-  pendingEnding = false;
-  state = 'ending'; exitLock(); hideAll(); $('#ending').hidden = false; sfx.chime();
+  pendingEnding = false; voice.stop(); setCam(false);
+  state = 'ending'; exitLock(); hideScreens(); $('#hud').hidden = true; $('#ending').hidden = false; sfx.chime();
   $('#end-title').textContent = S.title.toUpperCase();
+  renderStrip();
   const el = $('#end-text');
   const fallback = S.ending || 'And that was that. The tape hisses on for a while after the story ends.';
   if(aiOK){
@@ -1051,8 +1849,9 @@ async function startEnding(){
 Premise: ${S.intro}
 The planned ending was: ${S.ending}
 People: ${S.characters.map(c=>`${c.name} (${c.role})`).join(', ')}.
-Things the player said along the way:
+Things the player said and did along the way:
 ${playerLog.slice(-14).join('\n') || '(they said very little)'}
+${photos.length ? `They took ${photos.length} photos, including ones ${photos.slice(-3).map(p=>p.where).join('; ')}.` : ''}
 Write 3 to 5 sentences in second person that land the ending and reflect the specific things the player said and chose. Warm, odd, a little funny, never scary. End with one very short final line on its own line. Plain text only.`,
         {modelTier:'default', cache:false, signal:endCtl.signal, onText:({text}) => { el.textContent = text; }});
     }catch(e){ aiFailed(e); if(!e || e.code !== 'cancelled') el.textContent = (e && e.text) || fallback; }
@@ -1062,37 +1861,61 @@ Write 3 to 5 sentences in second person that land the ending and reflect the spe
 
 /* ---------- audio ---------- */
 const sfx = (() => {
-  let ctx = null, master = null, muted = false, padNodes = [];
+  let ctx = null, master = null, muted = false, padNodes = [], noiseBuf = null, amb = null, indoor = false;
   const ensure = () => {
     if(ctx) return true;
-    try{ ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = .7; master.connect(ctx.destination); return true; }catch(e){ return false; }
+    try{ ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = .7; master.connect(ctx.destination);
+      const len = ctx.sampleRate*2; noiseBuf = ctx.createBuffer(1, len, ctx.sampleRate); const d = noiseBuf.getChannelData(0); for(let i=0;i<len;i++) d[i] = Math.random()*2-1; return true; }catch(e){ return false; }
   };
   const tone = (f, d, type='square', v=.04, slide=0) => {
     if(!ctx || muted) return; const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = f;
     if(slide) o.frequency.linearRampToValueAtTime(f+slide, ctx.currentTime+d);
     g.gain.setValueAtTime(v, ctx.currentTime); g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+d); o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime+d);
   };
+  const burst = (ftype, freq, q, d, v) => {
+    if(!ctx || muted) return; const s = ctx.createBufferSource(); s.buffer = noiseBuf; const f = ctx.createBiquadFilter(); f.type = ftype; f.frequency.value = freq; f.Q.value = q;
+    const g = ctx.createGain(); const t0 = ctx.currentTime; g.gain.setValueAtTime(v, t0); g.gain.exponentialRampToValueAtTime(.0001, t0+d);
+    s.connect(f); f.connect(g); g.connect(master); s.start(t0, Math.random()*1.5); s.stop(t0+d+.02);
+  };
+  const STEPS = {
+    grass:   () => burst('lowpass', 900+Math.random()*300, .7, .1, .16),
+    leaf:    () => burst('lowpass', 900, .7, .1, .16),
+    dirt:    () => { burst('lowpass', 520, 1, .09, .18); tone(90, .05, 'sine', .06); },
+    sand:    () => burst('bandpass', 2300+Math.random()*500, .9, .13, .14),
+    snow:    () => { burst('bandpass', 1500+Math.random()*400, 1.4, .16, .18); burst('highpass', 4000, .5, .05, .04); },
+    asphalt: () => { burst('highpass', 2400, .8, .035, .12); tone(120, .04, 'sine', .07); },
+    tile:    () => { burst('highpass', 3000, 1, .03, .13); tone(180+Math.random()*30, .035, 'triangle', .05); },
+    planks:  () => { tone(140+Math.random()*30, .09, 'triangle', .09, -50); burst('lowpass', 700, 1, .06, .08); },
+    carpet:  () => burst('lowpass', 380, .7, .08, .14),
+  };
   return {
+    get muted(){ return muted; },
     start(){ if(!ensure()) return; if(ctx.state==='suspended') ctx.resume(); },
-    pad(seed){
+    pad(seed, rain){
       if(!ensure()) return;
-      padNodes.forEach(n => { try{ n.stop(); }catch(e){} }); padNodes = [];
+      this.stopPad();
       const r = mulberry32(seed), root = pick(r,[110,123.5,98,130.8,146.8]);
       const chord = pick(r,[[1,1.26,1.5],[1,1.19,1.5],[1,1.335,1.5,1.78],[1,1.5,2.25]]);
       const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700; lp.connect(master);
-      const g = ctx.createGain(); g.gain.value = .0; g.gain.linearRampToValueAtTime(.05, ctx.currentTime+3); g.connect(lp);
-      for(const m of chord){ for(const det of [-4,4]){ const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = root*m; o.detune.value = det; o.connect(g); o.start(); padNodes.push(o); } }
-      const len = ctx.sampleRate*2, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
-      for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
-      const n = ctx.createBufferSource(); n.buffer = buf; n.loop = true; const bp = ctx.createBiquadFilter(); bp.type = 'highpass'; bp.frequency.value = 3000;
-      const ng = ctx.createGain(); ng.gain.value = .012; n.connect(bp); bp.connect(ng); ng.connect(master); n.start(); padNodes.push(n);
+      const g = ctx.createGain(); g.gain.value = 0; g.gain.linearRampToValueAtTime(.045, ctx.currentTime+3); g.connect(lp);
+      for(const m of chord) for(const det of [-4,4]){ const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = root*m; o.detune.value = det; o.connect(g); o.start(); padNodes.push(o); }
+      const n = ctx.createBufferSource(); n.buffer = noiseBuf; n.loop = true; const hp = ctx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 3000;
+      const ng = ctx.createGain(); ng.gain.value = .012; n.connect(hp); hp.connect(ng); ng.connect(master); n.start(); padNodes.push(n);
+      if(rain){ const rs = ctx.createBufferSource(); rs.buffer = noiseBuf; rs.loop = true; const bp = ctx.createBiquadFilter(); bp.type = 'lowpass'; bp.frequency.value = 2400;
+        const rg = ctx.createGain(); rg.gain.value = .08; rs.connect(bp); bp.connect(rg); rg.connect(master); rs.start(); padNodes.push(rs); amb = {bp, rg}; this.setIndoor(indoor); }
+      else amb = null;
     },
-    stopPad(){ padNodes.forEach(n => { try{ n.stop(); }catch(e){} }); padNodes = []; },
-    toggle(){ muted = !muted; if(master) master.gain.value = muted ? 0 : .7; toast(muted ? 'AUDIO MUTE' : 'AUDIO ON', 1200); },
-    blip(v){ tone(v || 300, .05, 'square', .025); },
-    step(){ tone(70 + Math.random()*20, .06, 'triangle', .05); },
+    setIndoor(v){ indoor = v; if(amb && ctx){ amb.bp.frequency.setTargetAtTime(v ? 500 : 2400, ctx.currentTime, .2); amb.rg.gain.setTargetAtTime(v ? .05 : .08, ctx.currentTime, .2); } },
+    stopPad(){ padNodes.forEach(n => { try{ n.stop(); }catch(e){} }); padNodes = []; amb = null; },
+    toggle(){ muted = !muted; if(master) master.gain.value = muted ? 0 : .7; if(muted) voice.stop(); toast(muted ? 'AUDIO MUTE' : 'AUDIO ON', 1200); },
+    syllable(f){ tone(f, .06, 'square', .022, (Math.random()-.5)*60); },
+    step(surface){ (STEPS[surface] || STEPS.dirt)(); },
     pick(){ tone(520, .1, 'square', .04, 300); setTimeout(()=>tone(880,.14,'square',.035), 90); },
     chime(){ [523,659,784].forEach((f,i) => setTimeout(() => tone(f, .3, 'triangle', .05), i*110)); },
+    door(){ tone(220, .25, 'sawtooth', .02, -120); burst('lowpass', 300, 1, .18, .2); },
+    knock(){ [0,160,320].forEach(t => setTimeout(() => { tone(110, .07, 'sine', .16); burst('lowpass', 500, 1, .05, .12); }, t)); },
+    shutter(){ burst('highpass', 2000, 1, .04, .2); setTimeout(() => burst('highpass', 1600, 1, .06, .16), 70); },
+    beep(){ tone(1320, .08, 'square', .025); },
   };
 })();
 
@@ -1103,26 +1926,32 @@ function requestLock(){
   if(touchMode || state !== 'play') return;
   try{ const p = canvas.requestPointerLock(); if(p && p.catch) p.catch(()=>{}); }catch(e){}
 }
-function exitLock(){ if(document.pointerLockElement) { try{ document.exitPointerLock(); }catch(e){} } }
+function exitLock(){ if(document.pointerLockElement){ try{ document.exitPointerLock(); }catch(e){} } }
 document.addEventListener('pointerlockchange', () => { if(!document.pointerLockElement && state === 'play') pause(); });
 addEventListener('keydown', e => {
-  if(e.target && (e.target.tagName === 'INPUT')) { if(e.code==='Escape' && state==='dialog') closeDialog(); if(e.code==='Enter' && e.target.id==='vibe') newTape(); return; }
+  if(e.target && e.target.tagName === 'INPUT'){ if(e.code==='Escape' && state==='dialog') closeDialog(); if(e.code==='Enter' && e.target.id==='vibe') newTape(); return; }
   keys[e.code] = true;
-  if(e.code === 'KeyE' && state === 'play') interact();
-  else if(e.code === 'KeyM') sfx.toggle();
+  if(state === 'play'){
+    if(e.code === 'KeyE') interact();
+    else if(e.code === 'KeyC') setCam(!camOn);
+    else if((e.code === 'Space' || e.code === 'KeyF') && camOn) snap();
+    else if(e.code === 'KeyP'){ pause(); openAlbum('pause'); }
+  }
+  if(e.code === 'KeyM') sfx.toggle();
   else if(e.code === 'Escape'){ if(state === 'play') pause(); else if(state === 'dialog') closeDialog(); }
-  else if(state === 'dialog' && /^Digit[1-4]$/.test(e.code)){ const b = $('#d-choices').querySelectorAll('button')[+e.code.slice(5)-1]; if(b) b.click(); }
+  else if(state === 'dialog' && /^Digit[1-5]$/.test(e.code)){ const b = $('#d-choices').querySelectorAll('button')[+e.code.slice(5)-1]; if(b) b.click(); }
   if(state === 'play' && ['Space','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault();
 });
 addEventListener('keyup', e => { keys[e.code] = false; });
 addEventListener('blur', () => { for(const k in keys) keys[k] = false; });
-const look = (dx, dy, k) => { player.yaw -= dx*k; player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch - dy*k)); };
+addEventListener('wheel', e => { if(camOn && state==='play'){ camZoom = clamp(camZoom + Math.sign(e.deltaY)*4, 22, 64); updateCamMeta(); } }, {passive:true});
+const look = (dx, dy, k) => { const z = camOn ? camZoom/68 : 1; player.yaw -= dx*k*z; player.pitch = clamp(player.pitch - dy*k*z, -1.35, 1.35); };
 document.addEventListener('mousemove', e => { if(document.pointerLockElement === canvas && state === 'play') look(e.movementX, e.movementY, .0022); });
 const ptr = {};
 canvas.addEventListener('pointerdown', e => {
   if(state !== 'play') return;
   if(e.pointerType === 'mouse'){
-    if(document.pointerLockElement === canvas){ interact(); return; }
+    if(document.pointerLockElement === canvas){ if(camOn) snap(); else interact(); return; }
     requestLock(); ptr[e.pointerId] = {mode:'look', x:e.clientX, y:e.clientY}; return;
   }
   const left = e.clientX < innerWidth/2;
@@ -1132,34 +1961,44 @@ canvas.addEventListener('pointerdown', e => {
 canvas.addEventListener('pointermove', e => {
   const p = ptr[e.pointerId]; if(!p || state !== 'play') return;
   if(p.mode === 'look'){ look(e.clientX - p.x, e.clientY - p.y, touchMode ? .006 : .004); p.x = e.clientX; p.y = e.clientY; }
-  else { joy.x = Math.max(-1, Math.min(1, (e.clientX - p.ox)/55)); joy.y = Math.max(-1, Math.min(1, (e.clientY - p.oy)/55)); }
+  else { joy.x = clamp((e.clientX - p.ox)/55, -1, 1); joy.y = clamp((e.clientY - p.oy)/55, -1, 1); }
 });
 const endPtr = e => { const p = ptr[e.pointerId]; if(p && p.mode === 'move'){ joy.x = 0; joy.y = 0; } delete ptr[e.pointerId]; };
 canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
 $('#use-btn').addEventListener('click', interact);
+$('#snap-btn').addEventListener('click', snap);
 $('#menu-btn').addEventListener('click', () => { if(state === 'play') pause(); });
+$('#cam-btn').addEventListener('click', () => { if(state === 'play'){ setCam(!camOn); requestLock(); } });
 
 /* ---------- screens & flow ---------- */
-function hideAll(){ for(const id of ['#title','#loading','#pause','#ending','#hud','#dialog']) $(id).hidden = true; }
+function hideScreens(){ for(const id of ['#title','#loading','#pause','#ending','#album','#dialog']) $(id).hidden = true; }
+function refreshPause(){
+  $('#pause-sum').textContent = `${S.title} — ${S.place}. ${curStep() ? 'Current goal: ' + curStep().text + '.' : ''}`;
+  $('#photos-btn').textContent = `PHOTOS (${photos.length})`;
+  $('#shelve-btn').textContent = shelvedThisTape ? '★ ON YOUR SHELF' : '★ SAVE TO SHELF';
+}
 function pause(){
   if(state !== 'play') return;
   state = 'pause'; exitLock(); joy.x = joy.y = 0; for(const k in keys) keys[k] = false;
-  $('#pause').hidden = false; $('#hud').hidden = true;
-  $('#pause-sum').textContent = `${S.title} — ${S.place}. ${curStep() ? 'Current goal: ' + curStep().text + '.' : ''}`;
+  $('#pause').hidden = false; $('#hud').hidden = true; voice.stop();
+  refreshPause();
 }
 function resume(){ $('#pause').hidden = true; $('#hud').hidden = false; state = 'play'; requestLock(); }
 $('#resume-btn').addEventListener('click', resume);
-$('#rewind-btn').addEventListener('click', () => beginTape(S, seedNow));
+$('#photos-btn').addEventListener('click', () => openAlbum('pause'));
+$('#end-photos').addEventListener('click', () => openAlbum('ending'));
+$('#rewind-btn').addEventListener('click', () => beginTape(lastTape.S, lastTape.seed));
 $('#eject-btn').addEventListener('click', toTitle);
-$('#end-rewind').addEventListener('click', () => { if(endCtl) endCtl.abort(); beginTape(S, seedNow); });
+$('#end-rewind').addEventListener('click', () => { if(endCtl) endCtl.abort(); beginTape(lastTape.S, lastTape.seed); });
 $('#end-new').addEventListener('click', () => { if(endCtl) endCtl.abort(); newTape(); });
 $('#play-btn').addEventListener('click', () => newTape());
 $('#replay-btn').addEventListener('click', () => { if(lastTape) beginTape(lastTape.S, lastTape.seed); });
 
 let lastTape = null;
 function toTitle(){
-  hideAll(); exitLock(); state = 'title'; $('#title').hidden = false; sfx.stopPad();
+  hideScreens(); $('#hud').hidden = true; exitLock(); state = 'title'; $('#title').hidden = false; sfx.stopPad(); voice.stop(); setCam(false);
   $('#replay-btn').hidden = !lastTape;
+  renderShelf();
   attract();
 }
 function osdDate(seed){
@@ -1169,30 +2008,29 @@ function osdDate(seed){
 }
 let dateInfo = null;
 function beginTape(story, seed){
-  hideAll(); if(dlgCtl) dlgCtl.abort();
-  inv.clear(); usedItems.clear(); stepIdx = 0; playerLog = []; pendingEnding = false; dlgNPC = null;
-  buildWorld(JSON.parse(JSON.stringify(story)), seed);
+  hideScreens(); if(dlgCtl) dlgCtl.abort(); voice.stop(); setCam(false);
+  inv.clear(); usedItems.clear(); stepIdx = 0; playerLog = []; pendingEnding = false; dialogNPC = null;
+  if(!lastTape || lastTape.S !== story){ photos = []; shelvedThisTape = false; }
+  buildWorld(JSON.parse(JSON.stringify(story)), seed, false);
   lastTape = {S:story, seed};
   $('#tape-name').textContent = `"${S.title}"` + (S.ai ? '' : ' · offline tape');
   refreshHUD();
   dateInfo = osdDate(seed);
-  $('#hud').hidden = false; $('#touch').hidden = !touchMode;
-  state = 'play'; sfx.start(); sfx.pad(seed);
+  $('#hud').hidden = false; $('#touch').hidden = !touchMode; $('#cross').hidden = false;
+  state = 'play'; sfx.start(); sfx.pad(seed, S.weather==='rain'); sfx.setIndoor(false);
   toast((S.intro || S.title).toUpperCase(), 6500);
-  fadeIn();
+  fadeT = 0;
   requestLock();
 }
-let fadeT = 1;
-function fadeIn(){ fadeT = 0; }
 
 let genCtl = null, loadIv = null;
 async function newTape(){
   sfx.start();
   const vibe = str($('#vibe').value, 120);
-  const seed = (Math.random()*2**31)>>>0 ^ (vibe ? hashStr(vibe) : 0);
-  hideAll(); state = 'loading'; $('#loading').hidden = false; $('#skip-btn').hidden = !aiOK;
-  const lines = ['Adjusting tracking...','Someone taped over a cooking show...','Blowing into the cartridge. Wrong format...','Claude is writing your tape...','Casting the puppets...','Painting the sky a color...','Hiding something important...'];
-  let li = 0, t0 = performance.now();
+  const seed = ((Math.random()*2**31)>>>0) ^ (vibe ? hashStr(vibe) : 0);
+  hideScreens(); state = 'loading'; $('#loading').hidden = false; $('#skip-btn').hidden = !aiOK;
+  const lines = ['Adjusting tracking...','Someone taped over a cooking show...','Drawing floor plans on a napkin...','Claude is writing your tape...','Casting the puppets...','Teaching the puppets to talk...','Painting the sky a color...','Hiding something important...'];
+  let li = 0; const t0 = performance.now();
   $('#load-line').textContent = aiOK ? lines[3] : 'Splicing an offline tape...';
   clearInterval(loadIv);
   loadIv = setInterval(() => { li = (li+1)%lines.length; $('#load-line').textContent = aiOK ? lines[li] : 'Splicing an offline tape...'; $('#load-time').textContent = `TAPE COUNTER ${String(Math.floor((performance.now()-t0)/1000)).padStart(4,'0')}`; }, 1600);
@@ -1200,22 +2038,22 @@ async function newTape(){
   if(aiOK){
     genCtl = new AbortController();
     try{ story = normalizeStory(await sample.json(storyPrompt(seed, vibe), {modelTier:'default', cache:false, signal:genCtl.signal}), seed); }
-    catch(e){ aiFailed(e); if(e && e.code !== 'cancelled') toast('THE TAPE WAS BLANK. PLAYING AN OFFLINE ONE.', 3000); }
+    catch(e){ aiFailed(e); }
     genCtl = null;
   } else await new Promise(r => setTimeout(r, 900));
   clearInterval(loadIv);
   if(state !== 'loading') return;
-  if(!story) story = localStory(seed, vibe);
+  const blank = aiOK && !story;
+  if(!story) story = localStory(seed);
   beginTape(story, seed);
+  if(blank) toast('THE TAPE WAS BLANK, SO HERE IS AN OFFLINE ONE.', 3000);
 }
-$('#skip-btn').addEventListener('click', () => { if(genCtl) genCtl.abort(); else if(state==='loading'){} });
+$('#skip-btn').addEventListener('click', () => { if(genCtl) genCtl.abort(); });
 
-/* attract mode behind the title */
 function attract(){
   const seed = (Math.random()*2**31)>>>0;
-  buildWorld(localStory(seed), seed);
-  player.pitch = .05;
-  fadeIn();
+  buildWorld(localStory(seed), seed, true);
+  player.pitch = .05; fadeT = 0;
 }
 
 /* ---------- main loop ---------- */
@@ -1229,18 +2067,20 @@ function osdClock(){
 function frame(now){
   requestAnimationFrame(frame);
   const dt = Math.min(.05, (now - last)/1000); last = now; const t = now/1000;
-  if(scene){
+  if(Z){
     if(state === 'play') updatePlayer(dt);
-    if(state === 'title' || state === 'loading'){ player.yaw += dt*.06; player.bob += dt*2; player.x = Math.sin(t*.05)*6; player.z = 18 + Math.cos(t*.05)*6; }
+    if(state === 'title' || state === 'loading'){ player.yaw += dt*.06; player.bob += dt*2; player.x = Math.sin(t*.05)*8; player.z = 34 + Math.cos(t*.05)*8; }
     updateWorld(dt, t);
-    renderer.setRenderTarget(rt); renderer.render(scene, camera); renderer.setRenderTarget(null);
+    renderer.setRenderTarget(rt); renderer.render(Z.scene, camera); renderer.setRenderTarget(null);
   }
-  fadeT = Math.min(1, fadeT + dt*.8);
+  fadeT = Math.min(1, fadeT + dt*1.4);
   post.uniforms.time.value = t; post.uniforms.fade.value = fadeT;
   renderer.render(postScene, postCam);
+  if(snapPending) capturePhoto();
   if(state === 'play' || state === 'dialog') osdClock();
 }
 attract();
+shelf.init();
 requestAnimationFrame(frame);
 })();
 </script>
