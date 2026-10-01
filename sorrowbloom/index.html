@@ -241,9 +241,14 @@ const Input={
 const AU={
   ctx:null,ok:false,muted:false,last:{},curves:{},pluckCache:{},
   init(){
-    if(this.ctx){if(this.ctx.state==='suspended')this.ctx.resume().catch(()=>{});return}
+    // iOS reports 'interrupted' (not 'suspended') after a call or a trip to the background, so wake on anything but running
+    if(this.ctx){if(this.ctx.state!=='running'){this.ctx.resume().catch(()=>{});this.unlock()}return}
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
+    // iOS 17+: play like a music app, so the ring/silent switch doesn't mute the game
+    try{if(navigator.audioSession)navigator.audioSession.type='playback'}catch(e){}
     try{this.ctx=new AC({latencyHint:'interactive'})}catch(e){try{this.ctx=new AC()}catch(e2){return}}
+    if(this.ctx.state!=='running')this.ctx.resume().catch(()=>{});
+    this.unlock();
     const c=this.ctx;
     const nb=c.createBuffer(1,c.sampleRate*2,c.sampleRate),nd=nb.getChannelData(0);
     for(let i=0;i<nd.length;i++)nd[i]=Math.random()*2-1;
@@ -284,6 +289,8 @@ const AU={
     this.ok=true;this.applyVolume();
     Music.resync();
   },
+  // older iOS only unlocks Web Audio once a sound actually starts inside a tap: play one silent sample
+  unlock(){try{const c=this.ctx,s=c.createBufferSource();s.buffer=c.createBuffer(1,1,c.sampleRate);s.connect(c.destination);s.start(0)}catch(e){}},
   running(){return!!(this.ctx&&this.ctx.state==='running')},
   now(){return this.running()?this.ctx.currentTime:performance.now()/1000},
   applyVolume(){
@@ -3331,7 +3338,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.01-1104';
+const BUILD='2026.10.01-1113';
 const Updater={
   ready:false,
   check(){

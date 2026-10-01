@@ -2,7 +2,7 @@
 // The game page is network-first, so a phone with signal always gets the newest build and falls back to the
 // cached copy offline. Icons and fonts are served from cache and refreshed in the background.
 // version.json is never cached: the page uses it to notice updates.
-const CACHE='sorrowbloom-2026.10.01-1104';
+const CACHE='sorrowbloom-2026.10.01-1113';
 const CORE=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png','icon-maskable-512.png'];
 const FONT_CSS='https://fonts.googleapis.com/css2?family=Pirata+One&family=Silkscreen&family=VT323&display=swap';
 const FONT_HOSTS=['fonts.googleapis.com','fonts.gstatic.com'];
