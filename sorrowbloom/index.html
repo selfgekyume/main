@@ -93,7 +93,7 @@ const Save={
   d:null,
   fresh(){return{ach:{},seenI:{},gotI:{},seenE:{},bossK:{},
     stats:{runs:0,wins:0,deaths:0,kills:0,secrets:0,confess:0},
-    opts:{lang:(navigator.language||'').toLowerCase().startsWith('es')?'es':'en',master:1,music:.75,sfx:.8,shake:1,flash:true,hints:true,autofire:false,aim:false,dmgNums:false,fps:false,crt:true,grain:true,pixel:false,hiContrast:false,touchSize:1,diff:0,touchStyle:'twin',touchAssist:true,aimLine:true,flick:true,lefty:false,binds:{}},daily:{},best:0,hard:false,lastChar:'wren',tutDone:false,mods:{},chars:{}}},
+    opts:{lang:(navigator.language||'').toLowerCase().startsWith('es')?'es':'en',master:1,music:.75,sfx:.8,shake:1,flash:true,hints:true,autofire:false,aim:false,dmgNums:false,fps:false,crt:true,grain:true,pixel:false,hiContrast:false,touchSize:1,diff:0,timer:false,touchStyle:'twin',touchAssist:true,aimLine:true,flick:true,lefty:false,binds:{}},daily:{},best:0,hard:false,lastChar:'wren',tutDone:false,mods:{},chars:{},weekly:{},bestSplits:{}}},
   load(){
     let s=null;try{s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){s=null}
     const f=this.fresh();
@@ -1220,14 +1220,14 @@ function connected(room){
 }
 function buildRoom(room){
   const run=G.run,depth=run.depth,fl=FLOORS[depth-1];
-  const rng=new RNG(hashStr(run.seedStr+':'+depth+':'+room.idx));
+  const rng=new RNG(roomSeed(room));
   room.tiles=new Uint8Array(RC*RR);room.tileHp={};room.pickups=[];room.peds=[];room.objects=[];room.spec=[];room.lights=[];
   if(room.type.startsWith('tut'))buildTutRoom(room);
   else if(room.type==='normal'){
     applyLayout(room,rng,depth);
     if(rng.chance(.08)){for(let i=0;i<rng.int(2,4);i++)room.pickups.push(mkPickup(rollDrop(rng,true),CX+rng.range(-80,80),CY+rng.range(-40,40)))}
     else{
-      const n=clamp(2+Math.floor(depth*.6)+rng.int(0,2)+(run.hard?1:0)+diff().n,2,8);
+      const n=clamp(2+Math.floor(depth*.6)+rng.int(0,2)+(run.hard?1:0)+diff().n+Math.min(2,run.loop||0),2,8);
       for(let i=0;i<n;i++){
         const type=rng.pick(fl.pool);
         room.spec.push({type,elite:rng.chance(.065+depth*.005)});
@@ -1249,6 +1249,10 @@ function buildRoom(room){
   }else if(room.type==='confess'){
     for(let i=0;i<2;i++){const it=drawItem('c');if(it)room.peds.push({x:CX+(i?50:-50),y:CY,item:it,price:it.q>=3?2:1,pt:'hearts'})}
     room.objects.push({kind:'booth',x:CX,y:OY+26});
+  }else if(room.type==='rushstart'){
+    // first round: an item to start with. Later rounds: the boss already dropped one, so a heart and some pins
+    if(!G.run.round){const it=drawItem('t');if(it)room.peds.push({x:CX,y:CY-12,item:it})}
+    else{room.pickups.push(mkPickup('heart',CX-30,CY+16));for(let i=0;i<3;i++)room.pickups.push(mkPickup('pin',CX+20+i*12,CY+16))}
   }else if(room.type==='music'){
     room.objects.push({kind:'musicbox',x:CX,y:CY,used:false});
   }else if(room.type==='secret'){
@@ -1718,7 +1722,7 @@ const dropMul=()=>G.run&&G.run.mods&&G.run.mods.insomniac?2:1;
 function runMult(d,mods){let m=(DIFFS[d]||DIFFS[0]).score;for(const x of MODS)if(mods&&mods[x.id])m*=x.score;return m}
 function runTags(r){const t=[];if(r.diff)t.push(tr(DIFFS[r.diff].l));for(const x of MODS)if(r.mods&&r.mods[x.id])t.push(tr(x.n));return t.join(' · ')}
 function fitText(c,s,maxW,size,font){s=tr(s);c.font=(size||8)+'px '+(font||F_U);if(c.measureText(s).width<=maxW)return s;while(s.length>1&&c.measureText(s+'...').width>maxW)s=s.slice(0,-1);return s+'...'}
-function bulletMul(){return(1+.04*(G.run.depth-1))*(G.run.hard?1.1:1)*diff().bul}
+function bulletMul(){return(1+.04*(G.run.depth-1))*(G.run.hard?1.1:1)*diff().bul*(1+.06*(G.run.loop||0))}
 function aimAt(x,y){const p=G.player;let a=angTo(x,y,p.x,p.y);if(p.flags.hidden||p.invisible)a+=FX.range(-.3,.3);return a}
 function ebul(x,y,a,spd,o){
   o=o||{};spd*=bulletMul();
@@ -2126,8 +2130,8 @@ const EN={
     glow(c,e){c.fillStyle='#ff5fd0';c.fillRect(e.x+1,e.y-5,2,1)}},
 };
 function spawnEnemy(type,x,y,o){
-  o=o||{};const def=EN[type]||BOSS[type],depth=G.run.depth,sc=(1+.22*(depth-1))*(G.run.hard?1.25:1);
-  const e={type,def,x,y,vx:0,vy:0,kx:0,ky:0,r:def.r,hp:def.hp*(def.boss?(G.run.hard?1.2:1):sc)*diff().hp,t:0,st:0,stT:0,face:0,flash:0,burn:0,poison:0,slow:0,fear:0,stun:0,
+  o=o||{};const def=EN[type]||BOSS[type],depth=G.run.depth,sc=(1+.22*(depth-1))*(G.run.hard?1.25:1),loopMul=1+.35*(G.run.loop||0);
+  const e={type,def,x,y,vx:0,vy:0,kx:0,ky:0,r:def.r,hp:def.hp*(def.boss?(G.run.hard?1.2:1):sc)*diff().hp*loopMul,t:0,st:0,stT:0,face:0,flash:0,burn:0,poison:0,slow:0,fear:0,stun:0,
     spawnT:40,fly:!!def.fly,elite:false,dead:false,inv:false,hidden:false,seed:FX.next(),boss:!!def.boss};
   Object.assign(e,o);e.maxhp=e.hp;
   if(e.elite){e.hp*=1.8;e.maxhp=e.hp;e.r*=1.15}
@@ -2299,7 +2303,7 @@ function bossDefeated(e){
   if(!G.run.hurtBoss)grantAch('flawless');
   if(G.run.diff===3||G.run.diff===5)grantAch('sleepless');
   Save.write();
-  if(e.type==='you'){G.fx.push({t:60,f:()=>ending('kill')});Music.setMode('void');return}
+  if(e.type==='you'&&G.run.mode!=='encore'){G.fx.push({t:60,f:()=>ending('kill')});Music.setMode('void');return}
   Music.setMode('clear');
   const p=G.player;if(p.active)p.charge=Math.min(p.active.active.charge,p.charge+1);
   G.fx.push({t:70,f:()=>{
@@ -2313,6 +2317,30 @@ function ending(kind){
   if(G.state==='ending')return;
   G.run.win=kind;Save.d.stats.wins++;grantAch('win');if(kind==='hug')grantAch('hug');Save.write();
   G.state='ending';G.endT=0;Music.setMode('void');
+}
+
+// ---------- modes: encore loops, boss rush rounds, weekly challenge, speedrun splits ----------
+const ROUNDS=[{boss:'moths',d:1},{boss:'opening',d:2},{boss:'gutter',d:2},{boss:'choirm',d:3},{boss:'angel',d:4},{boss:'flatline',d:4},{boss:'bride',d:5},{boss:'saint',d:6},{boss:'you',d:7}];
+const loopKey=()=>{const r=G.run;return(r.loop?':L'+r.loop:'')+(r.mode==='rush'?':R'+r.round:'')};
+const roomSeed=room=>hashStr(G.run.seedStr+':'+G.run.depth+':'+room.idx+loopKey());
+// boss rush floor: a small room with something to pick up, and the boss through the door
+function genRushFloor(round){
+  const GW=9,GH=8,S=4+4*GW,B=S-GW,rooms=new Map();
+  const mk=(idx,type,dist)=>({idx,gx:idx%GW,gy:(idx/GW)|0,type,doors:{},visited:false,seen:true,mapped:true,cleared:false,built:false,dist});
+  const st=mk(S,'rushstart',0),bs=mk(B,'boss',1),link={secret:false,revealed:true};
+  st.doors.u={to:bs,link};bs.doors.d={to:st,link};rooms.set(S,st);rooms.set(B,bs);
+  return{depth:ROUNDS[round].d,rooms,start:st,GW,GH,rush:true};
+}
+function weekKey(d=new Date()){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())),day=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-day);const y=t.getUTCFullYear();return y+'-W'+String(Math.ceil(((t-Date.UTC(y,0,1))/864e5+1)/7)).padStart(2,'0')}
+// the same run code and two modifiers for everyone, all week
+function weeklySpec(key=weekKey()){const r=new RNG(hashStr('weekly:'+key)),mods={};for(const id of r.shuffle(MODS.map(m=>m.id)).slice(0,2))mods[id]=true;return{key,mods,seedStr:seedString((r.next()*4294967296)>>>0)}}
+function fmtTime(f){const s=f/60,m=Math.floor(s/60),r=s-m*60;return m+':'+(r<10?'0':'')+r.toFixed(1)}
+function takeSplit(){
+  const r=G.run;r.splits.push(r.frames);
+  if(!Save.d.opts.timer)return;
+  const best=(Save.d.bestSplits||{})[r.mode],i=r.splits.length-1,b=best&&best.splits[i];
+  const delta=b!=null?' ('+(r.frames<=b?'-':'+')+fmtTime(Math.abs(r.frames-b))+')':'';
+  toast(tr('SPLIT')+' '+fmtTime(r.frames)+delta,'',b!=null&&r.frames<=b?'#7cff6a':'#ffd23f');
 }
 
 // ---------- resume: the run is saved at every room, clear, pickup and trip to the background ----------
@@ -2337,7 +2365,7 @@ function snapshotRun(){
     rooms.push(o);
   }
   return{v:1,build:BUILD,at:Date.now(),
-    run:{seedStr:r.seedStr,char:r.char.id,depth:r.depth,diff:r.diff,mods:r.mods,daily:r.daily,dailyKey:r.dailyKey,items:ids(r.items),taken:r.taken,pools:r.pools,
+    run:{mode:r.mode,loop:r.loop,round:r.round,weekly:r.weekly,splits:r.splits,seedStr:r.seedStr,char:r.char.id,depth:r.depth,diff:r.diff,mods:r.mods,daily:r.daily,dailyKey:r.dailyKey,items:ids(r.items),taken:r.taken,pools:r.pools,
       candyMap:r.candyMap,candyKnown:r.candyKnown,kills:r.kills,frames:r.frames,bossKills:r.bossKills,secrets:r.secrets,newUnlocks:r.newUnlocks.map(a=>a.id)},
     player:{red:p.red,maxRed:p.maxRed,extras:p.extras,pins:p.pins,candles:p.candles,consum:p.consum,active:p.active?p.active.id:null,charge:p.charge,items:ids(p.items),
       bonus:p.bonus,mood:p.mood,trans:p.trans,revives:p.revives,fams:p.fams.map(f=>f.kind),hype:p.hype||0,tearN:p.tearN,dashes:p.dashes||0},
@@ -2350,7 +2378,8 @@ function restoreRun(d){
   const run={seed:hashStr(sr.seedStr),seedStr:sr.seedStr,rng:null,char:ch,depth:sr.depth|0||1,items:many(sr.items),taken:sr.taken||{},diff:diffId,hard:diffId===3||diffId===5,mods,
     mult:runMult(diffId,mods),daily:!!sr.daily,dailyKey:sr.dailyKey||null,tutorial:false,kills:sr.kills|0,frames:sr.frames|0,bossKills:sr.bossKills|0,killer:null,
     newUnlocks:(sr.newUnlocks||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean),pools:{},candyMap:sr.candyMap,candyKnown:sr.candyKnown||{},
-    hurtBoss:false,hurtRoom:false,secrets:sr.secrets|0,win:null,lastHurt:null};
+    hurtBoss:false,hurtRoom:false,secrets:sr.secrets|0,win:null,lastHurt:null,
+    mode:sr.mode||'story',loop:sr.loop|0,round:sr.round|0,weekly:sr.weekly||null,splits:sr.splits||[]};
   for(const k of 'tsbc')run.pools[k]=((sr.pools||{})[k]||[]).filter(id=>ITEM[id]); // a newer build may have dropped an item
   G.run=run;const p=G.player=makePlayer(ch);
   G.hist=[];G.toasts=[];G.banner=null;G.sadBar=0;G.mapToggle=false;G.tut=null;G.trans=null;
@@ -2368,7 +2397,7 @@ function restoreRun(d){
     rm.tiles=Uint8Array.from(o.tiles);rm.tileHp=o.tileHp||{};rm.outage=o.outage;rm.spec=(o.spec||[]).filter(x=>EN[x.type]);
     rm.pickups=o.pickups||[];rm.objects=o.objects||[];rm.peds=(o.peds||[]).map(x=>Object.assign({},x,{item:x.item?one(x.item):null}));
     rm.trapdoor=o.trapdoor?{x:o.trapdoor.x,y:o.trapdoor.y,t:60}:null;
-    rm.lights=[];rm.built=true;connected(rm);rm.bg=buildBG(rm,G.floorDef,new RNG(hashStr(run.seedStr+':'+run.depth+':'+rm.idx)));
+    rm.lights=[];rm.built=true;connected(rm);rm.bg=buildBG(rm,G.floorDef,new RNG(roomSeed(rm)));
   }
   G.state='play';
   enterRoom(G.floor.rooms.get(d.floor.room)||G.floor.start,null);
@@ -2431,11 +2460,12 @@ function startRun(charId,o){
   o=o||{};
   const ch=CHARS.find(c=>c.id===charId)||CHARS[0];
   // everything seeded keys off the run code, so typing one in replays that night
-  const seedStr=o.seedStr||seedString(o.seed!=null?o.seed>>>0:(Math.random()*4294967296)>>>0);
+  const seedStr=o.weekly?o.weekly.seedStr:o.seedStr||seedString(o.seed!=null?o.seed>>>0:(Math.random()*4294967296)>>>0);
   const seed=hashStr(seedStr),rng=new RNG(hashStr(seedStr+':pools'));
   let diffId=o.tutorial?0:(Save.d.opts.diff|0);if(!diffOk(diffId))diffId=0;
-  const mods={};if(!o.tutorial)for(const x of MODS)if(Save.d.mods&&Save.d.mods[x.id])mods[x.id]=true;
+  const mods={},pick=o.weekly?o.weekly.mods:Save.d.mods;if(!o.tutorial)for(const x of MODS)if(pick&&pick[x.id])mods[x.id]=true;
   const run={seed,seedStr,rng,char:ch,depth:1,items:[],taken:{},diff:diffId,hard:diffId===3||diffId===5,mods,mult:runMult(diffId,mods),daily:!!o.daily,dailyKey:o.daily?dateKey():null,
+    mode:o.mode||'story',loop:0,round:0,weekly:o.weekly?o.weekly.key:null,splits:[],
     tutorial:!!o.tutorial,kills:0,frames:0,bossKills:0,killer:null,newUnlocks:[],pools:null,candyMap:null,candyKnown:{},hurtBoss:false,hurtRoom:false,secrets:0,win:null,lastHurt:null};
   const pools={t:[],s:[],b:[],c:[]};
   for(const it of ITEMS){if(it.lock&&!isUnlocked(it.lock))continue;if(ch.items.includes(it.id))continue;for(const k of'tsbc')if(it.pool.includes(k))pools[k].push(it.id)}
@@ -2471,11 +2501,12 @@ function handMeDowns(){
 }
 function setupFloor(d,restoring){
   const run=G.run;run.depth=d;G.floorDef=FLOORS[d-1];
-  G.floor=run.tutorial?genTutorialFloor():genFloor(new RNG(hashStr(run.seedStr+':floor'+d)),d);
-  {const ar=new RNG(hashStr(run.seedStr+':alt'+d));G.floor.alt=run.tutorial?null:(d<=2&&ar.chance(.4))?'opening':(d>=3&&d<=4&&ar.chance(.4))?'angel':null}
+  const L=loopKey();
+  G.floor=run.tutorial?genTutorialFloor():run.mode==='rush'?genRushFloor(run.round):genFloor(new RNG(hashStr(run.seedStr+':floor'+d+L)),d);
+  {const ar=new RNG(hashStr(run.seedStr+':alt'+d+L));G.floor.alt=run.tutorial?null:run.mode==='rush'?ROUNDS[run.round].boss:(d<=2&&ar.chance(.4))?'opening':(d>=3&&d<=4&&ar.chance(.4))?'angel':null}
   if(run.mods.sellout)for(const r of G.floor.rooms.values())if(r.type==='treasure'){r.type='shop';r.sold=true} // Sellout: same items, but you pay
   G.tileSpr=buildTileSprites(G.floorDef,d);
-  Music.setSong(makeSong(hashStr(run.seedStr+':song'+d),d));Music.setMode('explore');
+  Music.setSong(makeSong(hashStr(run.seedStr+':song'+d+L),d));Music.setMode('explore');
   AU.setAmbience(G.floorDef.amb);AU.setMuffle(G.floorDef.water?2400:18000);
   const p=G.player;
   if(!restoring){
@@ -2492,14 +2523,19 @@ function enterFloor(d){
   const p=G.player;
   enterRoom(G.floor.start,null);
   p.x=CX;p.y=CY+10;G.hist=[];
-  const card={type:'floor',t:0,dur:150};
+  const r=G.run,card={type:'floor',t:0,dur:150};
+  if(r.mode==='rush'){card.sub=tr('ROUND {0} / {1}',r.round+1,ROUNDS.length);card.title=tr(BOSS[ROUNDS[r.round].boss].name)}
+  else if(r.loop)card.sub=tr('FLOOR')+' '+G.floorDef.ro+' · '+tr('LOOP {0}',r.loop+1);
+  if(!r.tutorial&&(d>1||r.loop||r.round))takeSplit();
   if(G.trans&&G.trans.type==='fade')G.trans.after=card;else G.trans=card;
 }
 function descend(){
   if(G.run.tutorial){finishTutorial();return}
-  if(G.run.depth>=7)return;
+  const r=G.run;let next=r.depth+1;
+  if(r.mode==='rush'){if(r.round>=ROUNDS.length-1)return;r.round++;next=ROUNDS[r.round].d}
+  else if(r.depth>=7){if(r.mode!=='encore')return;r.loop++;next=1}
   AU.play('door');
-  G.trans={type:'fade',t:0,dur:40,mid:()=>enterFloor(G.run.depth+1),keep:true};
+  G.trans={type:'fade',t:0,dur:40,mid:()=>enterFloor(next),keep:true};
 }
 function enterRoom(room,fromDir){
   G.room=room;if(!room.built)buildRoom(room);
@@ -2866,8 +2902,10 @@ function renderGame(c){
   drawHUD(c);
   if((Input.mapHeld||G.mapToggle)&&G.state==='play')drawMinimap(c,true);
   drawTutorial(c);
-  if(Save.d.opts.fps)txt(c,G.fps+' FPS',CX,4,{align:'center',col:'#7cff6a'});
-  if(trn&&trn.type==='floor'){const a=trn.t<20?trn.t/20:trn.t>110?Math.max(0,(trn.dur-trn.t)/40):1;c.globalAlpha=a;c.fillStyle='rgba(0,0,0,.55)';c.fillRect(0,96,W,62);txt(c,tr('FLOOR')+' '+G.floorDef.ro,CX,102,{align:'center',col:G.floorDef.acc});txt(c,G.floorDef.n,CX,114,{align:'center',font:F_T,size:28});c.globalAlpha=1}
+  const showTimer=Save.d.opts.timer&&!G.run.tutorial;
+  if(showTimer)txt(c,fmtTime(G.run.frames),CX,3,{align:'center',font:F_X,size:13,col:'#ffd23f'});
+  if(Save.d.opts.fps)txt(c,G.fps+' FPS',CX,showTimer?16:4,{align:'center',col:'#7cff6a'});
+  if(trn&&trn.type==='floor'){const a=trn.t<20?trn.t/20:trn.t>110?Math.max(0,(trn.dur-trn.t)/40):1;c.globalAlpha=a;c.fillStyle='rgba(0,0,0,.55)';c.fillRect(0,96,W,62);txt(c,trn.sub||tr('FLOOR')+' '+G.floorDef.ro,CX,102,{align:'center',col:G.floorDef.acc});txt(c,trn.title||G.floorDef.n,CX,114,{align:'center',font:F_T,size:28});c.globalAlpha=1}
   if(trn&&trn.type==='fade'){const h=trn.dur/2,a=trn.t<h?trn.t/h:(trn.dur-trn.t)/h;c.fillStyle=`rgba(0,0,0,${clamp(a,0,1)})`;c.fillRect(0,0,W,H)}
   let hint=null,toastY=H-26;
   if(Save.d.opts.hints&&!G.run.tutorial&&G.run.depth===1&&G.state==='play'&&G.room===G.floor.start){
@@ -3045,6 +3083,13 @@ const ES={
 'Insomniac':'Insomne','The lights never come on. Everything drops twice as much.':'Las luces nunca se prenden. Todo suelta el doble.',
 'Sellout':'Vendido','Treasure rooms become shops. Start with 20 pins, and everything costs 40% less.':'Los cuartos del tesoro se vuelven tiendas. Empiezas con 20 seguros y todo cuesta 40% menos.',
 'Hand-me-downs':'Heredado','Start with two random items, and one less heart.':'Empiezas con dos objetos al azar y un corazón menos.',
+// modes
+'WEEKLY CHALLENGE':'RETO SEMANAL','MORE MODES':'MÁS MODOS','More Modes':'Más Modos','ENCORE':'ENCORE','BOSS RUSH':'JEFES SEGUIDOS',
+'The floors never end. After the last room it loops back to the start, heavier every time. Go until you drop.':'Los pisos nunca terminan. Después del último cuarto vuelve al inicio, más pesado cada vez. Sigue hasta caer.',
+'Every boss, back to back, with an item between fights.':'Todos los jefes, uno tras otro, con un objeto entre peleas.',
+'LOOP {0}':'VUELTA {0}','ROUND {0} / {1}':'RONDA {0} / {1}','SPEEDRUN TIMER':'CRONÓMETRO','SPLIT':'PARCIAL','SPLITS':'PARCIALES','Best clear {0}':'Mejor tiempo {0}',
+'Same night and modifiers for everyone this week. Replay it as often as you like.':'La misma noche y modificadores para todos esta semana. Repítela cuantas veces quieras.',
+'(set by this week)':'(lo fija la semana)','Same night for everyone this week.':'La misma noche para todos esta semana.',
 // resume + sharing
 'CONTINUE':'CONTINUAR',"Couldn't load your last run.":'No se pudo cargar tu última partida.','SHARE':'COMPARTIR','Picture saved and link copied.':'Imagen guardada y enlace copiado.','Picture saved.':'Imagen guardada.',
 'I made it out of Sorrowbloom ({0}). Score {1}.':'Salí de Sorrowbloom ({0}). Puntos: {1}.','I made it to {0} in Sorrowbloom ({1}). Score {2}.':'Llegué hasta {0} en Sorrowbloom ({1}). Puntos: {2}.',
@@ -3287,7 +3332,7 @@ function optRows(tab){
   const sl=(k,lo,hi,after)=>({v:()=>bar((o[k]-lo)/(hi-lo)),act:(d,click)=>{let v=Math.round((o[k]+(d||1)*(hi-lo)/10)*100)/100;if(click&&v>hi+.001)v=lo;o[k]=clamp(v,lo,hi);after&&after()}});
   let rows;
   if(tab===0)rows=[{l:'LANGUAGE',v:()=>o.lang==='es'?'Español':'English',act:()=>{o.lang=o.lang==='es'?'en':'es';applyVideo()}},
-    {l:'BUTTON HINTS',...tog('hints')},{l:'AUTO-FIRE',...tog('autofire')},{l:'AIM ASSIST',...tog('aim')},{l:'DAMAGE NUMBERS',...tog('dmgNums')},{l:'SHOW FPS',...tog('fps')}];
+    {l:'BUTTON HINTS',...tog('hints')},{l:'SPEEDRUN TIMER',...tog('timer')},{l:'AUTO-FIRE',...tog('autofire')},{l:'AIM ASSIST',...tog('aim')},{l:'DAMAGE NUMBERS',...tog('dmgNums')},{l:'SHOW FPS',...tog('fps')}];
   else if(tab===1)rows=[{l:'MASTER VOLUME',...sl('master',0,1,()=>AU.applyVolume())},{l:'MUSIC',...sl('music',0,1,()=>AU.applyVolume())},{l:'SFX',...sl('sfx',0,1,()=>AU.applyVolume())},
     {l:'MUTE ALL',v:()=>onoff(AU.muted),act:()=>{AU.muted=!AU.muted;AU.applyVolume()}}];
   else if(tab===2)rows=[{l:'SCREEN SHAKE',...sl('shake',0,1)},{l:'FLASHING',v:()=>o.flash?'ON':'REDUCED',act:()=>{o.flash=!o.flash}},{l:'SCANLINES',...tog('crt',applyVideo)},{l:'FILM GRAIN',...tog('grain')},
@@ -3349,7 +3394,7 @@ function onUserGesture(){
   if(G.state==='boot'){goTitle();G.skipInput=true;
     if(LINK_CODE&&!G.linkUsed){G.linkUsed=true;
       const ch=CHARS.find(c=>c.id===Save.d.lastChar&&(!c.lock||isUnlocked(c.lock)))||CHARS[0];
-      openSetup(false,ch.id);G.setup.seed=LINK_CODE;G.setup.fromLink=true;
+      openSetup('story',ch.id);G.setup.seed=LINK_CODE;G.setup.fromLink=true;
       try{history.replaceState(null,'',location.pathname)}catch(e){}}}
 }
 function onBlur(){if(G.state==='play'||G.state==='bossintro'){G.prevState=G.state;G.state='pause';G.menu={sel:0};AU.setMuffle(900)}saveRun()}
@@ -3403,8 +3448,10 @@ function drawCandle(c,x,y){
   c.fillStyle='#e8e0d0';c.fillRect(x-4,y,8,22);c.fillStyle='#d8d0c0';c.fillRect(x-4,y+18,10,4);c.fillStyle='#ffb347';c.beginPath();c.ellipse(x,y-5,2.5,5+f,0,0,TAU);c.fill();c.fillStyle='#fff3c4';c.fillRect(x-1,y-5,2,3);
 }
 function titleItems(){
-  const it=[{id:'run',l:'DESCEND'},{id:'daily',l:'DAILY RUN'},{id:'tutorial',l:'TUTORIAL'},{id:'journal',l:'JOURNAL'},{id:'options',l:'SETTINGS'}];
-  if(!Save.d.tutDone)it.unshift(it.splice(2,1)[0]);
+  const wb=(Save.d.weekly||{})[weekKey()];
+  const it=[{id:'run',l:'DESCEND'},{id:'daily',l:'DAILY RUN'},{id:'tutorial',l:'TUTORIAL'},{id:'weekly',l:tr('WEEKLY CHALLENGE')+(wb?' · '+wb.best:'')},{id:'modes',l:'MORE MODES'},{id:'journal',l:'JOURNAL'},{id:'options',l:'SETTINGS'}];
+  if(Save.d.tutDone)it.splice(2,1);
+  else it.unshift(it.splice(2,1)[0]);
   const rs=G.runSave;if(rs){const ch=CHARS.find(c=>c.id===rs.run.char);it.unshift({id:'continue',l:tr('CONTINUE')+' · '+(ch?ch.name:'')+' '+((FLOORS[rs.run.depth-1]||FLOORS[0]).ro)})}
   const dd=Save.d.daily[dateKey()];if(dd&&dd.done){const d=it.find(i=>i.id==='daily');d.l=tr('DAILY: DONE ({0})',dd.score+(dd.diff?' · '+tr(DIFFS[dd.diff].l):''));d.dis=true}
   return it;
@@ -3413,8 +3460,10 @@ function updTitle(){
   const items=titleItems(),i=menuNav(items.length);if(i<0)return;
   const id=items[i].id;AU.play('select');
   if(id==='continue'){continueRun();return}
-  if(id==='run'){G.state='select';G.menu={sel:Math.max(0,CHARS.findIndex(c=>c.id===Save.d.lastChar))}}
-  else if(id==='daily'){if(items[i].dis){AU.play('denied');return}openSetup(true,'wren')}
+  if(id==='weekly'){openSetup('weekly','wren');return}
+  if(id==='modes'){G.state='modes';G.menu={sel:0};return}
+  if(id==='run'){G.selMode='story';G.state='select';G.menu={sel:Math.max(0,CHARS.findIndex(c=>c.id===Save.d.lastChar))}}
+  else if(id==='daily'){if(items[i].dis){AU.play('denied');return}openSetup('daily','wren')}
   else if(id==='journal'){G.state='journal';G.menu={sel:0,tab:0}}
   else if(id==='options'){G.state='options';G.optBack='title';G.menu={sel:0,tab:0}}
   else if(id==='tutorial')startTutorial();
@@ -3439,8 +3488,8 @@ function updSelect(){
   if(Input.pressed('mr')||Input.pressed('md')){m.sel=(m.sel+1)%CHARS.length;AU.play('blip')}
   let go=Input.pressed('ok');
   for(const cl of Input.clicks)CHARS.forEach((ch,i)=>{if(inRect(cl,[CX-200+i*80,70,70,110])){if(m.sel===i)go=true;m.sel=i}});
-  if(Input.pressed('back')||backBtnHit()){goTitle();return}
-  if(go){const ch=CHARS[m.sel];if(ch.lock&&!isUnlocked(ch.lock)){AU.play('denied');return}AU.play('select');openSetup(false,ch.id)}
+  if(Input.pressed('back')||backBtnHit()){if(G.selMode==='encore'||G.selMode==='rush'){G.state='modes';G.menu={sel:Math.max(0,MODE_LIST.findIndex(x=>x.id===G.selMode))}}else goTitle();return}
+  if(go){const ch=CHARS[m.sel];if(ch.lock&&!isUnlocked(ch.lock)){AU.play('denied');return}AU.play('select');openSetup(G.selMode||'story',ch.id)}
 }
 function renderSelect(c){
   drawRainBg(c,'#0b0612');
@@ -3468,27 +3517,49 @@ function renderSelect(c){
 // ---------- run setup: difficulty, controls, run code, modifiers ----------
 const SETUP_X=184,SETUP_W=288;
 const touchDevice=()=>matchMedia('(pointer:coarse)').matches;
-function openSetup(daily,charId){
+// kind: story, daily, weekly, encore or rush. Daily and weekly lock the run code (and weekly the modifiers).
+function openSetup(kind,charId){
   const o=Save.d.opts;if(!diffOk(o.diff|0))o.diff=0;
   G.run=null;G.player=null; // the setup screen always reads your saved choices, never a finished run
-  G.state='setup';G.setup={daily,charId,seed:'',err:''};G.menu={sel:setupRows().length-1};
+  G.state='setup';G.setup={kind,daily:kind==='daily'||kind==='weekly',charId,seed:'',err:'',wk:kind==='weekly'?weeklySpec():null};G.menu={sel:setupRows().length-1};
+}
+const MODE_LIST=[{id:'encore',l:'ENCORE',f:'The floors never end. After the last room it loops back to the start, heavier every time. Go until you drop.'},
+  {id:'rush',l:'BOSS RUSH',f:'Every boss, back to back, with an item between fights.'}];
+function updModes(){
+  const items=[...MODE_LIST,{id:'back',l:'BACK'}];
+  if(Input.pressed('back')||backBtnHit()){goTitle();return}
+  const i=menuNav(items.length);if(i<0)return;
+  const id=items[i].id;AU.play('select');
+  if(id==='back'){goTitle();return}
+  G.selMode=id;G.state='select';G.menu={sel:Math.max(0,CHARS.findIndex(c=>c.id===Save.d.lastChar))};
+}
+function renderModes(c){
+  drawRainBg(c);drawBackBtn(c);
+  txt(c,'More Modes',CX,18,{align:'center',font:F_T,size:28});
+  const items=[...MODE_LIST,{id:'back',l:'BACK'}];drawMenu(c,items,CX,86,22,{size:8});
+  const it=items[G.menu.sel];
+  if(it&&it.f){c.fillStyle='rgba(0,0,0,.45)';c.fillRect(70,170,340,40);wrapText(c,it.f,320,13).slice(0,3).forEach((l,i)=>txt(c,l,CX,175+i*12,{align:'center',font:F_X,size:13,col:'#d8cce4'}))}
+  if(it&&it.id==='rush'){const b=(Save.d.bestSplits||{}).rush;if(b)txt(c,tr('Best clear {0}',fmtTime(b.frames)),CX,218,{align:'center',font:F_X,size:12,col:'#ffd23f'})}
 }
 function cycleRow(list,get,set){return{cycle:true,act:d=>{const n=list.length,i=list.indexOf(get());set(list[((i<0?0:i)+(d<0?n-1:1))%n])}}}
 function setupRows(){
-  const o=Save.d.opts,s=G.setup,mods=Save.d.mods||(Save.d.mods={});
+  const o=Save.d.opts,s=G.setup,wk=s.wk,mods=wk?wk.mods:Save.d.mods||(Save.d.mods={});
   return[
     {l:'DIFFICULTY',v:()=>(DIFFS[o.diff|0]||DIFFS[0]).l,f:()=>tr((DIFFS[o.diff|0]||DIFFS[0]).f)+(diffLockHint(o.diff|0)?' '+diffLockHint(o.diff|0):''),...cycleRow(diffOrder(),()=>o.diff|0,v=>{o.diff=v})},
     {l:'CONTROLS',v:()=>curStyle().l,f:()=>tr(curStyle().f)+(touchDevice()?'':' '+tr('(touch screens)')),...cycleRow(TOUCH_STYLES.map(x=>x.id),()=>curStyle().id,v=>{o.touchStyle=v})},
     {l:'AUTO-FIRE',v:()=>o.autofire?'ON':'OFF',f:()=>'Fires at the nearest enemy you have a clear shot at, whenever you are not aiming yourself.',cycle:true,act:()=>{o.autofire=!o.autofire}},
-    s.daily?{l:'SEED',v:()=>dateKey(),f:()=>'Everyone gets the same night today.',dis:true}
+    wk?{l:'SEED',v:()=>wk.key,f:()=>'Same night and modifiers for everyone this week. Replay it as often as you like.',dis:true}
+    :s.daily?{l:'SEED',v:()=>dateKey(),f:()=>'Everyone gets the same night today.',dis:true}
       :{l:'SEED',v:()=>s.seed||'RANDOM',f:()=>s.err||(s.fromLink&&s.seed?'This run code came from a shared link. Tap to change it.':'Tap to type a run code from a past run or a friend. Leave it empty for a random night.'),seed:true},
-    ...MODS.map(x=>({l:x.n,v:()=>mods[x.id]?'ON':'OFF',f:()=>x.f,toggle:true,act:()=>{mods[x.id]=!mods[x.id]}})),
+    ...MODS.map(x=>({l:x.n,v:()=>mods[x.id]?'ON':'OFF',f:()=>wk?tr(x.f)+' '+tr('(set by this week)'):x.f,toggle:true,dis:!!wk,act:()=>{mods[x.id]=!mods[x.id]}})),
     {l:'DESCEND',go:true,f:()=>'Start the run.'}];
 }
 function setupRect(i,n){return i===n-1?[SETUP_X+64,176,SETUP_W-128,17]:[SETUP_X,(i<4?36+i*14:104+(i-4)*13)-3,SETUP_W,13]}
 function beginRun(){
   const s=G.setup;AU.play('select');Save.write();
-  if(s.daily)startRun('wren',{daily:true,seed:hashStr('daily:'+dateKey())});else startRun(s.charId,s.seed?{seedStr:s.seed}:{});
+  if(s.kind==='daily')startRun('wren',{daily:true,seed:hashStr('daily:'+dateKey())});
+  else if(s.kind==='weekly')startRun('wren',{weekly:weeklySpec()});
+  else startRun(s.charId,Object.assign({mode:s.kind==='encore'||s.kind==='rush'?s.kind:'story'},s.seed?{seedStr:s.seed}:{}));
 }
 function updSetup(){
   const m=G.menu,s=G.setup,rows=setupRows(),n=rows.length;
@@ -3503,7 +3574,7 @@ function updSetup(){
   for(const cl of Input.clicks)for(let i=0;i<n;i++)if(inRect(cl,setupRect(i,n))){m.sel=i;const ax=m.arrowX&&m.arrowX[i];use(i,ax!=null&&cl.x>ax-16&&cl.x<ax+14?-1:1,true);break}
   Input.clicks.length=0;if(G.state!=='setup')return;
   const d=(Input.pressed('mr')?1:0)-(Input.pressed('ml')?1:0),r=rows[m.sel];
-  if(d&&r&&(r.cycle||r.toggle)){r.act(d);AU.play('blip');Save.write()}
+  if(d&&r&&!r.dis&&(r.cycle||r.toggle)){r.act(d);AU.play('blip');Save.write()}
   m.rects=rows.map((_,i)=>setupRect(i,n));
   const i=menuNav(n);if(i>=0)use(i,1,false);
 }
@@ -3515,7 +3586,7 @@ function setupTapUp(p){
 function renderSetup(c){
   drawRainBg(c,'#0b0612');
   const s=G.setup,m=G.menu,rows=setupRows(),n=rows.length,ch=CHARS.find(x=>x.id===s.charId)||CHARS[0];
-  txt(c,s.daily?'DAILY RUN':'before you go',CX,6,{align:'center',font:F_T,size:22});
+  txt(c,{daily:'DAILY RUN',weekly:'WEEKLY CHALLENGE',encore:'ENCORE',rush:'BOSS RUSH'}[s.kind]||'before you go',CX,6,{align:'center',font:F_T,size:22});
   drawBackBtn(c);
   // left: who you are, and how it has gone for them so far
   const px=90,st=(Save.d.chars||{})[ch.id]||{runs:0,wins:0,best:0,deep:0};
@@ -3527,9 +3598,9 @@ function renderSetup(c){
   [['RUNS',st.runs],['WINS',st.wins],['BEST',st.best]].forEach(([k,v],i)=>{txt(c,k,26,136+i*13,{col:'#8f86a0'});txt(c,String(v),154,136+i*13,{align:'right',col:'#fff'})});
   txt(c,'DEEPEST',26,175,{col:'#8f86a0'});
   txt(c,st.deep?FLOORS[st.deep-1].ro+' · '+tr(FLOORS[st.deep-1].n):tr('not yet'),px,188,{align:'center',font:F_X,size:12,col:'#d8cce4'});
-  if(s.daily)txt(c,'Same night for everyone today.',px,206,{align:'center',font:F_X,size:11,col:'#8f86a0'});
+  if(s.daily)wrapText(c,s.kind==='weekly'?'Same night for everyone this week.':'Same night for everyone today.',136,11).slice(0,2).forEach((l,i)=>txt(c,l,px,200+i*10,{align:'center',font:F_X,size:11,col:'#8f86a0'}));
   // right: the options
-  const mult=runMult(Save.d.opts.diff|0,Save.d.mods||{});
+  const mult=runMult(Save.d.opts.diff|0,s.wk?s.wk.mods:Save.d.mods||{});
   txt(c,'MODIFIERS',SETUP_X+8,92,{col:'#ff8fc8'});
   txt(c,tr('SCORE ×{0}',mult.toFixed(2)),SETUP_X+SETUP_W-8,92,{align:'right',col:mult>1.001?'#ffd23f':mult<.999?'#7ff5e6':'#8f86a0'});
   m.arrowX=[];
@@ -3628,7 +3699,7 @@ function renderPause(c){
   drawMenu(c,['RESUME','SETTINGS','QUIT RUN'],90,80,16);
   txt(c,'CONTROLS',20,150,{col:'#a89cb8'});[['move','move'],['cry','shoot'],['dash','dash'],['candle','bomb'],['item','active'],['use','use'],['map','map'],['pause','pause']].forEach(([l,a],k)=>{txt(c,l,20,162+k*9,{size:8,col:'#6a607a'});txt(c,glyph(a),84,162+k*9,{size:8,col:'#d8cce4'})});
   const p=G.player,r=G.run;
-  txt(c,tr('FLOOR')+' '+G.floorDef.ro+' · '+tr(G.floorDef.n),190,22,{col:G.floorDef.acc});
+  txt(c,G.run.mode==='rush'?tr('ROUND {0} / {1}',G.run.round+1,ROUNDS.length)+' · '+tr(G.floorDef.n):tr('FLOOR')+' '+G.floorDef.ro+' · '+tr(G.floorDef.n)+(G.run.loop?' · '+tr('LOOP {0}',G.run.loop+1):''),190,22,{col:G.floorDef.acc});
   {const tags=runTags(r);txt(c,fitText(c,tr('SEED')+' '+r.seedStr+(r.daily?' ('+tr('DAILY')+')':'')+(tags?' · '+tags:''),W-200),190,34,{col:'#6a607a'})}
   const st=[['WEAPON',p.weapon?tr(ITEMS.find(i=>i.weapon===p.weapon).n):tr('tears')],['DAMAGE',p.dmg.toFixed(2)],['TEARS/S',p.rate.toFixed(2)],['RANGE',p.range|0],['SPEED',p.spd.toFixed(2)],['SHOT SPEED',p.ss.toFixed(2)],['LUCK',p.luck|0]];
   st.forEach(([k,v],i)=>{txt(c,k,190,48+i*10,{col:'#a89cb8'});txt(c,String(v),300,48+i*10,{col:'#fff'})});
@@ -3655,9 +3726,12 @@ function renderBossIntro(c){
 function toSummary(){
   const r=G.run,p=G.player,won=!!r.win;
   const mins=r.frames/3600;
-  r.score=Math.max(0,Math.round((r.depth*1000+r.kills*10+r.items.length*25+r.bossKills*500+(won?5000:0)-mins*20)*(r.mult||1)));
+  const progress=r.mode==='rush'?r.round+1:r.mode==='encore'?(r.loop||0)*7+r.depth:r.depth;
+  r.score=Math.max(0,Math.round((progress*1000+r.kills*10+r.items.length*25+r.bossKills*500+(won?5000:0)-mins*20)*(r.mult||1)));
   if(r.score>Save.d.best)Save.d.best=r.score;
   if(r.daily){Save.d.daily[r.dailyKey||dateKey()]={done:true,score:r.score,diff:r.diff}}
+  if(r.weekly){const w=Save.d.weekly||(Save.d.weekly={}),cur=w[r.weekly];if(!cur||r.score>cur.best)w[r.weekly]={best:r.score,diff:r.diff}}
+  if(won&&r.mode!=='encore'){const bs=Save.d.bestSplits||(Save.d.bestSplits={}),k=r.mode,cur=bs[k];if(!cur||r.frames<cur.frames)bs[k]={frames:r.frames,splits:r.splits.slice()}}
   if(!r.tutorial){const cs=charStats(r.char.id);cs.best=Math.max(cs.best,r.score);cs.deep=Math.max(cs.deep,r.depth);if(won)cs.wins++}
   Save.write();clearRunSave();
   G.state='summary';G.sumT=0;G.shareMsg='';Music.setMode('void');AU.setMuffle(18000);
@@ -3683,7 +3757,10 @@ function renderSummary(c){
   const y0=Math.max(104,64+epl.length*13),mods=MODS.filter(x=>r.mods&&r.mods[x.id]).map(x=>tr(x.n)).join(' · ');
   // difficulty (and the multiplier from it and any modifiers) sits right next to the score
   const score=r.score+' · '+tr(DIFFS[r.diff||0].l)+(Math.abs((r.mult||1)-1)>.001?' ×'+r.mult.toFixed(2):'')+(r.score>=Save.d.best?'  '+tr('(best)'):'');
-  const lines=[['FLOOR',FLOORS[r.depth-1].ro+' · '+tr(FLOORS[r.depth-1].n)],['KILLED BY',tr(won?'nothing, in the end':r.killer||'something')],['TIME',`${Math.floor(r.frames/3600)}:${String(Math.floor(r.frames/60)%60).padStart(2,'0')}`],['KILLS',r.kills],['SCORE',score],
+  const where=r.mode==='rush'?tr('ROUND {0} / {1}',r.round+1,ROUNDS.length):FLOORS[r.depth-1].ro+' · '+tr(FLOORS[r.depth-1].n)+(r.loop?' · '+tr('LOOP {0}',r.loop+1):'');
+  const timer=Save.d.opts.timer;
+  const lines=[['FLOOR',where],['KILLED BY',tr(won?'nothing, in the end':r.killer||'something')],['TIME',timer?fmtTime(r.frames):`${Math.floor(r.frames/3600)}:${String(Math.floor(r.frames/60)%60).padStart(2,'0')}`],
+    ...(timer&&r.splits.length?[['SPLITS',fitText(c,r.splits.map(fmtTime).join(' · '),W-(CX-30)-12)]]:[]),['KILLS',r.kills],['SCORE',score],
     ...(mods?[['MODIFIERS',fitText(c,mods,W-(CX-30)-12)]]:[]),['SEED',r.seedStr+(r.daily?' '+tr('daily'):'')]];
   const lh=Math.min(11,(172-y0)/lines.length);
   lines.forEach(([k,v],i)=>{txt(c,k,CX-120,y0+i*lh,{col:'#8f86a0',alpha:Math.min(1,Math.max(0,(t-40)/20))});txt(c,String(v),CX-30,y0+i*lh,{col:'#fff',alpha:Math.min(1,Math.max(0,(t-40)/20))})});
@@ -3744,6 +3821,7 @@ function step(){
     case'title':updTitle();break;
     case'select':updSelect();break;
     case'setup':updSetup();break;
+    case'modes':updModes();break;
     case'journal':updJournal();break;
     case'options':updOptions();break;
     case'play':updPlay();break;
@@ -3761,6 +3839,7 @@ function render(){
   if(s==='boot'||s==='title')renderTitle(B);
   else if(s==='select')renderSelect(B);
   else if(s==='setup')renderSetup(B);
+  else if(s==='modes')renderModes(B);
   else if(s==='journal')renderJournal(B);
   else if(s==='summary')renderSummary(B);
   else if(s==='ending')renderEnding(B);
@@ -3790,7 +3869,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.01-1659';
+const BUILD='2026.10.01-1704';
 const Updater={
   ready:false,
   check(){
