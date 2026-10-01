@@ -1,0 +1,1246 @@
+<title>Midnight Rental</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Silkscreen:wght@400;700&display=swap">
+<style>
+/* Layout: full-bleed low-res game canvas; a VHS on-screen-display layer floats above it. Single dark look by design. */
+:root{
+  --bg:#05060c;
+  --osd:#eef3ff;
+  --osd-dim:#8f98bf;
+  --tape:#1f2fd6;
+  --tape-deep:#0a1170;
+  --mark:#ffd23f;
+  --panel:rgba(5,7,18,.88);
+  --font-osd:"VT323", ui-monospace, "Courier New", monospace;
+  --font-title:"Silkscreen", "VT323", ui-monospace, monospace;
+  color-scheme:dark;
+}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--osd);font-family:var(--font-osd);font-size:22px;overflow:hidden;user-select:none;-webkit-user-select:none}
+#game{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;image-rendering:pixelated}
+.scan{position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(to bottom,rgba(0,0,0,0) 0,rgba(0,0,0,0) 2px,rgba(0,0,0,.18) 3px);mix-blend-mode:multiply}
+.osd{position:fixed;text-shadow:2px 2px 0 #000,0 0 6px rgba(160,190,255,.45);letter-spacing:.04em;pointer-events:none;line-height:1}
+#osd-tl{top:calc(env(safe-area-inset-top,0px) + 16px);left:20px;font-size:30px}
+#osd-tl small{display:block;font-size:20px;color:var(--osd-dim);margin-top:6px;max-width:44vw}
+#osd-tr{top:calc(env(safe-area-inset-top,0px) + 16px);right:20px;text-align:right;max-width:46vw;font-size:22px}
+#osd-tr .lbl{color:var(--mark);font-size:18px;display:block;margin-bottom:4px;letter-spacing:.12em}
+#osd-tr .inv{color:var(--osd-dim);font-size:18px;display:block;margin-top:6px}
+#osd-br{bottom:calc(env(safe-area-inset-bottom,0px) + 16px);right:20px;font-size:26px;font-variant-numeric:tabular-nums}
+#cross{position:fixed;left:50%;top:50%;width:4px;height:4px;margin:-2px 0 0 -2px;background:var(--osd);box-shadow:0 0 0 1px #000;pointer-events:none}
+#prompt{position:fixed;left:50%;bottom:22%;transform:translateX(-50%);font-size:26px;background:rgba(0,0,0,.55);padding:4px 12px;white-space:nowrap}
+#toast{position:fixed;left:50%;top:22%;transform:translateX(-50%);font-size:30px;color:var(--mark);text-align:center;max-width:min(90vw,820px);white-space:pre-line;line-height:1.1}
+#menu-btn{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 12px);left:16px;pointer-events:auto;font-size:22px}
+
+/* dialogue */
+#dialog{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);transform:translateX(-50%);width:min(760px,calc(100% - 32px));background:var(--panel);border:2px solid var(--osd);box-shadow:4px 4px 0 #000;padding:14px 18px 16px;display:flex;flex-direction:column;gap:10px}
+#d-name{color:var(--mark);font-size:24px;letter-spacing:.1em}
+#d-name span{color:var(--osd-dim);font-size:18px;letter-spacing:.02em;margin-left:10px}
+#d-text{font-size:26px;line-height:1.15;min-height:3.4em;max-height:40vh;overflow:auto;cursor:pointer}
+#d-choices{display:flex;flex-direction:column;gap:4px}
+#d-form{display:flex;gap:8px}
+#d-input{flex:1;min-width:0;background:#000;color:var(--osd);border:1px solid var(--osd-dim);font:inherit;font-size:22px;padding:4px 8px}
+#d-input:focus{outline:2px solid var(--mark);outline-offset:1px}
+
+button{font:inherit;color:var(--osd);background:transparent;border:0;cursor:pointer;text-align:left;padding:2px 4px;font-size:24px}
+button:hover,button:focus-visible{color:#000;background:var(--osd);outline:none}
+button:disabled{opacity:.4;cursor:default;background:transparent;color:var(--osd)}
+.choice::before{content:"\25B8  "}
+.btn-box{border:2px solid var(--osd);padding:6px 16px;text-align:center}
+
+/* full screens */
+.screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;padding:24px 16px;overflow:auto}
+.screen-in{width:min(640px,100%);display:flex;flex-direction:column;gap:18px}
+#title{background:linear-gradient(to bottom,rgba(5,6,12,.1),rgba(5,6,12,.72) 60%)}
+.logo{font-family:var(--font-title);font-weight:700;font-size:clamp(34px,8vw,64px);line-height:.95;letter-spacing:.02em;text-shadow:3px 3px 0 var(--tape),6px 6px 0 #000;text-wrap:balance}
+.lede{font-size:26px;line-height:1.15;max-width:34ch;text-shadow:2px 2px 0 #000}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:20px;color:var(--osd-dim);letter-spacing:.08em;text-transform:uppercase}
+.field input{background:rgba(0,0,0,.7);color:var(--osd);border:2px solid var(--osd-dim);font:inherit;font-size:24px;padding:6px 10px}
+.field input:focus{outline:none;border-color:var(--mark)}
+.row{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.status{font-size:20px;color:var(--osd-dim);text-shadow:1px 1px 0 #000}
+.status b{color:var(--mark);font-weight:400}
+.keys{font-size:19px;color:var(--osd-dim);line-height:1.3;text-shadow:1px 1px 0 #000}
+.keys kbd{font:inherit;color:var(--osd);border:1px solid var(--osd-dim);padding:0 5px}
+
+#loading,#ending{background:var(--tape)}
+#loading .screen-in,#ending .screen-in{text-shadow:2px 2px 0 var(--tape-deep)}
+.big{font-size:44px;letter-spacing:.06em}
+.blink{animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:0}}
+#end-text{font-size:28px;line-height:1.2;white-space:pre-wrap;min-height:5em}
+#pause{background:rgba(5,6,12,.72)}
+
+#touch{position:fixed;right:20px;bottom:calc(env(safe-area-inset-bottom,0px) + 70px)}
+#touch button{width:76px;height:76px;border:2px solid var(--osd);text-align:center;background:rgba(0,0,0,.4);border-radius:50%}
+@media (prefers-reduced-motion:reduce){.blink{animation:none}}
+@media (max-width:560px){body{font-size:20px}#osd-tl{font-size:24px}#osd-tr{font-size:19px}#osd-br{font-size:20px}#d-text{font-size:22px}}
+</style>
+
+<canvas id="game"></canvas>
+<div class="scan"></div>
+
+<div id="hud" hidden>
+  <div id="osd-tl" class="osd">PLAY &#9654;<small id="tape-name"></small></div>
+  <div id="osd-tr" class="osd"><span class="lbl">OBJECTIVE</span><span id="obj"></span><span class="inv" id="inv"></span></div>
+  <div id="osd-br" class="osd"></div>
+  <div id="cross"></div>
+  <div id="prompt" class="osd" hidden></div>
+  <div id="toast" class="osd" hidden></div>
+  <button id="menu-btn" class="osd" type="button">&#10074;&#10074; MENU</button>
+  <div id="touch" hidden><button id="use-btn" type="button">USE</button></div>
+</div>
+
+<div id="dialog" hidden>
+  <div id="d-name"></div>
+  <div id="d-text" title="Click to skip"></div>
+  <div id="d-choices"></div>
+  <form id="d-form" hidden>
+    <input id="d-input" maxlength="140" autocomplete="off" placeholder="Say something else...">
+    <button type="submit" class="btn-box">SAY</button>
+  </form>
+</div>
+
+<section id="title" class="screen">
+  <div class="screen-in">
+    <div class="status">&#9632; STOP &nbsp; CH 03</div>
+    <h1 class="logo">Midnight<br>Rental</h1>
+    <p class="lede">Every tape holds a different story. Nobody knows what's on it until you press play.</p>
+    <div class="field">
+      <label for="vibe">Write on the label (optional)</label>
+      <input id="vibe" maxlength="120" placeholder="a bakery that only opens during eclipses">
+    </div>
+    <div class="row">
+      <button id="play-btn" class="btn-box" type="button">&#9654; PLAY NEW TAPE</button>
+      <button id="replay-btn" class="btn-box" type="button" hidden>&#8634; REWIND LAST TAPE</button>
+    </div>
+    <div class="status" id="ai-status">Checking the tape deck...</div>
+    <div class="keys"><kbd>WASD</kbd> walk &middot; <kbd>Mouse</kbd> look &middot; <kbd>Shift</kbd> run &middot; <kbd>E</kbd> or click to talk / pick up &middot; <kbd>Esc</kbd> menu &middot; <kbd>M</kbd> mute<br>On a phone: drag the left side to walk, the right side to look.</div>
+  </div>
+</section>
+
+<section id="loading" class="screen" hidden>
+  <div class="screen-in">
+    <div class="big">TRACKING<span class="blink">_</span></div>
+    <div id="load-line" style="font-size:28px"></div>
+    <div class="status" id="load-time" style="color:var(--osd)"></div>
+    <div class="row"><button id="skip-btn" class="btn-box" type="button">PLAY AN OFFLINE TAPE INSTEAD</button></div>
+  </div>
+</section>
+
+<section id="pause" class="screen" hidden>
+  <div class="screen-in">
+    <div class="big">&#10074;&#10074; PAUSE</div>
+    <div id="pause-sum" class="lede"></div>
+    <div class="row">
+      <button id="resume-btn" class="btn-box" type="button">&#9654; RESUME</button>
+      <button id="rewind-btn" class="btn-box" type="button">&#8634; REWIND</button>
+      <button id="eject-btn" class="btn-box" type="button">&#9167; EJECT</button>
+    </div>
+  </div>
+</section>
+
+<section id="ending" class="screen" hidden>
+  <div class="screen-in">
+    <div class="big">END OF TAPE</div>
+    <div id="end-title" style="font-size:26px;color:var(--mark)"></div>
+    <div id="end-text"></div>
+    <div class="row">
+      <button id="end-new" class="btn-box" type="button">&#9654; PLAY NEW TAPE</button>
+      <button id="end-rewind" class="btn-box" type="button">&#8634; REWIND</button>
+    </div>
+  </div>
+</section>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(() => {
+"use strict";
+const $ = s => document.querySelector(s);
+
+/* ---------- random helpers ---------- */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const pick = (r,a) => a[Math.floor(r()*a.length)];
+const rr = (r,a,b) => a + (b-a)*r();
+const shuffle = (r,a) => { a=a.slice(); for(let i=a.length-1;i>0;i--){const j=Math.floor(r()*(i+1));[a[i],a[j]]=[a[j],a[i]];} return a; };
+const hashStr = s => { let h=2166136261; for(const c of s){h^=c.charCodeAt(0);h=Math.imul(h,16777619);} return h>>>0; };
+const HEX = /^#[0-9a-fA-F]{6}$/;
+const str = (v,n) => typeof v==='string' ? v.trim().slice(0,n) : '';
+const lsGet = k => { try { return localStorage.getItem(k); } catch(e){ return null; } };
+const lsSet = (k,v) => { try { localStorage.setItem(k,v); } catch(e){} };
+
+/* ---------- world vocab ---------- */
+const TIMES = {
+  day:  {sky:'#9fc3e0', near:14, far:72, hemi:.95, sun:'#fff4dd', sunI:.7, lantern:0,   mix:.5,  night:false},
+  dusk: {sky:'#c47a68', near:8,  far:50, hemi:.72, sun:'#ff9a5a', sunI:.5, lantern:.7,  mix:.45, night:false},
+  night:{sky:'#0c1330', near:3,  far:32, hemi:.38, sun:'#6a7ab8', sunI:.18,lantern:1.4, mix:.22, night:true},
+  dawn: {sky:'#d6a8bf', near:8,  far:56, hemi:.78, sun:'#ffd0b0', sunI:.5, lantern:.3,  mix:.45, night:false},
+};
+const WEATHERS = ['clear','rain','snow','fireflies','fog'];
+const HATS = ['none','cap','tall','bow','antenna','beanie'];
+const SETTINGS = {
+  town:       {ground:'grass', gcol:['#4d6b3c','#5b6e45'], path:'asphalt', structs:['house','shop','shop'], props:['lamp','tree','bench','car','mailbox','bush'], n:8, np:26, edge:'tree'},
+  forest:     {ground:'grass', gcol:['#3d5a34','#4a5e3a'], path:'dirt',    structs:['cabin','tent','tent'], props:['pine','pine','tree','rock','log','campfire'], n:5, np:70, edge:'pine'},
+  motel:      {ground:'asphalt',gcol:['#6a6660','#5c5a58'],path:null,      structs:['motel','shop'], props:['car','car','lamp','cactus','box','bush'], n:3, np:24, edge:'bush'},
+  seaside:    {ground:'sand',  gcol:['#c9b48a','#d4c09a'], path:'planks',  structs:['shack','shack','tower'], props:['post','boat','rock','umbrella','box'], n:6, np:28, edge:'rock', water:true},
+  snowvillage:{ground:'snow',  gcol:['#dfe6ef','#e8ecf2'], path:'dirt',    structs:['cabin','house'], props:['pine','pine','snowman','lamp','rock'], n:7, np:40, edge:'pine'},
+  carnival:   {ground:'dirt',  gcol:['#7a6248','#6e5a44'], path:null,      structs:['tent','stall','stall','ferris'], props:['lamp','balloon','box','bench'], n:9, np:24, edge:'fence'},
+  farm:       {ground:'grass', gcol:['#5e7a3e','#6d7e44'], path:'dirt',    structs:['barn','tower','shack'], props:['hay','hay','fence','tree','crop','crop'], n:4, np:40, edge:'fence'},
+  suburb:     {ground:'grass', gcol:['#557a42','#4f7040'], path:'asphalt', structs:['house','house'], props:['tree','mailbox','car','lamp','bush','bush'], n:9, np:30, edge:'bush'},
+};
+const SET_WORDS = {town:'small town street',forest:'woods and campsite',motel:'roadside motel lot',seaside:'beach and pier',snowvillage:'snowy village',carnival:'night carnival',farm:'farm',suburb:'suburban cul-de-sac'};
+const PAINT = [['red','#a8453a'],['mint','#7fb89a'],['yellow','#d8b64a'],['blue','#4d6fa8'],['pink','#d08aa0'],['white','#d8d4c8'],['green','#5f8a4a'],['orange','#c8773a'],['lilac','#9a86b8'],['brown','#7a5a40'],['teal','#3f8f8f']];
+
+/* ---------- offline tape parts ---------- */
+const PLACES = {town:['Pell Hollow','Little Ardent','Wicker Bend','Marrow Falls','Saint Dunmore'],forest:['Camp Kettle','Lantern Woods','Hushpine Trail','Oldgrowth Camp'],motel:['the Starlite Motor Inn','the Blue Heron Motel','the Palomino Lodge'],seaside:["Gull's Rest",'Brine Point','Lowtide Harbor'],snowvillage:['Frostmere','Sleet Hollow','Kindle Ridge'],carnival:['the Moonbeam Carnival',"Doyle's Traveling Fair",'the Lucky Penny Midway'],farm:['Honeycomb Farm','Pettibone Acres','Crooked Gate Farm'],suburb:['Maple Circle','Tidewater Estates','Fernwood Court']};
+const NAMES = ['Marla','Otis','Grandpa Wendell','Bea','Lionel','Dot','Vern','Ida','Chester','Pim','Rosalind','Gus','Nell','Barnaby','Tuesday','Mr. Fennick','Loretta','Hollis','June','Sprocket','Mabel','Doctor Pudding'];
+const ROLES = ['the night mechanic','a retired magician','the postmaster','a kid on a bike','the ice-cream man','a lonely scarecrow',"the town's only DJ",'a lighthouse keeper','a traveling salesman','the lunch lady','a very tall stranger','the mayor (probably)','a birdwatcher','a snowplow driver','the fortune teller','a mall Santa on vacation'];
+const PERSONAS = ['talks in riddles','extremely polite','nervous and fast-talking','sleepy and kind','overly dramatic','completely deadpan','cheerful but forgetful','secretly sentimental','suspicious of birds','hums between sentences'];
+const ITEMS = [['brass key','Warm, like someone was holding it.'],['jar of moths','They glow a little. Friendly moths.'],['birthday candle','Half melted. Someone already made a wish.'],['unlabeled cassette',"Side B is just someone laughing."],['tiny accordion','It wheezes a sad little C major.'],['crayon map','X marks a spot that is also, apparently, a cow.'],['lighthouse bulb','Heavy. It hums when you hold it up.'],['left shoe','Size enormous. Recently polished.'],['snow globe with no snow','A tiny man inside is waving.'],['library book','87 years overdue.'],['blue ribbon',"FIRST PLACE. For what, it doesn't say."],['pocket radio','Tuned to a station that only plays weather.'],['wedding cake topper','The groom is missing his head.'],['bag of marbles','One of them is definitely an eye. A glass one. Probably.']];
+const PREMISES = [
+  '{A} has lost the {item}, and tonight is the one night a year it matters in {place}.',
+  'The {item} went missing from {place}. {A} is sure it walked off on its own.',
+  '{A} wants to give {B} a present before sunrise. The present is a {item}, and it is somewhere out there.',
+  'Nobody in {place} can sleep until the {item} is back with {B}.',
+  'You were only passing through {place}, but {A} has been waiting for someone exactly like you.',
+];
+const TITLES = ['The {Item} Situation','A Night in {place}','{A} and the {Item}','Somebody Tell {B}','The Long Walk to {B}','Late Checkout','Please Return the {Item}'];
+const ENDINGS = [
+  '{B} holds the {item} up to the light, and everyone in {place} finally goes to sleep. {A} waves at you from very far away. The tape runs out before you can wave back.',
+  'It turns out the {item} was never the point. {C} says so, anyway, and then hums the rest of the night away. You leave {place} feeling lighter than when you arrived.',
+  'In the morning nobody in {place} remembers you, except {B}, who leaves a note on your windshield that just says THANK YOU in crayon.',
+];
+const FLAVOR = ['The streetlights hum a different song on Tuesdays.',"I haven't blinked since 1994. Don't tell anyone.",'Did you hear that? No? Good. Me neither.','My cousin is a vending machine. We don\'t talk anymore.','This place is smaller than it looks and bigger than it feels.','You have a very trustworthy face. Like a lamp.','Sometimes the sky here buffers.','I used to be taller. Long story. Not a good one.','If you see a dog wearing a hat, say hello for me.','Everyone here is somebody\'s favorite person.'];
+
+/* ---------- story generation ---------- */
+function localStory(seed, vibe){
+  const r = mulberry32(seed);
+  const setting = pick(r, Object.keys(SETTINGS));
+  const place = pick(r, PLACES[setting]);
+  const names = shuffle(r, NAMES), roles = shuffle(r, ROLES), pers = shuffle(r, PERSONAS);
+  const nChars = 3 + (r()<.5?1:0);
+  const chars = [];
+  for(let i=0;i<nChars;i++){
+    chars.push({id:'c'+(i+1), name:names[i], role:roles[i], personality:pers[i],
+      look:{body:pick(r,PAINT)[1], head:pick(r,['#e8c8a8','#c89878','#8a6048','#d8d0c0','#b8c8a0','#e0b0b8']), hat:pick(r,HATS), height:+rr(r,.8,1.3).toFixed(2)},
+      greeting:''});
+  }
+  const its = shuffle(r, ITEMS);
+  const two = r()<.4;
+  const items = [{id:'i1', name:its[0][0], description:its[0][1]}];
+  if(two) items.push({id:'i2', name:its[1][0], description:its[1][1]});
+  const fill = s => s.replace(/\{A\}/g,chars[0].name).replace(/\{B\}/g,chars[1].name).replace(/\{C\}/g,chars[2].name)
+    .replace(/\{place\}/g,place).replace(/\{item\}/g,items[0].name).replace(/\{Item\}/g,items[0].name.replace(/\b\w/g,c=>c.toUpperCase()));
+  const intro = fill(pick(r,PREMISES));
+  chars.forEach((c,i) => { c.greeting = i===0 ? pick(r,['Oh! A new face. Good. I need a new face.','There you are. I think. Are you the one?','Hello, stranger. Do you like errands?']) : pick(r,['Evening.','You look lost. Everyone does, here.','Hi. Sorry. I was thinking about soup.','Oh, hello. Mind the puddles.']); });
+  const steps = [
+    {type:'talk', target:'c1', text:`Talk to ${chars[0].name}`},
+    {type:'find', target:'i1', text:`Find the ${items[0].name}`},
+    {type:'give', target:'c2', item:'i1', text:`Bring the ${items[0].name} to ${chars[1].name}`},
+  ];
+  if(two){ steps.push({type:'find', target:'i2', text:`Find the ${items[1].name}`}); steps.push({type:'give', target:'c1', item:'i2', text:`Bring the ${items[1].name} to ${chars[0].name}`}); }
+  else steps.push({type:'talk', target:'c3', text:`Tell ${chars[2].name} what happened`});
+  const sky = pick(r,['#9fc3e0','#c47a68','#0c1330','#d6a8bf','#8a7ab0','#6aa0a0']);
+  return {
+    title: fill(pick(r,TITLES)), place, tagline:'', setting, time:pick(r,Object.keys(TIMES)), weather:pick(r,WEATHERS),
+    colors:{sky, ground:pick(r,SETTINGS[setting].gcol), accent:pick(r,PAINT)[1]},
+    intro, characters:chars, items, steps, ending: fill(pick(r,ENDINGS)), ai:false,
+  };
+}
+
+function normalizeStory(s, seed){
+  if(!s || typeof s!=='object') return null;
+  const r = mulberry32(seed+7);
+  const out = {ai:true};
+  out.title = str(s.title,60) || 'Untitled Tape';
+  out.place = str(s.place,40) || 'somewhere';
+  out.tagline = str(s.tagline,140);
+  out.setting = SETTINGS[s.setting] ? s.setting : pick(r,Object.keys(SETTINGS));
+  out.time = TIMES[s.time] ? s.time : 'dusk';
+  out.weather = WEATHERS.includes(s.weather) ? s.weather : 'clear';
+  const c = s.colors || {};
+  out.colors = {sky:HEX.test(c.sky)?c.sky:TIMES[out.time].sky, ground:HEX.test(c.ground)?c.ground:SETTINGS[out.setting].gcol[0], accent:HEX.test(c.accent)?c.accent:'#d8b64a'};
+  out.intro = str(s.intro,500);
+  out.ending = str(s.ending,600);
+  const idMap = {};
+  out.characters = (Array.isArray(s.characters)?s.characters:[]).slice(0,4).map((ch,i) => {
+    const id='c'+(i+1); if(ch && ch.id) idMap[ch.id]=id;
+    const lk = (ch&&ch.look)||{};
+    return {id, name:str(ch&&ch.name,28)||pick(r,NAMES), role:str(ch&&ch.role,60)||pick(r,ROLES), personality:str(ch&&ch.personality,160)||pick(r,PERSONAS),
+      greeting:str(ch&&ch.greeting,220), look:{body:HEX.test(lk.body)?lk.body:pick(r,PAINT)[1], head:HEX.test(lk.head)?lk.head:'#e0c0a0', hat:HATS.includes(lk.hat)?lk.hat:'none', height:Math.min(1.4,Math.max(.7,+lk.height||1))}};
+  });
+  if(out.characters.length<2) return null;
+  out.items = (Array.isArray(s.items)?s.items:[]).slice(0,3).map((it,i) => { const id='i'+(i+1); if(it&&it.id) idMap[it.id]=id; return {id, name:str(it&&it.name,40)||'odd object', description:str(it&&it.description,160)}; });
+  if(!out.items.length) return null;
+  const has = id => out.characters.some(x=>x.id===id) || out.items.some(x=>x.id===id);
+  const map = id => idMap[id] || (has(id)?id:null);
+  const steps = [];
+  const found = new Set();
+  for(const st of (Array.isArray(s.steps)?s.steps:[]).slice(0,6)){
+    if(!st) continue;
+    const t = map(st.target), text = str(st.text,70);
+    if(st.type==='talk' && t && t[0]==='c') steps.push({type:'talk', target:t, text:text||'Talk to '+charName(out,t)});
+    else if(st.type==='find' && t && t[0]==='i'){ if(!found.has(t)){ found.add(t); steps.push({type:'find', target:t, text:text||'Find the '+itemName(out,t)}); } }
+    else if(st.type==='give' && t && t[0]==='c'){
+      const it = map(st.item); if(!it || it[0]!=='i') continue;
+      if(!found.has(it)){ found.add(it); steps.push({type:'find', target:it, text:'Find the '+itemName(out,it)}); }
+      steps.push({type:'give', target:t, item:it, text:text||`Bring the ${itemName(out,it)} to ${charName(out,t)}`});
+    }
+  }
+  if(steps.length<2) return null;
+  out.steps = steps;
+  return out;
+}
+const charName = (S,id) => (S.characters.find(c=>c.id===id)||{}).name || 'someone';
+const itemName = (S,id) => (S.items.find(c=>c.id===id)||{}).name || 'thing';
+
+const INSPIRE = ['lost luggage','a retirement party','a haunted jukebox that only plays polka','time running backwards','a bake sale','the last bus','a missing parrot','a wedding','a talent show','a comet','a broken ferris wheel','an eclipse','a pie contest','a runaway snowplow','a family reunion','a stolen moon','a cursed but friendly hat','insomnia','a lighthouse with no light','a very old dog','a mix tape','the town mascot quitting','an apology nobody made','a garage sale','a pen pal','a lunar tide','a lost tooth','a flooded bowling alley','a chess rivalry','a puppet show'];
+const TONES = ['whimsical','melancholy but warm','absurd comedy','dreamlike and surreal','cozy mystery','bittersweet','deadpan weird','small-town soap opera'];
+
+function storyPrompt(seed, vibe){
+  const r = mulberry32(seed);
+  const words = shuffle(r,INSPIRE).slice(0,3).join(', ');
+  const tone = pick(r,TONES);
+  const setHint = vibe ? '' : `Prefer the "${pick(r,Object.keys(SETTINGS))}" setting unless another fits your idea much better.`;
+  return `You are writing one short story for a first-person, low-poly PS1-era indie game, in the visual style of Puppet Combo (VHS grain, fog, crude puppet-like people, small odd places). It must NOT be horror or scary: make it ${tone}. Every tape should feel completely unlike any other. Seed ${seed}.
+${vibe ? `The player wrote this on the tape label, build the story around it: "${vibe}"` : `Loose inspiration (use or twist freely): ${words}.`}
+${setHint}
+
+The 3D world is built from a fixed kit, so "setting" must be one of: ${Object.entries(SET_WORDS).map(([k,v])=>`${k} (${v})`).join(', ')}.
+The player can only: walk around, talk to characters, pick up items, and hand items to characters. Design the quest from those actions only.
+
+Reply with ONLY one JSON object in exactly this shape:
+{"title":"tape title, max 6 words","place":"name of the place","tagline":"one intriguing line","setting":"town","time":"day|dusk|night|dawn","weather":"clear|rain|snow|fireflies|fog","colors":{"sky":"#rrggbb","ground":"#rrggbb","accent":"#rrggbb"},
+"intro":"2-3 sentences in second person setting up the situation",
+"characters":[{"id":"c1","name":"...","role":"short role","personality":"how they talk, one sentence","greeting":"their first line to the player, max 25 words","look":{"body":"#rrggbb","head":"#rrggbb","hat":"none|cap|tall|bow|antenna|beanie","height":1.0}}],
+"items":[{"id":"i1","name":"short item name","description":"one odd sentence"}],
+"steps":[{"type":"talk","target":"c1","text":"Talk to ..."},{"type":"find","target":"i1","text":"Find ..."},{"type":"give","target":"c2","item":"i1","text":"Bring ... to ..."}],
+"ending":"3 sentences in second person, a satisfying strange ending"}
+Rules: 3 or 4 characters, 1 or 2 items, 3 to 5 steps. The first step is a talk. Every give must come after the find for that item. Step text under 50 characters. Characters' heights between 0.7 and 1.4. Colors should suit the time of day. Keep names and dialogue specific and memorable.`;
+}
+
+/* ---------- Claude connection ---------- */
+let sample = null, aiOK = false, aiChecked = false;
+(async () => {
+  try { if(window.claude && window.claude.use) sample = await window.claude.use('sample'); } catch(e){ sample = null; }
+  aiOK = !!sample; aiChecked = true; updateAiStatus();
+})();
+setTimeout(() => { if(!aiChecked){ aiChecked = true; updateAiStatus(); } }, 11000);
+function updateAiStatus(){
+  const el = $('#ai-status');
+  if(!aiChecked){ el.textContent = 'Checking the tape deck...'; return; }
+  el.innerHTML = aiOK
+    ? '<b>&#9679; AI DECK ONLINE.</b> Claude writes every tape and voices every character. The first tape asks your permission.'
+    : '<b>&#9675; OFFLINE DECK.</b> Tapes are assembled from built-in parts. Open this page on claude.ai for AI-written tapes.';
+}
+function aiFailed(e){
+  if(!e) return;
+  if(['not_granted','sampling_disabled','capability_disabled','capability_removed','not_declared','session_expired'].includes(e.code)){ aiOK = false; updateAiStatus(); }
+}
+
+/* ---------- renderer & PS1 post ---------- */
+const canvas = $('#game');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:false});
+renderer.setPixelRatio(1);
+const LOW_H = 240;
+const rt = new THREE.WebGLRenderTarget(320, LOW_H, {minFilter:THREE.NearestFilter, magFilter:THREE.NearestFilter});
+const SNAP = {value:new THREE.Vector2(160,120)};
+const post = new THREE.ShaderMaterial({
+  uniforms:{t:{value:rt.texture}, res:{value:new THREE.Vector2(320,LOW_H)}, time:{value:0}, fade:{value:1}},
+  vertexShader:'varying vec2 vUv; void main(){ vUv=uv; gl_Position=vec4(position.xy,0.,1.); }',
+  fragmentShader:`
+    uniform sampler2D t; uniform vec2 res; uniform float time; uniform float fade; varying vec2 vUv;
+    float b2(vec2 a){ a=floor(a); return fract(dot(a, vec2(.5, a.y*.75))); }
+    float b4(vec2 a){ return b2(.5*a)*.25 + b2(a); }
+    float h(vec2 p){ return fract(sin(dot(p, vec2(12.9898,78.233)))*43758.5453); }
+    void main(){
+      vec2 uv = vUv;
+      float line = floor(uv.y*res.y);
+      float jitter = step(.994, h(vec2(line, floor(time*9.)))) * .006;
+      float band = smoothstep(.0,.03, abs(fract(uv.y*.7 - time*.06) - .5));
+      uv.x += sin(time*1.7 + line*.07)*.0007 + jitter + (1.-band)*.004;
+      float px = 1./res.x;
+      vec3 c = vec3(texture2D(t, uv+vec2(px,0.)).r, texture2D(t, uv).g, texture2D(t, uv-vec2(px,0.)).b);
+      c += (1.-band)*.035;
+      vec2 p = floor(vUv*res);
+      c = floor(c*31. + b4(p)) / 31.;
+      c += (h(p + fract(time)*91.) - .5) * .045;
+      vec2 q = vUv - .5; c *= 1. - dot(q,q)*.7;
+      gl_FragColor = vec4(c*fade, 1.);
+    }`,
+  depthTest:false, depthWrite:false,
+});
+const postScene = new THREE.Scene(), postCam = new THREE.OrthographicCamera(-1,1,1,-1,0,1);
+postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2), post));
+const camera = new THREE.PerspectiveCamera(68, 4/3, .08, 200);
+camera.rotation.order = 'YXZ';
+
+function psx(m){
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uSnap = SNAP;
+    sh.vertexShader = 'uniform vec2 uSnap;\n' + sh.vertexShader.replace('#include <project_vertex>',
+      '#include <project_vertex>\n{ vec4 p = gl_Position; if(p.w > 0.0){ p.xy = floor(p.xy/p.w*uSnap + .5)/uSnap*p.w; } gl_Position = p; }');
+  };
+  return m;
+}
+function resize(){
+  const w = innerWidth, hgt = innerHeight;
+  renderer.setSize(w, hgt, false);
+  const lw = Math.max(160, Math.round(LOW_H*w/hgt));
+  rt.setSize(lw, LOW_H); post.uniforms.res.value.set(lw, LOW_H); SNAP.value.set(lw/2, LOW_H/2);
+  camera.aspect = w/hgt; camera.updateProjectionMatrix();
+}
+addEventListener('resize', resize); resize();
+
+/* ---------- textures & materials ---------- */
+const TEX = {};
+function getTex(kind){
+  if(TEX[kind]) return TEX[kind];
+  const c = document.createElement('canvas'); c.width = c.height = 32;
+  const x = c.getContext('2d'); const r = mulberry32(hashStr(kind));
+  const px = (i,j,v) => { v=Math.max(0,Math.min(255,v|0)); x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(i,j,1,1); };
+  const noise = (b,a) => { for(let i=0;i<32;i++) for(let j=0;j<32;j++) px(i,j,b+(r()-.5)*a); };
+  const rect = (v,X,Y,W,H) => { x.fillStyle=`rgb(${v},${v},${v})`; x.fillRect(X,Y,W,H); };
+  switch(kind){
+    case 'grass': noise(200,50); for(let k=0;k<70;k++){const i=r()*32|0,j=r()*32|0; px(i,j,135); px(i,(j+1)%32,160);} break;
+    case 'dirt': noise(190,70); break;
+    case 'sand': noise(228,30); break;
+    case 'snow': noise(246,14); break;
+    case 'asphalt': noise(175,60); for(let k=0;k<30;k++) px(r()*32|0,r()*32|0,240); break;
+    case 'planks': noise(205,30); for(let j=0;j<32;j+=8) rect(120,0,j,32,1); for(let k=0;k<5;k++) px(r()*32|0,r()*32|0,110); break;
+    case 'brick': rect(150,0,0,32,32); for(let row=0;row<4;row++){ const off=row%2?8:0; for(let b=-1;b<2;b++) rect(185+(r()-.5)*40, b*16+off+1, row*8+1, 14, 6); } break;
+    case 'siding': noise(228,14); for(let j=0;j<32;j+=4) rect(160,0,j+3,32,1); break;
+    case 'shingle': rect(130,0,0,32,32); for(let row=0;row<4;row++) for(let b=0;b<6;b++) rect(200+(r()-.5)*50, b*8-(row%2)*4, row*8, 7, 7); break;
+    case 'stripe': for(let i=0;i<32;i++) rect((Math.floor(i/4)%2)?255:125, i,0,1,32); break;
+    case 'water': noise(205,26); for(let k=0;k<18;k++) rect(255, r()*32|0, r()*32|0, 3, 1); break;
+    case 'bark': noise(170,40); for(let i=0;i<32;i+=3) rect(120,i,0,1,32); break;
+    case 'leaf': noise(190,80); break;
+    default: noise(218,28);
+  }
+  const t = new THREE.CanvasTexture(c);
+  t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  return (TEX[kind] = t);
+}
+let MATS = {};
+function mat(color, kind, o={}){
+  const k = [color,kind,o.basic?1:0,o.rep||1,o.side||0].join('|');
+  if(MATS[k]) return MATS[k];
+  const p = {color:new THREE.Color(color)};
+  if(kind){ const t = getTex(kind).clone(); t.needsUpdate = true; t.repeat.set(o.rep||1, o.rep||1); p.map = t; }
+  const m = psx(o.basic ? new THREE.MeshBasicMaterial(p) : new THREE.MeshLambertMaterial(p));
+  if(o.side) m.side = THREE.DoubleSide;
+  return (MATS[k] = m);
+}
+
+/* ---------- world state ---------- */
+let scene = null, S = null, seedNow = 0;
+let rects = [], circles = [], interactables = [], animated = [], structures = [];
+let lantern = null, weather = null, water = null, bounds = null;
+const player = {x:0, z:30, yaw:0, pitch:0, bob:0};
+const inv = new Set(), usedItems = new Set();
+let stepIdx = 0, playerLog = [], pendingEnding = false;
+
+function disposeScene(){
+  if(!scene) return;
+  const ms = new Set(Object.values(MATS));
+  scene.traverse(o => { if(o.geometry) o.geometry.dispose(); if(o.material) [].concat(o.material).forEach(m => ms.add(m)); });
+  ms.forEach(m => { if(m.map) m.map.dispose(); m.dispose(); });
+  MATS = {};
+}
+
+function mesh(geo, m, x=0, y=0, z=0, parent){ const o = new THREE.Mesh(geo, m); o.position.set(x,y,z); (parent||scene).add(o); return o; }
+const BOX = (w,h,d) => new THREE.BoxGeometry(w,h,d);
+
+function roof(g, w, d, h, y, m){
+  const geo = new THREE.ConeGeometry(Math.SQRT1_2, 1, 4); geo.rotateY(Math.PI/4);
+  const o = mesh(geo, m, 0, y + h/2, 0, g); o.scale.set(w, h, d); return o;
+}
+function windowMat(){ return mat(S && TIMES[S.time].night ? '#ffd27a' : (S&&S.time==='dusk' ? '#e8a060' : '#2a3548'), null, {basic:true}); }
+
+/* structure builders: return {group, w, d, label} with local footprint w x d, front facing +z */
+function buildStructure(type, r){
+  const g = new THREE.Group();
+  const [pname, pcol] = pick(r, PAINT);
+  const accent = S.colors.accent;
+  let w, d, label;
+  const door = (dw, dh, z) => mesh(BOX(dw,dh,.12), mat('#3a2a22','planks'), 0, dh/2, z, g);
+  const win = (x, y, z, ww=.9, wh=.8) => mesh(BOX(ww,wh,.1), windowMat(), x, y, z, g);
+  switch(type){
+    case 'house': case 'barn': {
+      const barn = type==='barn';
+      w = barn ? rr(r,8,10) : rr(r,5,7); d = barn ? rr(r,7,9) : rr(r,4.5,6); const h = barn ? 5 : rr(r,2.8,3.6);
+      const col = barn ? pick(r,['#9a3a2e','#8a4a3a','#a0503a']) : pcol;
+      mesh(BOX(w,h,d), mat(col, barn?'planks':pick(r,['siding','brick','planks']), {rep:2}), 0, h/2, 0, g);
+      roof(g, w+.8, d+.8, barn?3.4:rr(r,1.6,2.6), h, mat(pick(r,['#5a4a48','#3e4450','#6a3a30','#4a5a4a']),'shingle',{rep:3}));
+      door(barn?2.6:1, barn?3.2:2, d/2+.05);
+      if(!barn){ win(-w/3, h*.6, d/2+.06); win(w/3, h*.6, d/2+.06); win(w/2+.06, h*.6, 0).rotation.y = Math.PI/2; }
+      label = barn ? 'the barn' : `the ${pname} house`;
+      break;
+    }
+    case 'shop': {
+      w = rr(r,5,8); d = rr(r,4,6); const h = rr(r,3,4);
+      mesh(BOX(w,h,d), mat(pcol,'brick',{rep:2}), 0, h/2, 0, g);
+      mesh(BOX(w+.3,.3,d+.3), mat('#5a5048','noise'), 0, h+.15, 0, g);
+      const aw = mesh(BOX(w*.9,.12,1.4), mat(accent,'stripe',{rep:2}), 0, h*.72, d/2+.6, g); aw.rotation.x = .35;
+      win(-w/4, h*.42, d/2+.06, w*.35, 1.3); door(1.1, 2.1, d/2+.05).position.x = w/4;
+      label = `the ${pname} shop`;
+      break;
+    }
+    case 'cabin': case 'shack': {
+      w = rr(r,4,5.5); d = rr(r,3.5,5); const h = rr(r,2.4,3);
+      mesh(BOX(w,h,d), mat(type==='cabin'?'#8a6a4a':pcol,'planks',{rep:2}), 0, h/2, 0, g);
+      if(type==='cabin') roof(g, w+.8, d+.8, 1.8, h, mat('#4a3a34','shingle',{rep:3}));
+      else { const rf = mesh(BOX(w+.6,.2,d+.8), mat('#6a6a6a','noise'), 0, h+.25, 0, g); rf.rotation.x = .12; }
+      door(1, 2, d/2+.05); win(w/3, h*.6, d/2+.06, .7, .7);
+      label = type==='cabin' ? 'the log cabin' : `the ${pname} shack`;
+      break;
+    }
+    case 'tent': {
+      const rad = rr(r,2,3); w = d = rad*2;
+      const t = mesh(new THREE.ConeGeometry(rad, rr(r,3,4.5), 6, 1, true), mat(r()<.5?accent:pcol,'stripe',{rep:3, side:true}), 0, 1.9, 0, g);
+      t.position.y = t.geometry.parameters.height/2;
+      mesh(new THREE.SphereGeometry(.15,4,3), mat(accent,null,{basic:true}), 0, t.geometry.parameters.height+.1, 0, g);
+      label = `the ${pname} tent`;
+      break;
+    }
+    case 'stall': {
+      w = 3.2; d = 2.2;
+      mesh(BOX(w,1,d*.5), mat(pcol,'planks'), 0, .5, .3, g);
+      for(const [px,pz] of [[-1.5,-1],[1.5,-1],[-1.5,1],[1.5,1]]) mesh(BOX(.12,2.6,.12), mat('#d8d4c8','noise'), px, 1.3, pz, g);
+      roof(g, w+.6, d+.6, 1.1, 2.6, mat(accent,'stripe',{rep:2}));
+      for(let i=0;i<5;i++) mesh(new THREE.SphereGeometry(.14,4,3), mat(pick(r,PAINT)[1],null,{basic:true}), -1.2+i*.6, 1.15, .4, g);
+      label = `the ${pname} game stall`;
+      break;
+    }
+    case 'tower': {
+      w = d = 4; const h = rr(r,8,12);
+      const stripe = S.setting === 'seaside';
+      mesh(new THREE.CylinderGeometry(1.4,1.9,h,8), mat(stripe?'#e8e0d8':'#b8b8b0', stripe?'stripe':'siding', {rep:2}), 0, h/2, 0, g).rotation.z = 0;
+      if(stripe){ mesh(new THREE.CylinderGeometry(1.1,1.1,1.2,8), mat('#ffe9a0',null,{basic:true}), 0, h+.6, 0, g); mesh(new THREE.ConeGeometry(1.4,1.2,8), mat('#a8453a','noise'), 0, h+1.8, 0, g); label = 'the lighthouse'; }
+      else { mesh(new THREE.SphereGeometry(1.4,8,4,0,Math.PI*2,0,Math.PI/2), mat('#8a8a88','noise'), 0, h, 0, g); label = 'the silo'; }
+      door(1, 2, 1.75);
+      break;
+    }
+    case 'motel': {
+      w = rr(r,18,24); d = 5; const h = 3.2;
+      mesh(BOX(w,h,d), mat(pcol,'siding',{rep:3}), 0, h/2, 0, g);
+      mesh(BOX(w+1,.25,d+1.6), mat('#5a5048','noise'), 0, h+.12, .3, g);
+      const n = Math.floor(w/3);
+      for(let i=0;i<n;i++){ const px = -w/2 + 1.5 + i*3; door(1,2.1,d/2+.05).position.x = px; win(px+.95, 1.6, d/2+.06, .7, .7); }
+      mesh(BOX(.25,6,.25), mat('#6a6a6a','noise'), w/2+1.5, 3, d/2+1, g);
+      mesh(BOX(2.6,1.4,.3), mat(accent,null,{basic:true}), w/2+1.5, 6.3, d/2+1, g);
+      label = 'the motel office';
+      break;
+    }
+    case 'ferris': {
+      w = 4; d = 14;
+      const wheel = new THREE.Group(); wheel.position.set(0,8,0); g.add(wheel);
+      const tm = mat(accent,null,{basic:true});
+      mesh(new THREE.TorusGeometry(6,.15,4,16), tm, 0,0,0, wheel).rotation.y = Math.PI/2;
+      for(let i=0;i<8;i++){ const a = i/8*Math.PI*2; const sp = mesh(BOX(.1,12,.1), mat('#d8d4c8','noise'), 0,0,0, wheel); sp.rotation.x = a;
+        const cab = mesh(BOX(1,1,1), mat(pick(r,PAINT)[1],'noise'), 0, Math.cos(a)*6, Math.sin(a)*6, wheel); cab.userData.cab = true; }
+      for(const s of [-1,1]){ const leg = mesh(BOX(.25,9,.25), mat('#8a8a88','noise'), 0, 4, s*2.2, g); leg.rotation.x = s*.25; }
+      animated.push(dt => { wheel.rotation.x += dt*.12; wheel.children.forEach(c => { if(c.userData.cab) c.rotation.x = -wheel.rotation.x; }); });
+      label = 'the ferris wheel';
+      break;
+    }
+  }
+  return {group:g, w, d, label};
+}
+
+/* props: return {obj, rad} rad = collision radius (0 = walk through) */
+function buildProp(type, r){
+  const g = new THREE.Group(); let rad = 0;
+  const night = TIMES[S.time].night || S.time==='dusk';
+  switch(type){
+    case 'tree': { const h = rr(r,1.4,2.2); mesh(new THREE.CylinderGeometry(.18,.25,h,5), mat('#5a4030','bark'), 0,h/2,0,g);
+      mesh(new THREE.DodecahedronGeometry(rr(r,1.1,1.7),0), mat(pick(r,['#4a7a3a','#5a8a40','#6a7a30','#8a6a3a']),'leaf'), 0,h+1,0,g); rad=.35; break; }
+    case 'pine': { const s = rr(r,.8,1.4); mesh(new THREE.CylinderGeometry(.15,.2,1,5), mat('#4a3428','bark'), 0,.5,0,g);
+      const col = S.setting==='snowvillage' && r()<.5 ? '#c8d8d0' : pick(r,['#2e5a3a','#3a6040','#2a4a38']);
+      for(let i=0;i<3;i++) mesh(new THREE.ConeGeometry((1.4-i*.35)*s, 1.6*s, 6), mat(col,'leaf'), 0, 1.2+i*1.0*s, 0, g); rad=.4; break; }
+    case 'bush': mesh(new THREE.DodecahedronGeometry(rr(r,.5,.9),0), mat(pick(r,['#3e6a38','#4e7a3a']),'leaf'), 0,.45,0,g); rad=.5; break;
+    case 'rock': { const s=rr(r,.4,1.1); const o = mesh(new THREE.DodecahedronGeometry(s,0), mat('#7a7874','noise'), 0,s*.5,0,g); o.rotation.set(r()*3,r()*3,0); rad=s*.8; break; }
+    case 'lamp': { mesh(BOX(.14,3.4,.14), mat('#3a3a3e','noise'), 0,1.7,0,g); mesh(BOX(.5,.3,.5), mat(night?'#ffe0a0':'#9a9a90',null,{basic:night}), 0,3.4,0,g); rad=.2; g.userData.lamp = true; break; }
+    case 'bench': mesh(BOX(1.8,.12,.5), mat('#7a5a3a','planks'), 0,.5,0,g); mesh(BOX(1.8,.5,.1), mat('#7a5a3a','planks'), 0,.8,-.22,g); mesh(BOX(1.6,.5,.4), mat('#3a3a3a','noise'), 0,.25,0,g); rad=.6; break;
+    case 'car': { const col = pick(r,PAINT)[1]; mesh(BOX(1.8,.8,3.8), mat(col,'noise'), 0,.65,0,g); mesh(BOX(1.6,.7,2), mat(col,'noise'), 0,1.4,-.2,g);
+      mesh(BOX(1.62,.5,1.9), mat('#1a2028',null,{basic:true}), 0,1.45,-.2,g);
+      for(const [x,z] of [[-.9,1.2],[.9,1.2],[-.9,-1.2],[.9,-1.2]]) mesh(BOX(.25,.6,.6), mat('#141414',null), x,.3,z,g); rad=1.7; break; }
+    case 'mailbox': mesh(BOX(.1,1,.1), mat('#5a4a3a','planks'), 0,.5,0,g); mesh(BOX(.35,.35,.6), mat(pick(r,PAINT)[1],'noise'), 0,1.1,0,g); rad=.2; break;
+    case 'log': { const o = mesh(new THREE.CylinderGeometry(.3,.3,2.4,6), mat('#6a4a34','bark'), 0,.3,0,g); o.rotation.z = Math.PI/2; rad=.9; break; }
+    case 'campfire': { for(let i=0;i<6;i++){ const a=i/6*Math.PI*2; mesh(new THREE.DodecahedronGeometry(.2,0), mat('#6a6a6a','noise'), Math.cos(a)*.6,.1,Math.sin(a)*.6,g); }
+      const f = mesh(new THREE.ConeGeometry(.35,.9,4), mat('#ffa040',null,{basic:true}), 0,.45,0,g); animated.push((dt,t)=>{ f.scale.y = .8+Math.sin(t*13)*.2; f.rotation.y += dt*3; });
+      g.userData.fire = true; rad=.7; break; }
+    case 'cactus': mesh(BOX(.4,2,.4), mat('#4a7a4a','noise'), 0,1,0,g); mesh(BOX(.3,.8,.3), mat('#4a7a4a','noise'), .4,1.2,0,g); rad=.3; break;
+    case 'box': mesh(BOX(.9,.9,.9), mat('#9a7a50','planks'), 0,.45,0,g); if(r()<.5) mesh(BOX(.7,.7,.7), mat('#9a7a50','planks'), .1,1.25,0,g); rad=.6; break;
+    case 'post': mesh(new THREE.CylinderGeometry(.15,.15,1.4,5), mat('#6a5a4a','bark'), 0,.7,0,g); rad=.2; break;
+    case 'boat': { const b = mesh(BOX(1.4,.5,3.2), mat(pick(r,PAINT)[1],'planks'), 0,.25,0,g); b.rotation.z = .15; rad=1.4; break; }
+    case 'umbrella': mesh(BOX(.08,2.2,.08), mat('#d8d4c8','noise'), 0,1.1,0,g); mesh(new THREE.ConeGeometry(1.3,.5,8), mat(S.colors.accent,'stripe',{rep:2}), 0,2.3,0,g); rad=.15; break;
+    case 'snowman': mesh(new THREE.SphereGeometry(.55,6,4), mat('#f0f0f4','snow'), 0,.5,0,g); mesh(new THREE.SphereGeometry(.4,6,4), mat('#f0f0f4','snow'), 0,1.25,0,g);
+      mesh(new THREE.SphereGeometry(.28,6,4), mat('#f0f0f4','snow'), 0,1.8,0,g); mesh(new THREE.ConeGeometry(.06,.3,4), mat('#e07a30',null), 0,1.8,.35,g).rotation.x = Math.PI/2; rad=.5; break;
+    case 'balloon': { const col = pick(r,PAINT)[1]; const b = mesh(new THREE.SphereGeometry(.35,5,4), mat(col,null,{basic:true}), 0,2.6,0,g); mesh(BOX(.02,2.2,.02), mat('#ffffff',null,{basic:true}), 0,1.2,0,g);
+      const ph = r()*6; animated.push((dt,t)=>{ b.position.y = 2.6+Math.sin(t*1.3+ph)*.12; }); break; }
+    case 'hay': { const o = mesh(new THREE.CylinderGeometry(.7,.7,1.3,8), mat('#c8a850','grass'), 0,.7,0,g); o.rotation.z = Math.PI/2; rad=.8; break; }
+    case 'fence': for(let i=-1;i<=1;i++) mesh(BOX(.12,1,.12), mat('#8a7050','planks'), i*1.2,.5,0,g); mesh(BOX(2.6,.12,.08), mat('#8a7050','planks'), 0,.8,0,g); mesh(BOX(2.6,.12,.08), mat('#8a7050','planks'), 0,.45,0,g); rad=0; g.userData.fence = true; break;
+    case 'crop': for(let i=0;i<5;i++) mesh(BOX(.2,rr(r,.5,1),.2), mat('#6a9a3a','leaf'), i*.5-1,.4,0,g); rad=0; break;
+  }
+  return {obj:g, rad};
+}
+
+function textSign(lines, accent){
+  const c = document.createElement('canvas'); c.width = 128; c.height = 64; const x = c.getContext('2d');
+  x.fillStyle = '#e8e0cc'; x.fillRect(0,0,128,64); x.fillStyle = accent; x.fillRect(0,0,128,6); x.fillRect(0,58,128,6);
+  x.fillStyle = '#1a1a22'; x.textAlign = 'center'; x.textBaseline = 'middle';
+  x.font = '10px monospace'; x.fillText(lines[0], 64, 18);
+  let fs = 16; x.font = `bold ${fs}px monospace`; while(x.measureText(lines[1]).width > 118 && fs > 8){ fs--; x.font = `bold ${fs}px monospace`; }
+  x.fillText(lines[1], 64, 38);
+  const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
+  return t;
+}
+
+/* puppet faces */
+function faceTex(skin, r){
+  const c = document.createElement('canvas'); c.width = c.height = 16; const x = c.getContext('2d');
+  x.fillStyle = skin; x.fillRect(0,0,16,16);
+  const dot = (X,Y,W,H,col) => { x.fillStyle = col; x.fillRect(X,Y,W,H); };
+  const eyes = Math.floor(r()*4), mouth = Math.floor(r()*4);
+  if(eyes===0){ dot(4,5,2,2,'#111'); dot(10,5,2,2,'#111'); }
+  else if(eyes===1){ dot(3,4,4,4,'#fff'); dot(9,4,4,4,'#fff'); dot(5,6,2,2,'#111'); dot(9,5,2,2,'#111'); }
+  else if(eyes===2){ dot(4,6,3,1,'#111'); dot(9,6,3,1,'#111'); }
+  else { dot(3,4,3,3,'#222'); dot(10,4,3,3,'#222'); dot(4,5,1,1,'#fff'); dot(11,5,1,1,'#fff'); }
+  if(mouth===0) dot(5,11,6,1,'#5a1a1a');
+  else if(mouth===1){ dot(5,10,1,1,'#5a1a1a'); dot(6,11,4,1,'#5a1a1a'); dot(10,10,1,1,'#5a1a1a'); }
+  else if(mouth===2) dot(7,10,2,3,'#3a0a0a');
+  else { for(let i=0;i<6;i++) dot(5+i,10+(i%2),1,1,'#5a1a1a'); }
+  if(r()<.5){ dot(2,9,2,1,'rgba(220,90,90,.6)'); dot(12,9,2,1,'rgba(220,90,90,.6)'); }
+  const t = new THREE.CanvasTexture(c); t.magFilter = t.minFilter = THREE.NearestFilter; t.generateMipmaps = false;
+  return t;
+}
+function buildNPC(ch, r){
+  const g = new THREE.Group(); const L = ch.look, h = L.height;
+  const body = mesh(new THREE.CylinderGeometry(.28,.4,.95*h,6), mat(L.body,'noise'), 0,.48*h,0,g);
+  const skin = mat(L.head,'noise');
+  const face = psx(new THREE.MeshLambertMaterial({color:'#ffffff', map:faceTex(L.head, r)}));
+  const headY = .95*h + .27;
+  const head = mesh(BOX(.5,.5,.46), [skin,skin,skin,skin,face,skin], 0, headY, 0, g);
+  for(const s of [-1,1]){ const a = mesh(BOX(.13,.6*h,.13), mat(L.body,'noise'), s*.38, .62*h, 0, g); a.rotation.z = s*.12; }
+  const hatCol = S.colors.accent;
+  switch(L.hat){
+    case 'cap': mesh(BOX(.54,.14,.5), mat(hatCol,'noise'), 0,headY+.3,0,g); mesh(BOX(.5,.05,.3), mat(hatCol,'noise'), 0,headY+.24,.36,g); break;
+    case 'tall': mesh(new THREE.CylinderGeometry(.22,.22,.55,6), mat('#1e1e24','noise'), 0,headY+.52,0,g); mesh(new THREE.CylinderGeometry(.36,.36,.05,6), mat('#1e1e24','noise'), 0,headY+.26,0,g); break;
+    case 'bow': mesh(BOX(.18,.14,.1), mat(hatCol,null), -.12,headY+.3,.05,g); mesh(BOX(.18,.14,.1), mat(hatCol,null), .12,headY+.3,.05,g); break;
+    case 'antenna': mesh(BOX(.03,.4,.03), mat('#888',null), 0,headY+.45,0,g); mesh(new THREE.SphereGeometry(.07,4,3), mat(hatCol,null,{basic:true}), 0,headY+.68,0,g); break;
+    case 'beanie': mesh(new THREE.SphereGeometry(.3,6,3,0,Math.PI*2,0,Math.PI/2), mat(hatCol,'stripe'), 0,headY+.2,0,g); break;
+  }
+  return {group:g, head, body};
+}
+
+/* ---------- world building ---------- */
+function dirWord(x,z){
+  const ns = z < -12 ? 'north' : z > 14 ? 'south' : '';
+  const ew = x > 12 ? 'east' : x < -12 ? 'west' : '';
+  if(!ns && !ew) return 'near the middle';
+  return 'over on the ' + (ns && ew ? ns+ew : ns || ew) + ' side';
+}
+function nearestLabel(x,z){
+  let best = null, bd = 1e9;
+  for(const s of structures){ const d = (s.x-x)**2 + (s.z-z)**2; if(d<bd){ bd=d; best=s; } }
+  return best && bd < 16*16 ? best.label : null;
+}
+function hintFor(x,z){ const l = nearestLabel(x,z); return dirWord(x,z) + (l ? `, by ${l}` : ''); }
+
+function buildWorld(story, seed){
+  disposeScene();
+  S = story; seedNow = seed;
+  const r = mulberry32(seed ^ 0x9e3779b9);
+  const cfg = SETTINGS[S.setting], tp = TIMES[S.time];
+  scene = new THREE.Scene(); rects = []; circles = []; interactables = []; animated = []; structures = [];
+  bounds = {minX:-36, maxX:cfg.water?26:36, minZ:-36, maxZ:34};
+
+  const sky = new THREE.Color(tp.sky).lerp(new THREE.Color(S.colors.sky), tp.mix);
+  scene.background = sky;
+  scene.fog = new THREE.Fog(sky, tp.near, tp.far * (S.weather==='fog' ? .5 : S.weather==='rain' ? .8 : 1));
+  scene.add(new THREE.HemisphereLight(sky.clone().lerp(new THREE.Color('#ffffff'),.35), new THREE.Color(S.colors.ground).multiplyScalar(.6), tp.hemi));
+  const sun = new THREE.DirectionalLight(tp.sun, tp.sunI); sun.position.set(r()*2-1, 1, r()*2-1); scene.add(sun);
+  lantern = new THREE.PointLight('#ffd9a0', tp.lantern, 10, 1.6); scene.add(lantern);
+
+  // ground
+  const gm = mat(S.colors.ground, cfg.ground, {rep:34});
+  const ground = mesh(new THREE.PlaneGeometry(110,110,24,24), gm); ground.rotation.x = -Math.PI/2;
+  if(cfg.path){ const p = mesh(new THREE.PlaneGeometry(5,76,2,20), mat(cfg.path==='asphalt'?'#4a4a4e':cfg.path==='planks'?'#8a6a4a':'#8a7050', cfg.path, {rep:6}), 0,.02,-1); p.rotation.x = -Math.PI/2; p.material.map.repeat.set(2,24); }
+  if(cfg.water){ water = mesh(new THREE.PlaneGeometry(90,110,8,8), mat('#3a6a8a','water',{rep:20}), 72,-.15,0); water.rotation.x = -Math.PI/2;
+    const wm = water.material; animated.push(dt => { wm.map.offset.x += dt*.02; wm.map.offset.y += dt*.01; }); }
+  else water = null;
+  if(tp.night || S.time==='dusk'){
+    const n = 400, pos = new Float32Array(n*3);
+    for(let i=0;i<n;i++){ const a = r()*Math.PI*2, e = rr(r,.12,1.3), R = 150; pos[i*3]=Math.cos(a)*Math.cos(e)*R; pos[i*3+1]=Math.sin(e)*R; pos[i*3+2]=Math.sin(a)*Math.cos(e)*R; }
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(pos,3));
+    const st = new THREE.Points(gg, new THREE.PointsMaterial({color:'#ffffff', size:1.2, sizeAttenuation:false, fog:false, transparent:true, opacity:tp.night?.9:.35}));
+    scene.add(st); animated.push((dt) => st.position.set(camera.position.x, 0, camera.position.z));
+  }
+
+  const inRect = (x,z,pad) => rects.some(q => x>q.minX-pad && x<q.maxX+pad && z>q.minZ-pad && z<q.maxZ+pad);
+  const onPath = (x,pad) => cfg.path && Math.abs(x) < 2.5+pad;
+  const nearStart = (x,z,rad) => (x-player0.x)**2 + (z-player0.z)**2 < rad*rad;
+
+  // welcome sign
+  { const g = new THREE.Group(); g.position.set(cfg.path?4.2:3, 0, 25); g.rotation.y = -.35; scene.add(g);
+    for(const s of [-1,1]) mesh(BOX(.12,2.2,.12), mat('#5a4a3a','planks'), s*1.1,1.1,0,g);
+    const sm = psx(new THREE.MeshLambertMaterial({map:textSign(['WELCOME TO', S.place.toUpperCase()], S.colors.accent)}));
+    mesh(BOX(2.8,1.4,.1), [mat('#5a4a3a','planks'),mat('#5a4a3a','planks'),mat('#5a4a3a','planks'),mat('#5a4a3a','planks'),sm,mat('#5a4a3a','planks')], 0,2,0,g);
+    rects.push({minX:g.position.x-1.3, maxX:g.position.x+1.3, minZ:24.6, maxZ:25.4}); }
+
+  // structures
+  let placed = 0;
+  for(let tries=0; tries<400 && placed<cfg.n; tries++){
+    const type = placed===0 && cfg.structs.includes('motel') ? 'motel' : pick(r, cfg.structs.filter(t=>t!=='motel' || placed===0));
+    if(type==='ferris' && structures.some(s=>s.type==='ferris')) continue;
+    if(type==='tower' && structures.some(s=>s.type==='tower')) continue;
+    const x = type==='motel' ? rr(r,-6,6) : rr(r,bounds.minX+6, bounds.maxX-6);
+    const z = type==='motel' ? rr(r,-24,-16) : rr(r,-30,20);
+    let rot = Math.round(Math.atan2(-x, -z + 4) / (Math.PI/2)) * Math.PI/2;
+    if(cfg.path) rot = x<0 ? Math.PI/2 : -Math.PI/2;
+    if(type==='motel') rot = 0;
+    const st = buildStructure(type, r);
+    const odd = Math.abs(Math.round(rot/(Math.PI/2)))%2===1;
+    const W = odd ? st.d : st.w, D = odd ? st.w : st.d;
+    const q = {minX:x-W/2, maxX:x+W/2, minZ:z-D/2, maxZ:z+D/2};
+    const bad = q.minX<bounds.minX+2 || q.maxX>bounds.maxX-2 || q.minZ<bounds.minZ+2 ||
+      rects.some(o => q.minX<o.maxX+3.5 && q.maxX>o.minX-3.5 && q.minZ<o.maxZ+3.5 && q.maxZ>o.minZ-3.5) ||
+      (cfg.path && q.minX < 4 && q.maxX > -4) || nearStart(x,z,9);
+    if(bad){ st.group.traverse(o=>{ if(o.geometry) o.geometry.dispose(); }); continue; }
+    st.group.position.set(x,0,z); st.group.rotation.y = rot; scene.add(st.group);
+    rects.push(q); structures.push({x, z, label:st.label, type}); placed++;
+  }
+
+  // edge ring
+  const edgeRad = cfg.edge==='fence' ? 0 : .6;
+  for(let i=0;i<4;i++){
+    for(let t=-36; t<=36; t+= cfg.edge==='fence'?2.6:rr(r,2.5,4.5)){
+      let x, z, rot = 0;
+      if(i===0){ x=t; z=bounds.minZ-1.5; } else if(i===1){ x=t; z=bounds.maxZ+1.5; }
+      else if(i===2){ x=bounds.minX-1.5; z=t; rot=Math.PI/2; } else { if(cfg.water) continue; x=bounds.maxX+1.5; z=t; rot=Math.PI/2; }
+      const p = buildProp(cfg.edge, r); p.obj.position.set(x + (cfg.edge==='fence'?0:rr(r,-1,1)), 0, z + (cfg.edge==='fence'?0:rr(r,-1,1))); p.obj.rotation.y = rot; scene.add(p.obj);
+      if(edgeRad && r()<.5){ const p2 = buildProp(cfg.edge, r); p2.obj.position.set(x*1.08+rr(r,-2,2), 0, z*1.08+rr(r,-2,2)); scene.add(p2.obj); }
+    }
+  }
+
+  // props
+  let lights = 0;
+  for(let i=0, tries=0; i<cfg.np && tries<cfg.np*12; tries++){
+    const type = pick(r, cfg.props);
+    let x = rr(r,bounds.minX+1,bounds.maxX-1), z = rr(r,bounds.minZ+1,bounds.maxZ-1);
+    if(type==='lamp' && cfg.path && r()<.7){ x = (r()<.5?-1:1)*3.2; }
+    if(inRect(x,z,1.2) || (type!=='lamp' && onPath(x,.8)) || nearStart(x,z,4) || circles.some(c=>(c.x-x)**2+(c.z-z)**2 < (c.r+1.2)**2)) continue;
+    const p = buildProp(type, r); p.obj.position.set(x,0,z); p.obj.rotation.y = type==='car' ? pick(r,[0,Math.PI/2,Math.PI]) : r()*Math.PI*2; scene.add(p.obj);
+    if(p.rad){ if(type==='car'){ const o = Math.abs(Math.sin(p.obj.rotation.y))>.5; rects.push({minX:x-(o?1.9:.9), maxX:x+(o?1.9:.9), minZ:z-(o?.9:1.9), maxZ:z+(o?.9:1.9)}); } else circles.push({x,z,r:p.rad}); }
+    if((p.obj.userData.lamp || p.obj.userData.fire) && (tp.night || S.time==='dusk') && lights < 4){
+      const L = new THREE.PointLight(p.obj.userData.fire?'#ff9040':'#ffd89a', 1.3, 12, 1.4); L.position.set(x, p.obj.userData.fire?1:3.2, z); scene.add(L); lights++;
+    }
+    i++;
+  }
+
+  // open spot finder
+  const spots = [];
+  const openSpot = (minD, far, maxD=999) => {
+    for(let k=0;k<300;k++){
+      const x = rr(r,bounds.minX+3,bounds.maxX-3), z = rr(r,bounds.minZ+3,bounds.maxZ-6);
+      if(inRect(x,z,1.5) || nearStart(x,z,far) || !nearStart(x,z,maxD) || circles.some(c=>(c.x-x)**2+(c.z-z)**2 < (c.r+1.2)**2) || spots.some(s=>(s.x-x)**2+(s.z-z)**2 < minD*minD)) continue;
+      spots.push({x,z}); return {x,z};
+    }
+    const f = {x:rr(r,-20,20), z:rr(r,-20,10)}; spots.push(f); return f;
+  };
+
+  // characters
+  S.characters.forEach((ch, i) => {
+    const sp = i===0 ? openSpot(6, 7, 18) : openSpot(12, 14);
+    const n = buildNPC(ch, r); n.group.position.set(sp.x, 0, sp.z); n.group.rotation.y = r()*Math.PI*2; scene.add(n.group);
+    const o = {kind:'npc', id:ch.id, char:ch, x:sp.x, z:sp.z, group:n.group, head:n.head, body:n.body, history:[], talks:0, phase:r()*6};
+    circles.push({x:sp.x, z:sp.z, r:.5});
+    interactables.push(o);
+  });
+  // items
+  S.items.forEach(it => {
+    const sp = openSpot(10, 16);
+    const g = new THREE.Group(); g.position.set(sp.x, 0, sp.z); scene.add(g);
+    const gem = mesh(new THREE.OctahedronGeometry(.22,0), mat(S.colors.accent,null,{basic:true}), 0,.9,0,g);
+    const ring = mesh(new THREE.TorusGeometry(.4,.03,3,10), mat('#ffffff',null,{basic:true}), 0,.9,0,g);
+    mesh(BOX(.5,.5,.5), mat('#6a5a48','planks'), 0,.25,0,g);
+    const o = {kind:'item', id:it.id, item:it, x:sp.x, z:sp.z, group:g, gem, ring};
+    animated.push((dt,t) => { if(!g.visible) return; gem.rotation.y += dt*2; gem.position.y = .95 + Math.sin(t*2)*.08; ring.rotation.x = t; ring.rotation.y = t*.7; });
+    circles.push({x:sp.x, z:sp.z, r:.4, item:it.id});
+    interactables.push(o);
+  });
+  for(const o of interactables) o.hint = hintFor(o.x, o.z);
+
+  // weather
+  weather = null;
+  const wtype = S.weather;
+  if(wtype==='rain' || wtype==='snow' || wtype==='fireflies'){
+    const N = wtype==='rain' ? 1400 : wtype==='snow' ? 900 : 90;
+    const pos = new Float32Array(N*3);
+    for(let i=0;i<N;i++){ pos[i*3]=rr(r,-22,22); pos[i*3+1]=wtype==='fireflies'?rr(r,.3,3):rr(r,0,16); pos[i*3+2]=rr(r,-22,22); }
+    const gg = new THREE.BufferGeometry(); gg.setAttribute('position', new THREE.BufferAttribute(pos,3));
+    const pm = new THREE.PointsMaterial({color: wtype==='rain'?'#9fb0c8':wtype==='snow'?'#ffffff':'#fff08a', size: wtype==='rain'?.07:wtype==='snow'?.13:.16, transparent:true, opacity:wtype==='rain'?.7:1});
+    const pts = new THREE.Points(gg, pm); pts.frustumCulled = false; scene.add(pts);
+    weather = {pts, pos, N, type:wtype, ph:new Float32Array(N).map(()=>r()*6)};
+  }
+
+  player.x = player0.x; player.z = player0.z; player.yaw = 0; player.pitch = -.03;
+}
+const player0 = {x:0, z:30};
+
+/* ---------- movement & collision ---------- */
+const keys = {};
+const joy = {x:0, y:0};
+function collide(x, z){
+  const R = .38;
+  for(const q of rects){
+    if(x>q.minX-R && x<q.maxX+R && z>q.minZ-R && z<q.maxZ+R){
+      const dl = x-(q.minX-R), dr = (q.maxX+R)-x, dt = z-(q.minZ-R), db = (q.maxZ+R)-z;
+      const m = Math.min(dl,dr,dt,db);
+      if(m===dl) x = q.minX-R; else if(m===dr) x = q.maxX+R; else if(m===dt) z = q.minZ-R; else z = q.maxZ+R;
+    }
+  }
+  for(const c of circles){
+    if(c.item && (inv.has(c.item) || usedItems.has(c.item))) continue;
+    const dx = x-c.x, dz = z-c.z, d = Math.hypot(dx,dz), m = c.r + R;
+    if(d < m && d > 1e-4){ x = c.x + dx/d*m; z = c.z + dz/d*m; }
+  }
+  x = Math.max(bounds.minX, Math.min(bounds.maxX, x));
+  z = Math.max(bounds.minZ, Math.min(bounds.maxZ, z));
+  return [x, z];
+}
+let stepTimer = 0;
+function updatePlayer(dt){
+  let f = 0, s = 0;
+  if(keys.KeyW || keys.ArrowUp) f += 1; if(keys.KeyS || keys.ArrowDown) f -= 1;
+  if(keys.KeyD || keys.ArrowRight) s += 1; if(keys.KeyA || keys.ArrowLeft) s -= 1;
+  f += -joy.y; s += joy.x;
+  const len = Math.hypot(f, s);
+  const moving = len > .05;
+  if(moving){
+    if(len > 1){ f /= len; s /= len; }
+    const sp = (keys.ShiftLeft || keys.ShiftRight ? 6.2 : 3.6) * dt;
+    const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw), rx = Math.cos(player.yaw), rz = -Math.sin(player.yaw);
+    [player.x, player.z] = collide(player.x + (fx*f + rx*s)*sp, player.z + (fz*f + rz*s)*sp);
+    player.bob += dt * (keys.ShiftLeft||keys.ShiftRight ? 13 : 9);
+    stepTimer -= dt; if(stepTimer <= 0){ stepTimer = keys.ShiftLeft||keys.ShiftRight ? .3 : .45; sfx.step(); }
+  }
+}
+
+/* ---------- per-frame world ---------- */
+let target = null;
+function updateWorld(dt, t){
+  camera.position.set(player.x, 1.62 + Math.sin(player.bob)*.045, player.z);
+  camera.rotation.set(player.pitch, player.yaw, Math.sin(player.bob*.5)*.006);
+  if(lantern) lantern.position.set(player.x, 2, player.z);
+  for(const a of animated) a(dt, t);
+  for(const o of interactables){
+    if(o.kind !== 'npc') continue;
+    const dx = player.x - o.x, dz = player.z - o.z, d = Math.hypot(dx, dz);
+    o.body.scale.y = 1 + Math.sin(t*2 + o.phase)*.025;
+    if(d < 8){ const want = Math.atan2(dx, dz); let diff = want - o.group.rotation.y; diff = Math.atan2(Math.sin(diff), Math.cos(diff)); o.group.rotation.y += diff * Math.min(1, dt*3); }
+    else o.group.rotation.y += Math.sin(t*.3 + o.phase)*dt*.2;
+    o.head.rotation.z = Math.sin(t*1.1 + o.phase)*.06;
+  }
+  if(weather){
+    const {pos, N, type, ph} = weather;
+    for(let i=0;i<N;i++){
+      let x = pos[i*3], y = pos[i*3+1], z = pos[i*3+2];
+      if(type==='rain') y -= dt*22; else if(type==='snow'){ y -= dt*1.4; x += Math.sin(t+ph[i])*dt*.4; }
+      else { x += Math.sin(t*.7+ph[i])*dt*.5; z += Math.cos(t*.6+ph[i]*1.3)*dt*.5; y = 1.2 + Math.sin(t*.9+ph[i])*.9; }
+      if(y < 0) y += 16;
+      const rx = x - player.x, rz = z - player.z;
+      if(rx > 22) x -= 44; else if(rx < -22) x += 44;
+      if(rz > 22) z -= 44; else if(rz < -22) z += 44;
+      pos[i*3]=x; pos[i*3+1]=y; pos[i*3+2]=z;
+    }
+    weather.pts.geometry.attributes.position.needsUpdate = true;
+  }
+  // target
+  target = null;
+  if(state === 'play'){
+    const fx = -Math.sin(player.yaw), fz = -Math.cos(player.yaw);
+    let best = 1e9;
+    for(const o of interactables){
+      if(o.kind==='item' && !o.group.visible) continue;
+      const dx = o.x - player.x, dz = o.z - player.z, d = Math.hypot(dx, dz);
+      if(d > 3.2) continue;
+      const dot = (dx*fx + dz*fz) / Math.max(d, .01);
+      if(dot < .5 && d > 1.2) continue;
+      const sc = d * (1.6 - dot);
+      if(sc < best){ best = sc; target = o; }
+    }
+  }
+  const pr = $('#prompt');
+  if(state==='play' && !target && !touchMode && document.pointerLockElement !== canvas){ pr.textContent = 'CLICK TO LOOK AROUND'; pr.hidden = false; }
+  else if(target && state==='play'){
+    pr.textContent = (touchMode ? 'USE: ' : '[E] ') + (target.kind==='npc' ? 'Talk to ' + target.char.name : 'Pick up the ' + target.item.name);
+    pr.hidden = false;
+  } else pr.hidden = true;
+}
+
+/* ---------- quest ---------- */
+const curStep = () => S && S.steps[stepIdx];
+function refreshHUD(){
+  const st = curStep();
+  $('#obj').textContent = st ? st.text : 'Nothing left to do. Enjoy the quiet.';
+  $('#inv').textContent = inv.size ? 'CARRYING: ' + [...inv].map(id => itemName(S,id).toUpperCase()).join(', ') : '';
+}
+let toastT = null;
+function toast(msg, ms=2600){ const el = $('#toast'); el.textContent = msg; el.hidden = false; clearTimeout(toastT); toastT = setTimeout(()=>{ el.hidden = true; }, ms); }
+function completeStep(){
+  const st = curStep(); if(!st) return;
+  stepIdx++; sfx.chime();
+  toast('✓ ' + st.text.toUpperCase());
+  autoAdvance(); refreshHUD();
+  if(stepIdx >= S.steps.length) pendingEnding = true;
+}
+function autoAdvance(){
+  let st = curStep();
+  while(st && st.type==='find' && (inv.has(st.target) || usedItems.has(st.target))){ stepIdx++; st = curStep(); }
+}
+function pickUp(o){
+  o.group.visible = false; inv.add(o.id); sfx.pick();
+  toast(`GOT THE ${o.item.name.toUpperCase()}` + (o.item.description ? `\n${o.item.description}` : ''), 3600);
+  const st = curStep();
+  if(st && st.type==='find' && st.target===o.id) completeStep(); else refreshHUD();
+  if(pendingEnding) setTimeout(startEnding, 1800);
+}
+function interact(){
+  if(state !== 'play' || !target) return;
+  if(target.kind === 'item') pickUp(target); else openDialog(target);
+}
+
+/* ---------- dialogue ---------- */
+let dlgNPC = null, dlgBusy = false, dlgCtl = null, typing = null;
+function typeText(text, voice){
+  const el = $('#d-text'); el.textContent = '';
+  return new Promise(res => {
+    let i = 0; const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const done = () => { clearInterval(iv); el.textContent = text; typing = null; res(); };
+    if(reduce){ el.textContent = text; res(); return; }
+    const iv = setInterval(() => { i += 1; el.textContent = text.slice(0, i); if(i%3===0) sfx.blip(voice); if(i >= text.length) done(); }, 22);
+    typing = done;
+  });
+}
+function setChoices(list){
+  const box = $('#d-choices'); box.textContent = '';
+  for(const c of list){
+    const b = document.createElement('button'); b.type = 'button'; b.className = 'choice'; b.textContent = c;
+    b.onclick = () => playerSays(c); box.appendChild(b);
+  }
+  const bye = document.createElement('button'); bye.type = 'button'; bye.className = 'choice'; bye.textContent = 'Leave'; bye.onclick = closeDialog; box.appendChild(bye);
+  $('#d-form').hidden = !aiOK;
+  const first = box.querySelector('button'); if(first && !touchMode) first.focus({preventScroll:true});
+}
+function worldBrief(){
+  const lines = interactables.map(o => o.kind==='npc'
+    ? `- ${o.char.name} (${o.char.role}) is ${o.hint}.`
+    : `- the ${o.item.name} ${inv.has(o.id) ? 'is being carried by the player' : usedItems.has(o.id) ? 'has already been delivered' : 'is lying ' + o.hint}.`);
+  return lines.join('\n');
+}
+function npcPrompt(npc, event){
+  const c = npc.char, st = curStep();
+  const others = S.characters.filter(x => x.id !== c.id).map(x => `${x.name} (${x.role})`).join(', ');
+  const hist = npc.history.slice(-10).map(h => (h.who==='p' ? 'PLAYER: ' : c.name.toUpperCase()+': ') + h.text).join('\n');
+  return `You voice one character in a short first-person PS1-style story game called "${S.title}", set in ${S.place} (a ${SET_WORDS[S.setting]}, ${S.time}, weather: ${S.weather}). The tone is gentle, strange and a little funny, never scary.
+Premise: ${S.intro}
+You are ${c.name}, ${c.role}. Personality: ${c.personality}. ${c.greeting ? `Your first line was meant to be: "${c.greeting}"` : ''}
+Other people here: ${others}.
+Where things are right now:
+${worldBrief()}
+The player's current goal: ${st ? st.text : 'the story is finished; just chat and say goodbye warmly'}.
+${event ? 'WHAT JUST HAPPENED: ' + event : ''}
+${hist ? 'Conversation so far:\n' + hist : 'The player just walked up to you. This is the start of the conversation.'}
+
+Write ${c.name}'s next line: 1 to 3 short sentences, in character, specific and a little odd, like dialogue in an old low-budget game. If the player seems stuck, nudge them toward their goal using the locations above (describe places, not coordinates). Never mention being an AI or a game.
+Then give 3 short things the player could say back (max 8 words each), each taking the talk somewhere different.
+Reply with only JSON: {"line":"...","choices":["...","...","..."]}`;
+}
+function localLine(npc, event){
+  const c = npc.char, st = curStep(), r = Math.random;
+  if(event==='gave') return `The ${itemName(S, npc.lastGiven)}! ${pick(r,["I could cry. I won't. But I could.","I'm going to keep this somewhere safe. Maybe in my hat.","You don't know what this means. Honestly, neither do I, but it means a lot."])}`;
+  if(event==='quest') {
+    const nx = curStep();
+    return `${pick(r,["I was hoping you'd come.","Finally, someone who listens.","Oh good. You're real."])} ${npc.firstQuest ? S.intro : ''} ${nx ? pick(r,['Could you help? ','Will you do something for me? ','Please. ']) + nx.text + '.' : ''}`.trim();
+  }
+  if(npc.talks===1 && c.greeting && !npc.greeted){ npc.greeted = true; return c.greeting; }
+  if(st && r() < .75){
+    if(st.type==='talk' && st.target!==c.id){ const o = interactables.find(x=>x.id===st.target); return `${o.char.name}? ${pick(r,['Last I saw,','I think they were','Try looking'])} ${o.hint}.`; }
+    if(st.type==='find'){ const o = interactables.find(x=>x.id===st.target); return `The ${o.item.name}? ${pick(r,['I saw something shiny','Something was glowing','There was a funny little box'])} ${o.hint}.`; }
+    if(st.type==='give' && st.target===c.id){ const o = interactables.find(x=>x.id===st.item); return inv.has(st.item) ? `Is that... do you have it?` : `Still no ${o.item.name}? Look ${o.hint}.`; }
+    if(st.type==='give'){ const t = interactables.find(x=>x.id===st.target); return `${t.char.name} is ${t.hint}. ${pick(r,['They seemed worried.','Go on.','Say hi for me.'])}`; }
+  }
+  return pick(r, FLAVOR);
+}
+async function npcSpeak(npc, event, localEvent){
+  dlgBusy = true; $('#d-choices').textContent = ''; $('#d-form').hidden = true;
+  const el = $('#d-text');
+  let line = '', choices = null;
+  if(aiOK){
+    el.textContent = '...';
+    dlgCtl = new AbortController();
+    try{
+      const res = await sample.json(npcPrompt(npc, event), {modelTier:'quick', cache:false, signal:dlgCtl.signal});
+      line = str(res && res.line, 400);
+      if(res && Array.isArray(res.choices)) choices = res.choices.map(x => str(x, 60)).filter(Boolean).slice(0,3);
+    }catch(e){ aiFailed(e); if(e && e.code==='cancelled'){ dlgBusy = false; return; } }
+  }
+  if(dlgNPC !== npc) { dlgBusy = false; return; }
+  if(!line) line = localLine(npc, localEvent);
+  npc.history.push({who:'n', text:line});
+  await typeText(line, npc.voice);
+  if(!choices || !choices.length) choices = pick(Math.random, [["Any idea where I should go?","Tell me about this place.","What's your deal?"],["Where is everyone?","Can I help?","You seem nice."],["What should I do next?","Tell me something weird.","How long have you lived here?"]]);
+  dlgBusy = false;
+  if(dlgNPC === npc) setChoices(choices);
+}
+function playerSays(text){
+  if(dlgBusy || !dlgNPC) return;
+  const t = str(text, 140); if(!t) return;
+  dlgNPC.history.push({who:'p', text:t}); playerLog.push(`to ${dlgNPC.char.name}: "${t}"`);
+  npcSpeak(dlgNPC, '', '');
+}
+function openDialog(npc){
+  state = 'dialog'; exitLock(); dlgNPC = npc; npc.talks++;
+  $('#dialog').hidden = false; $('#cross').hidden = true; $('#prompt').hidden = true;
+  $('#d-name').innerHTML = ''; $('#d-name').append(npc.char.name.toUpperCase()); const sp = document.createElement('span'); sp.textContent = npc.char.role; $('#d-name').append(sp);
+  if(npc.voice == null) npc.voice = 180 + (hashStr(npc.char.name) % 260);
+  const st = curStep();
+  let event = '', localEvent = '';
+  if(st && st.type==='give' && st.target===npc.id){
+    if(inv.has(st.item)){
+      inv.delete(st.item); usedItems.add(st.item); npc.lastGiven = st.item;
+      event = `The player just handed you the ${itemName(S,st.item)}. This is exactly what you needed. React to it and let it move the story forward.`;
+      localEvent = 'gave'; completeStep();
+    } else event = `You are waiting for someone to bring you the ${itemName(S,st.item)}.`;
+  } else if(st && st.type==='talk' && st.target===npc.id){
+    event = stepIdx===0 ? 'The player has come to you first. Explain your situation (the premise) and ask for their help with what comes next.' : 'This is the conversation the player needed to have with you. Share something meaningful that moves the story along.';
+    localEvent = 'quest'; npc.firstQuest = stepIdx===0; completeStep();
+  }
+  if(pendingEnding) event += ' This is the last moment of the story; give it a sense of closure.';
+  npcSpeak(npc, event, localEvent);
+}
+function closeDialog(){
+  if(dlgCtl) dlgCtl.abort();
+  if(typing) typing();
+  dlgNPC = null; dlgBusy = false;
+  $('#dialog').hidden = true; $('#cross').hidden = false;
+  if(pendingEnding){ startEnding(); return; }
+  state = 'play'; requestLock();
+}
+$('#d-text').addEventListener('click', () => { if(typing) typing(); });
+$('#d-form').addEventListener('submit', e => { e.preventDefault(); const v = $('#d-input').value; $('#d-input').value = ''; playerSays(v); });
+
+/* ---------- ending ---------- */
+let endCtl = null;
+async function startEnding(){
+  if(state === 'ending') return;
+  pendingEnding = false;
+  state = 'ending'; exitLock(); hideAll(); $('#ending').hidden = false; sfx.chime();
+  $('#end-title').textContent = S.title.toUpperCase();
+  const el = $('#end-text');
+  const fallback = S.ending || 'And that was that. The tape hisses on for a while after the story ends.';
+  if(aiOK){
+    el.textContent = 'Rewinding the last few minutes...';
+    endCtl = new AbortController();
+    try{
+      await sample(`Write the ending narration for a short, gentle, strange first-person PS1-style story game called "${S.title}", set in ${S.place}.
+Premise: ${S.intro}
+The planned ending was: ${S.ending}
+People: ${S.characters.map(c=>`${c.name} (${c.role})`).join(', ')}.
+Things the player said along the way:
+${playerLog.slice(-14).join('\n') || '(they said very little)'}
+Write 3 to 5 sentences in second person that land the ending and reflect the specific things the player said and chose. Warm, odd, a little funny, never scary. End with one very short final line on its own line. Plain text only.`,
+        {modelTier:'default', cache:false, signal:endCtl.signal, onText:({text}) => { el.textContent = text; }});
+    }catch(e){ aiFailed(e); if(!e || e.code !== 'cancelled') el.textContent = (e && e.text) || fallback; }
+  } else el.textContent = fallback;
+  const n = (+lsGet('mr_tapes') || 0) + 1; lsSet('mr_tapes', String(n));
+}
+
+/* ---------- audio ---------- */
+const sfx = (() => {
+  let ctx = null, master = null, muted = false, padNodes = [];
+  const ensure = () => {
+    if(ctx) return true;
+    try{ ctx = new (window.AudioContext || window.webkitAudioContext)(); master = ctx.createGain(); master.gain.value = .7; master.connect(ctx.destination); return true; }catch(e){ return false; }
+  };
+  const tone = (f, d, type='square', v=.04, slide=0) => {
+    if(!ctx || muted) return; const o = ctx.createOscillator(), g = ctx.createGain(); o.type = type; o.frequency.value = f;
+    if(slide) o.frequency.linearRampToValueAtTime(f+slide, ctx.currentTime+d);
+    g.gain.setValueAtTime(v, ctx.currentTime); g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+d); o.connect(g); g.connect(master); o.start(); o.stop(ctx.currentTime+d);
+  };
+  return {
+    start(){ if(!ensure()) return; if(ctx.state==='suspended') ctx.resume(); },
+    pad(seed){
+      if(!ensure()) return;
+      padNodes.forEach(n => { try{ n.stop(); }catch(e){} }); padNodes = [];
+      const r = mulberry32(seed), root = pick(r,[110,123.5,98,130.8,146.8]);
+      const chord = pick(r,[[1,1.26,1.5],[1,1.19,1.5],[1,1.335,1.5,1.78],[1,1.5,2.25]]);
+      const lp = ctx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 700; lp.connect(master);
+      const g = ctx.createGain(); g.gain.value = .0; g.gain.linearRampToValueAtTime(.05, ctx.currentTime+3); g.connect(lp);
+      for(const m of chord){ for(const det of [-4,4]){ const o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = root*m; o.detune.value = det; o.connect(g); o.start(); padNodes.push(o); } }
+      const len = ctx.sampleRate*2, buf = ctx.createBuffer(1, len, ctx.sampleRate), d = buf.getChannelData(0);
+      for(let i=0;i<len;i++) d[i] = Math.random()*2-1;
+      const n = ctx.createBufferSource(); n.buffer = buf; n.loop = true; const bp = ctx.createBiquadFilter(); bp.type = 'highpass'; bp.frequency.value = 3000;
+      const ng = ctx.createGain(); ng.gain.value = .012; n.connect(bp); bp.connect(ng); ng.connect(master); n.start(); padNodes.push(n);
+    },
+    stopPad(){ padNodes.forEach(n => { try{ n.stop(); }catch(e){} }); padNodes = []; },
+    toggle(){ muted = !muted; if(master) master.gain.value = muted ? 0 : .7; toast(muted ? 'AUDIO MUTE' : 'AUDIO ON', 1200); },
+    blip(v){ tone(v || 300, .05, 'square', .025); },
+    step(){ tone(70 + Math.random()*20, .06, 'triangle', .05); },
+    pick(){ tone(520, .1, 'square', .04, 300); setTimeout(()=>tone(880,.14,'square',.035), 90); },
+    chime(){ [523,659,784].forEach((f,i) => setTimeout(() => tone(f, .3, 'triangle', .05), i*110)); },
+  };
+})();
+
+/* ---------- input ---------- */
+let state = 'title';
+const touchMode = matchMedia('(pointer: coarse)').matches;
+function requestLock(){
+  if(touchMode || state !== 'play') return;
+  try{ const p = canvas.requestPointerLock(); if(p && p.catch) p.catch(()=>{}); }catch(e){}
+}
+function exitLock(){ if(document.pointerLockElement) { try{ document.exitPointerLock(); }catch(e){} } }
+document.addEventListener('pointerlockchange', () => { if(!document.pointerLockElement && state === 'play') pause(); });
+addEventListener('keydown', e => {
+  if(e.target && (e.target.tagName === 'INPUT')) { if(e.code==='Escape' && state==='dialog') closeDialog(); if(e.code==='Enter' && e.target.id==='vibe') newTape(); return; }
+  keys[e.code] = true;
+  if(e.code === 'KeyE' && state === 'play') interact();
+  else if(e.code === 'KeyM') sfx.toggle();
+  else if(e.code === 'Escape'){ if(state === 'play') pause(); else if(state === 'dialog') closeDialog(); }
+  else if(state === 'dialog' && /^Digit[1-4]$/.test(e.code)){ const b = $('#d-choices').querySelectorAll('button')[+e.code.slice(5)-1]; if(b) b.click(); }
+  if(state === 'play' && ['Space','ArrowUp','ArrowDown'].includes(e.code)) e.preventDefault();
+});
+addEventListener('keyup', e => { keys[e.code] = false; });
+addEventListener('blur', () => { for(const k in keys) keys[k] = false; });
+const look = (dx, dy, k) => { player.yaw -= dx*k; player.pitch = Math.max(-1.35, Math.min(1.35, player.pitch - dy*k)); };
+document.addEventListener('mousemove', e => { if(document.pointerLockElement === canvas && state === 'play') look(e.movementX, e.movementY, .0022); });
+const ptr = {};
+canvas.addEventListener('pointerdown', e => {
+  if(state !== 'play') return;
+  if(e.pointerType === 'mouse'){
+    if(document.pointerLockElement === canvas){ interact(); return; }
+    requestLock(); ptr[e.pointerId] = {mode:'look', x:e.clientX, y:e.clientY}; return;
+  }
+  const left = e.clientX < innerWidth/2;
+  ptr[e.pointerId] = {mode:left?'move':'look', ox:e.clientX, oy:e.clientY, x:e.clientX, y:e.clientY};
+  try{ canvas.setPointerCapture(e.pointerId); }catch(err){}
+});
+canvas.addEventListener('pointermove', e => {
+  const p = ptr[e.pointerId]; if(!p || state !== 'play') return;
+  if(p.mode === 'look'){ look(e.clientX - p.x, e.clientY - p.y, touchMode ? .006 : .004); p.x = e.clientX; p.y = e.clientY; }
+  else { joy.x = Math.max(-1, Math.min(1, (e.clientX - p.ox)/55)); joy.y = Math.max(-1, Math.min(1, (e.clientY - p.oy)/55)); }
+});
+const endPtr = e => { const p = ptr[e.pointerId]; if(p && p.mode === 'move'){ joy.x = 0; joy.y = 0; } delete ptr[e.pointerId]; };
+canvas.addEventListener('pointerup', endPtr); canvas.addEventListener('pointercancel', endPtr);
+$('#use-btn').addEventListener('click', interact);
+$('#menu-btn').addEventListener('click', () => { if(state === 'play') pause(); });
+
+/* ---------- screens & flow ---------- */
+function hideAll(){ for(const id of ['#title','#loading','#pause','#ending','#hud','#dialog']) $(id).hidden = true; }
+function pause(){
+  if(state !== 'play') return;
+  state = 'pause'; exitLock(); joy.x = joy.y = 0; for(const k in keys) keys[k] = false;
+  $('#pause').hidden = false; $('#hud').hidden = true;
+  $('#pause-sum').textContent = `${S.title} — ${S.place}. ${curStep() ? 'Current goal: ' + curStep().text + '.' : ''}`;
+}
+function resume(){ $('#pause').hidden = true; $('#hud').hidden = false; state = 'play'; requestLock(); }
+$('#resume-btn').addEventListener('click', resume);
+$('#rewind-btn').addEventListener('click', () => beginTape(S, seedNow));
+$('#eject-btn').addEventListener('click', toTitle);
+$('#end-rewind').addEventListener('click', () => { if(endCtl) endCtl.abort(); beginTape(S, seedNow); });
+$('#end-new').addEventListener('click', () => { if(endCtl) endCtl.abort(); newTape(); });
+$('#play-btn').addEventListener('click', () => newTape());
+$('#replay-btn').addEventListener('click', () => { if(lastTape) beginTape(lastTape.S, lastTape.seed); });
+
+let lastTape = null;
+function toTitle(){
+  hideAll(); exitLock(); state = 'title'; $('#title').hidden = false; sfx.stopPad();
+  $('#replay-btn').hidden = !lastTape;
+  attract();
+}
+function osdDate(seed){
+  const r = mulberry32(seed+3); const M = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  const hour = {day:13, dusk:18, night:23, dawn:5}[S.time] || 21;
+  return {label:`${pick(r,M)} ${String(1+Math.floor(r()*28)).padStart(2,'0')} ${1994+Math.floor(r()*6)}`, start:hour*3600 + Math.floor(r()*1800), t0:performance.now()};
+}
+let dateInfo = null;
+function beginTape(story, seed){
+  hideAll(); if(dlgCtl) dlgCtl.abort();
+  inv.clear(); usedItems.clear(); stepIdx = 0; playerLog = []; pendingEnding = false; dlgNPC = null;
+  buildWorld(JSON.parse(JSON.stringify(story)), seed);
+  lastTape = {S:story, seed};
+  $('#tape-name').textContent = `"${S.title}"` + (S.ai ? '' : ' · offline tape');
+  refreshHUD();
+  dateInfo = osdDate(seed);
+  $('#hud').hidden = false; $('#touch').hidden = !touchMode;
+  state = 'play'; sfx.start(); sfx.pad(seed);
+  toast((S.intro || S.title).toUpperCase(), 6500);
+  fadeIn();
+  requestLock();
+}
+let fadeT = 1;
+function fadeIn(){ fadeT = 0; }
+
+let genCtl = null, loadIv = null;
+async function newTape(){
+  sfx.start();
+  const vibe = str($('#vibe').value, 120);
+  const seed = (Math.random()*2**31)>>>0 ^ (vibe ? hashStr(vibe) : 0);
+  hideAll(); state = 'loading'; $('#loading').hidden = false; $('#skip-btn').hidden = !aiOK;
+  const lines = ['Adjusting tracking...','Someone taped over a cooking show...','Blowing into the cartridge. Wrong format...','Claude is writing your tape...','Casting the puppets...','Painting the sky a color...','Hiding something important...'];
+  let li = 0, t0 = performance.now();
+  $('#load-line').textContent = aiOK ? lines[3] : 'Splicing an offline tape...';
+  clearInterval(loadIv);
+  loadIv = setInterval(() => { li = (li+1)%lines.length; $('#load-line').textContent = aiOK ? lines[li] : 'Splicing an offline tape...'; $('#load-time').textContent = `TAPE COUNTER ${String(Math.floor((performance.now()-t0)/1000)).padStart(4,'0')}`; }, 1600);
+  let story = null;
+  if(aiOK){
+    genCtl = new AbortController();
+    try{ story = normalizeStory(await sample.json(storyPrompt(seed, vibe), {modelTier:'default', cache:false, signal:genCtl.signal}), seed); }
+    catch(e){ aiFailed(e); if(e && e.code !== 'cancelled') toast('THE TAPE WAS BLANK. PLAYING AN OFFLINE ONE.', 3000); }
+    genCtl = null;
+  } else await new Promise(r => setTimeout(r, 900));
+  clearInterval(loadIv);
+  if(state !== 'loading') return;
+  if(!story) story = localStory(seed, vibe);
+  beginTape(story, seed);
+}
+$('#skip-btn').addEventListener('click', () => { if(genCtl) genCtl.abort(); else if(state==='loading'){} });
+
+/* attract mode behind the title */
+function attract(){
+  const seed = (Math.random()*2**31)>>>0;
+  buildWorld(localStory(seed), seed);
+  player.pitch = .05;
+  fadeIn();
+}
+
+/* ---------- main loop ---------- */
+let last = performance.now();
+function osdClock(){
+  if(!dateInfo) return;
+  const s = dateInfo.start + Math.floor((performance.now() - dateInfo.t0)/1000);
+  let h = Math.floor(s/3600)%24, m = Math.floor(s/60)%60, sec = s%60; const ap = h>=12 ? 'PM' : 'AM'; h = h%12 || 12;
+  $('#osd-br').textContent = `${dateInfo.label}  ${h}:${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')} ${ap}`;
+}
+function frame(now){
+  requestAnimationFrame(frame);
+  const dt = Math.min(.05, (now - last)/1000); last = now; const t = now/1000;
+  if(scene){
+    if(state === 'play') updatePlayer(dt);
+    if(state === 'title' || state === 'loading'){ player.yaw += dt*.06; player.bob += dt*2; player.x = Math.sin(t*.05)*6; player.z = 18 + Math.cos(t*.05)*6; }
+    updateWorld(dt, t);
+    renderer.setRenderTarget(rt); renderer.render(scene, camera); renderer.setRenderTarget(null);
+  }
+  fadeT = Math.min(1, fadeT + dt*.8);
+  post.uniforms.time.value = t; post.uniforms.fade.value = fadeT;
+  renderer.render(postScene, postCam);
+  if(state === 'play' || state === 'dialog') osdClock();
+}
+attract();
+requestAnimationFrame(frame);
+})();
+</script>
