@@ -208,11 +208,10 @@ const Input={
       const p=View.toGame(e.clientX,e.clientY);
       const t=this.touches.get(e.pointerId);
       if(t){t.x=p.x;t.y=p.y;
-        if(t.role==='move'||t.role==='aim'){
-          // the stick's base trails the thumb past its edge, so you never run out of stick
-          const dx=t.x-t.ox,dy=t.y-t.oy,d=Math.hypot(dx,dy);if(d>STICK_R){t.ox=t.x-dx/d*STICK_R;t.oy=t.y-dy/d*STICK_R}
-          if(t.role==='move'&&Save.d.opts.flick)this.checkFlick(t,e.timeStamp);
-        }}
+        // move stick stays where your thumb first landed; the aim stick's base trails your thumb so turning is quick
+        if(t.role==='aim'){const dx=t.x-t.ox,dy=t.y-t.oy,d=Math.hypot(dx,dy);if(d>STICK_R){t.ox=t.x-dx/d*STICK_R;t.oy=t.y-dy/d*STICK_R}}
+        if(t.role==='move'&&Save.d.opts.flick)this.checkFlick(t,e.timeStamp);
+      }
       if(e.pointerType!=='touch'){this.ptr.x=p.x;this.ptr.y=p.y;this.ptr.mouse=true}
     });
     // a finger lifting is what browsers count as a real tap, so audio unlock and fullscreen go here
@@ -1404,7 +1403,7 @@ function addContainers(p,n){
   if(p.noRed){for(let i=0;i<n;i++)addExtra(p,'black',2);return}
   for(let i=0;i<n;i++)if(heartSlots(p)<12)p.maxRed+=2;
 }
-const dmgUnit=()=>G.run&&(G.run.depth>=4||G.run.mods&&G.run.mods.hopeful)?2:1; // Hopeful: every hit is a whole heart
+const dmgUnit=()=>G.run&&(G.run.depth>=4||G.run.diff===5||G.run.mods&&G.run.mods.hopeful)?2:1; // Hopeful and Sleepless: every hit is a whole heart
 function hooks(name,...a){const p=G.player;if(!p)return;for(const it of p.items)if(it.on&&it.on[name])it.on[name](p,...a)}
 function damagePlayer(n,src,ignoreInv){
   const p=G.player;if(!p||p.dead)return;
@@ -1691,8 +1690,17 @@ const DIFFS={
   0:{l:'NORMAL',hp:1,bul:1,n:0,score:1,f:'The night as it was meant to be.'},
   1:{l:'EASY',hp:.7,bul:.88,n:0,score:.75,f:'Enemies have 70% health. Their bullets are a little slower.'},
   2:{l:'VERY EASY',hp:.5,bul:.78,n:-1,score:.5,f:'Enemies have half health and slower bullets. One fewer per room.'},
-  3:{l:'HEAVIER',hp:1,bul:1,n:0,score:1.5,f:'More enemies with more health, faster bullets, darker rooms.'}};
-const diffOrder=()=>isUnlocked('mode:hard')?[2,1,0,3]:[2,1,0];
+  4:{l:'HARD',hp:1.3,bul:1.1,n:0,score:1.25,f:'Enemies have 30% more health and faster bullets.'},
+  3:{l:'HEAVIER',hp:1.15,bul:1.05,n:0,score:1.6,f:'Harder than Hard: an extra enemy per room, tougher bosses, darker rooms.'},
+  5:{l:'SLEEPLESS',hp:1.35,bul:1.15,n:1,score:2.25,f:'Heavier, then worse: two extra enemies per room, and every hit takes a whole heart.'}};
+// Heavier and Sleepless also switch on run.hard (extra enemy, boss health, darkness)
+const diffOk=d=>!!DIFFS[d]&&(d!==3||isUnlocked('mode:hard'))&&(d!==5||isUnlocked('mode:sleepless'));
+const diffOrder=()=>[2,1,0,4,3,5].filter(diffOk);
+function diffLockHint(d){
+  if(d===4&&!diffOk(3))return tr('Finish the game to unlock Heavier.');
+  if(d===3&&!diffOk(5))return tr('Beat a boss on Heavier to unlock Sleepless.');
+  return'';
+}
 const diff=()=>DIFFS[G.run?G.run.diff:(Save.d.opts.diff|0)]||DIFFS[0];
 // run modifiers: each one is a real trade, and moves the score multiplier
 const MODS=[
@@ -2289,6 +2297,7 @@ function bossDefeated(e){
   Save.d.bossK[e.type]=1;Save.d.seenE[e.type]=1;G.run.bossKills++;
   if(BOSS_ACH[e.type])grantAch(BOSS_ACH[e.type]);
   if(!G.run.hurtBoss)grantAch('flawless');
+  if(G.run.diff===3||G.run.diff===5)grantAch('sleepless');
   Save.write();
   if(e.type==='you'){G.fx.push({t:60,f:()=>ending('kill')});Music.setMode('void');return}
   Music.setMode('clear');
@@ -2313,9 +2322,9 @@ function startRun(charId,o){
   // everything seeded keys off the run code, so typing one in replays that night
   const seedStr=o.seedStr||seedString(o.seed!=null?o.seed>>>0:(Math.random()*4294967296)>>>0);
   const seed=hashStr(seedStr),rng=new RNG(hashStr(seedStr+':pools'));
-  let diffId=o.tutorial?0:(Save.d.opts.diff|0);if(!DIFFS[diffId]||(diffId===3&&!isUnlocked('mode:hard')))diffId=0;
+  let diffId=o.tutorial?0:(Save.d.opts.diff|0);if(!diffOk(diffId))diffId=0;
   const mods={};if(!o.tutorial)for(const x of MODS)if(Save.d.mods&&Save.d.mods[x.id])mods[x.id]=true;
-  const run={seed,seedStr,rng,char:ch,depth:1,items:[],taken:{},diff:diffId,hard:diffId===3,mods,mult:runMult(diffId,mods),daily:!!o.daily,
+  const run={seed,seedStr,rng,char:ch,depth:1,items:[],taken:{},diff:diffId,hard:diffId===3||diffId===5,mods,mult:runMult(diffId,mods),daily:!!o.daily,
     tutorial:!!o.tutorial,kills:0,frames:0,bossKills:0,killer:null,newUnlocks:[],pools:null,candyMap:null,candyKnown:{},hurtBoss:false,hurtRoom:false,secrets:0,win:null,lastHurt:null};
   const pools={t:[],s:[],b:[],c:[]};
   for(const it of ITEMS){if(it.lock&&!isUnlocked(it.lock))continue;if(ch.items.includes(it.id))continue;for(const k of'tsbc')if(it.pool.includes(k))pools[k].push(it.id)}
@@ -2890,7 +2899,12 @@ const ES={
 'Setlist':'Setlist','Every fight starts with the crowd on your side.':'Cada pelea empieza con el público de tu lado.','Stage Light':'Luz de Escenario','All eyes on you.':'Todos los ojos sobre ti.',
 'Earplugs':'Tapones','Blocks the first hit in every fight.':'Bloquea el primer golpe de cada pelea.',
 // phone / updates
-'DIFFICULTY':'DIFICULTAD','NORMAL':'NORMAL','EASY':'FÁCIL','VERY EASY':'MUY FÁCIL',
+'DIFFICULTY':'DIFICULTAD','NORMAL':'NORMAL','EASY':'FÁCIL','VERY EASY':'MUY FÁCIL','HARD':'DIFÍCIL','SLEEPLESS':'SIN SUEÑO',
+'Enemies have 30% more health and faster bullets.':'Los enemigos tienen 30% más de vida y balas más rápidas.',
+'Harder than Hard: an extra enemy per room, tougher bosses, darker rooms.':'Más que Difícil: un enemigo extra por cuarto, jefes más duros, cuartos más oscuros.',
+'Heavier, then worse: two extra enemies per room, and every hit takes a whole heart.':'Pesado, y peor: dos enemigos extra por cuarto, y cada golpe quita un corazón entero.',
+'Finish the game to unlock Heavier.':'Termina el juego para desbloquear Pesado.','Beat a boss on Heavier to unlock Sleepless.':'Vence a un jefe en Pesado para desbloquear Sin Sueño.',
+'No Sleep':'Sin Dormir','Defeat a boss on Heavier':'Derrota a un jefe en Pesado',
 // run setup
 'before you go':'antes de irte','RANDOM':'ALEATORIA','MODIFIERS':'MODIFICADORES','SCORE ×{0}':'PUNTOS ×{0}','RUNS':'PARTIDAS','WINS':'VICTORIAS',
 'BEST':'RÉCORD','DEEPEST':'MÁS HONDO','not yet':'todavía no','Same night for everyone today.':'La misma noche para todos hoy.',
@@ -2971,6 +2985,7 @@ ACH.push(
   {id:'angel',name:'Top Friend',desc:'Defeat The Myspace Angel',unlock:['item:megaphone']},
   {id:'crowd',name:'Crowd Pleaser',desc:'Trigger an Encore',unlock:['item:feedbacklaser']},
   {id:'practice',name:'Practice',desc:'Finish the tutorial',unlock:['item:blackcat']},
+  {id:'sleepless',name:'No Sleep',desc:'Defeat a boss on Heavier',unlock:['mode:sleepless']},
 );
 Object.assign(BOSS_ACH,{opening:'opening',angel:'angel'});
 Object.assign(EN,{
@@ -3323,14 +3338,15 @@ function renderSelect(c){
 const SETUP_X=184,SETUP_W=288;
 const touchDevice=()=>matchMedia('(pointer:coarse)').matches;
 function openSetup(daily,charId){
-  const o=Save.d.opts;if(!DIFFS[o.diff|0]||((o.diff|0)===3&&!isUnlocked('mode:hard')))o.diff=0;
+  const o=Save.d.opts;if(!diffOk(o.diff|0))o.diff=0;
+  G.run=null;G.player=null; // the setup screen always reads your saved choices, never a finished run
   G.state='setup';G.setup={daily,charId,seed:'',err:''};G.menu={sel:setupRows().length-1};
 }
 function cycleRow(list,get,set){return{cycle:true,act:d=>{const n=list.length,i=list.indexOf(get());set(list[((i<0?0:i)+(d<0?n-1:1))%n])}}}
 function setupRows(){
   const o=Save.d.opts,s=G.setup,mods=Save.d.mods||(Save.d.mods={});
   return[
-    {l:'DIFFICULTY',v:()=>diff().l,f:()=>diff().f,...cycleRow(diffOrder(),()=>o.diff|0,v=>{o.diff=v})},
+    {l:'DIFFICULTY',v:()=>(DIFFS[o.diff|0]||DIFFS[0]).l,f:()=>tr((DIFFS[o.diff|0]||DIFFS[0]).f)+(diffLockHint(o.diff|0)?' '+diffLockHint(o.diff|0):''),...cycleRow(diffOrder(),()=>o.diff|0,v=>{o.diff=v})},
     {l:'CONTROLS',v:()=>curStyle().l,f:()=>tr(curStyle().f)+(touchDevice()?'':' '+tr('(touch screens)')),...cycleRow(TOUCH_STYLES.map(x=>x.id),()=>curStyle().id,v=>{o.touchStyle=v})},
     {l:'AUTO-FIRE',v:()=>o.autofire?'ON':'OFF',f:()=>'Fires at the nearest enemy you have a clear shot at, whenever you are not aiming yourself.',cycle:true,act:()=>{o.autofire=!o.autofire}},
     s.daily?{l:'SEED',v:()=>dateKey(),f:()=>'Everyone gets the same night today.',dis:true}
@@ -3459,7 +3475,7 @@ function renderJournal(c){
       if(l.k==='i'){txt(c,l.seen?l.it.n:'???',30,H-48,{font:F_T,size:16,col:l.seen?'#fff':'#555'});txt(c,l.seen?l.it.f:(l.it.lock&&!isUnlocked(l.it.lock)?tr('Locked: {0}',tr(unlockHint(l.it.lock))):'Not found yet.'),30,H-28,{font:F_X,size:13,col:'#b8aec8'});if(l.seen&&l.it.set)txt(c,SETS[l.it.set].n,W-30,H-48,{align:'right',col:SETS[l.it.set].col})}
       else{const nm=tr(l.def.name);txt(c,l.seen?nm[0].toUpperCase()+nm.slice(1):'???',30,H-48,{font:F_T,size:16,col:l.seen?'#fff':'#555'});txt(c,l.k==='b'?(l.seen?'Defeated.':'Not defeated yet.'):(l.seen?'Killed at least once.':'Not met yet.'),30,H-28,{font:F_X,size:13,col:'#b8aec8'})}}
   }else{
-    list.forEach((l,i)=>{const y=44+i*12;txt(c,(l.seen?'■ ':'□ ')+tr(l.a.name),40,y,{col:l.seen?'#ffd23f':'#6a607a'});txt(c,l.a.desc,190,y,{font:F_X,size:12,col:l.seen?'#d8cce4':'#5a5068'})});
+    const lh=Math.min(12,(H-66)/list.length);list.forEach((l,i)=>{const y=44+i*lh;txt(c,(l.seen?'■ ':'□ ')+tr(l.a.name),40,y,{col:l.seen?'#ffd23f':'#6a607a'});txt(c,l.a.desc,190,y,{font:F_X,size:12,col:l.seen?'#d8cce4':'#5a5068'})});
   }
   drawBackBtn(c);txt(c,tr('{0} switch tab   {1} browse   {2} back',glyph('tabs'),glyph('nav'),glyph('back')),CX,H-6,{align:'center',font:F_X,size:10,col:'#4a4058',base:'bottom'});
 }
@@ -3634,7 +3650,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.01-1640';
+const BUILD='2026.10.01-1648';
 const Updater={
   ready:false,
   check(){
