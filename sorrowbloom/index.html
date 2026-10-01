@@ -218,7 +218,7 @@ const Input={
     const up=e=>{this.touches.delete(e.pointerId);if(e.pointerType==='touch'){AU.init();autoFull()}else if(e.button===0)this.ptr.down=false;
       if(this.swallow===e.pointerId){this.swallow=null;return}
       // the run code box has to open inside the tap itself or phones won't show the keyboard
-      if(G.state==='setup'&&e.type==='pointerup')setupTapUp(View.toGame(e.clientX,e.clientY))};
+      if((G.state==='setup'||G.state==='summary')&&e.type==='pointerup')setupTapUp(View.toGame(e.clientX,e.clientY))};
     cv.addEventListener('pointerup',up);cv.addEventListener('pointercancel',up);
   },
   // a fast swipe of the move thumb dashes that way
@@ -1436,7 +1436,7 @@ function playerDie(src){
     if(p.noRed)addExtra(p,'black',2);else{p.maxRed=Math.max(p.maxRed,2);p.red=2}
     p.inv=150;banner('Not yet.','The Polaroid fades to white.',null);flashScreen(.8);return;
   }
-  p.dead=true;G.run.killer=src||'something';G.state='dying';G.dieT=0;
+  p.dead=true;G.run.killer=src||'something';G.state='dying';G.dieT=0;clearRunSave(); // closing the app can't undo a death
   Music.setMode('off');AU.tapeStop((Music.song?Music.song.root:36)+12);
   Save.d.stats.deaths++;if(Save.d.stats.deaths>=5)grantAch('sad5');Save.write();
 }
@@ -1905,7 +1905,7 @@ function giveItem(it){
   recalc(p);
   banner(it.n,it.f,itemIcon(it));AU.play('item');p.holdItem=it;p.holdT=70;
   if(it.set)checkTransform(p,it.set);
-  Save.write();
+  Save.write();saveRun();
   return old;
 }
 function checkTransform(p,s){
@@ -2306,13 +2306,124 @@ function bossDefeated(e){
     G.locked=false;G.room.cleared=true;G.bossDying=false;
     const it=drawItem('b');if(it)G.room.peds.push({x:CX,y:CY-14,item:it});
     spawnPickup('heart',CX-34,CY+8);
-    G.room.trapdoor={x:CX,y:CY+44,t:0};AU.play('door');
+    G.room.trapdoor={x:CX,y:CY+44,t:0};AU.play('door');saveRun();
   }});
 }
 function ending(kind){
   if(G.state==='ending')return;
   G.run.win=kind;Save.d.stats.wins++;grantAch('win');if(kind==='hug')grantAch('hug');Save.write();
   G.state='ending';G.endT=0;Music.setMode('void');
+}
+
+// ---------- resume: the run is saved at every room, clear, pickup and trip to the background ----------
+const RUN_KEY='sorrowbloom.run.v1';
+function clearRunSave(){try{localStorage.removeItem(RUN_KEY)}catch(e){}G.runSave=null}
+function loadRunSave(){try{const d=JSON.parse(localStorage.getItem(RUN_KEY)||'null');return d&&d.v===1&&d.run&&d.floor?d:null}catch(e){return null}}
+function saveRun(){
+  const r=G.run,p=G.player;
+  if(!r||!p||r.tutorial||p.dead||r.win||!G.floor||!G.room||!G.room.built)return;
+  if(G.state!=='play'&&G.state!=='pause'&&G.state!=='bossintro')return;
+  try{localStorage.setItem(RUN_KEY,JSON.stringify(snapshotRun()))}catch(e){}
+}
+function snapshotRun(){
+  const r=G.run,p=G.player,ids=a=>a.map(i=>i.id),rooms=[];
+  for(const rm of G.floor.rooms.values()){
+    const o={idx:rm.idx,type:rm.type,visited:!!rm.visited,seen:!!rm.seen,mapped:!!rm.mapped,cleared:!!rm.cleared,counted:!!rm.counted,sold:!!rm.sold,doors:{}};
+    for(const d in rm.doors)o.doors[d]=!!rm.doors[d].link.revealed;
+    if(rm.built)Object.assign(o,{built:true,tiles:Array.from(rm.tiles),tileHp:rm.tileHp,outage:!!rm.outage,spec:rm.spec,
+      pickups:rm.pickups.map(k=>({kind:k.kind,x:k.x,y:k.y,vx:0,vy:0,t:30,price:k.price,fixed:k.fixed,val:k.val,cid:k.cid})),
+      peds:rm.peds.map(d=>({x:d.x,y:d.y,item:d.item?d.item.id:null,price:d.price||0,pt:d.pt||null})),
+      objects:rm.objects.map(b=>Object.assign({},b)),trapdoor:rm.trapdoor?{x:rm.trapdoor.x,y:rm.trapdoor.y}:null});
+    rooms.push(o);
+  }
+  return{v:1,build:BUILD,at:Date.now(),
+    run:{seedStr:r.seedStr,char:r.char.id,depth:r.depth,diff:r.diff,mods:r.mods,daily:r.daily,dailyKey:r.dailyKey,items:ids(r.items),taken:r.taken,pools:r.pools,
+      candyMap:r.candyMap,candyKnown:r.candyKnown,kills:r.kills,frames:r.frames,bossKills:r.bossKills,secrets:r.secrets,newUnlocks:r.newUnlocks.map(a=>a.id)},
+    player:{red:p.red,maxRed:p.maxRed,extras:p.extras,pins:p.pins,candles:p.candles,consum:p.consum,active:p.active?p.active.id:null,charge:p.charge,items:ids(p.items),
+      bonus:p.bonus,mood:p.mood,trans:p.trans,revives:p.revives,fams:p.fams.map(f=>f.kind),hype:p.hype||0,tearN:p.tearN,dashes:p.dashes||0},
+    floor:{room:G.room.idx,rooms}};
+}
+function restoreRun(d){
+  const sr=d.run,sp=d.player,ch=CHARS.find(c=>c.id===sr.char);if(!ch)throw new Error('unknown character');
+  const one=id=>ITEM[id]||null,many=a=>(a||[]).map(one).filter(Boolean);
+  const diffId=diffOk(sr.diff)?sr.diff:0,mods=sr.mods||{};
+  const run={seed:hashStr(sr.seedStr),seedStr:sr.seedStr,rng:null,char:ch,depth:sr.depth|0||1,items:many(sr.items),taken:sr.taken||{},diff:diffId,hard:diffId===3||diffId===5,mods,
+    mult:runMult(diffId,mods),daily:!!sr.daily,dailyKey:sr.dailyKey||null,tutorial:false,kills:sr.kills|0,frames:sr.frames|0,bossKills:sr.bossKills|0,killer:null,
+    newUnlocks:(sr.newUnlocks||[]).map(id=>ACH.find(a=>a.id===id)).filter(Boolean),pools:{},candyMap:sr.candyMap,candyKnown:sr.candyKnown||{},
+    hurtBoss:false,hurtRoom:false,secrets:sr.secrets|0,win:null,lastHurt:null};
+  for(const k of 'tsbc')run.pools[k]=((sr.pools||{})[k]||[]).filter(id=>ITEM[id]); // a newer build may have dropped an item
+  G.run=run;const p=G.player=makePlayer(ch);
+  G.hist=[];G.toasts=[];G.banner=null;G.sadBar=0;G.mapToggle=false;G.tut=null;G.trans=null;
+  Object.assign(p,{red:sp.red|0,maxRed:sp.maxRed|0,extras:sp.extras||[],pins:sp.pins|0,candles:sp.candles|0,consum:sp.consum||null,charge:sp.charge|0,
+    trans:sp.trans||{},revives:sp.revives|0,hype:sp.hype||0,tearN:sp.tearN|0,dashes:sp.dashes|0});
+  Object.assign(p.bonus,sp.bonus||{});Object.assign(p.mood,sp.mood||{});
+  p.items=many(sp.items);p.active=sp.active?one(sp.active):null;p.fams=[];for(const k of sp.fams||[])addFam(p,k);
+  recalc(p);
+  setupFloor(run.depth,true);
+  for(const o of d.floor.rooms){
+    const rm=G.floor.rooms.get(o.idx);if(!rm)continue;
+    Object.assign(rm,{type:o.type,visited:o.visited,seen:o.seen,mapped:o.mapped,cleared:o.cleared,counted:o.counted,sold:o.sold});
+    for(const dir in o.doors)if(rm.doors[dir])rm.doors[dir].link.revealed=o.doors[dir];
+    if(!o.built)continue;
+    rm.tiles=Uint8Array.from(o.tiles);rm.tileHp=o.tileHp||{};rm.outage=o.outage;rm.spec=(o.spec||[]).filter(x=>EN[x.type]);
+    rm.pickups=o.pickups||[];rm.objects=o.objects||[];rm.peds=(o.peds||[]).map(x=>Object.assign({},x,{item:x.item?one(x.item):null}));
+    rm.trapdoor=o.trapdoor?{x:o.trapdoor.x,y:o.trapdoor.y,t:60}:null;
+    rm.lights=[];rm.built=true;connected(rm);rm.bg=buildBG(rm,G.floorDef,new RNG(hashStr(run.seedStr+':'+run.depth+':'+rm.idx)));
+  }
+  G.state='play';
+  enterRoom(G.floor.rooms.get(d.floor.room)||G.floor.start,null);
+  // come back paused, so nothing hits you before you've got your thumbs down
+  G.prevState=G.state;G.state='pause';G.menu={sel:0};AU.setMuffle(900);
+}
+function continueRun(){
+  const d=loadRunSave();
+  try{if(!d)throw new Error('no save');restoreRun(d)}
+  catch(e){console.error(e);clearRunSave();goTitle();G.titleMsg=tr("Couldn't load your last run.");G.titleMsgT=300}
+}
+
+// ---------- shareable links + share card ----------
+// ?code=ABCD-EFGH opens the setup screen with that run code filled in
+const LINK_CODE=(()=>{try{const v=(new URLSearchParams(location.search).get('code')||'').toUpperCase().replace(/[^A-Z0-9]/g,'');return v.length===8?v.slice(0,4)+'-'+v.slice(4):''}catch(e){return''}})();
+const shareURL=code=>location.origin+location.pathname+'?code='+code;
+const SHARE_BTN=[CX-100,H-30,92,17],DONE_BTN=[CX+8,H-30,92,17];
+function shareText(r){
+  const fl=tr(FLOORS[r.depth-1].n),diffL=tr(DIFFS[r.diff||0].l);
+  return(r.win?tr('I made it out of Sorrowbloom ({0}). Score {1}.',diffL,r.score):tr('I made it to {0} in Sorrowbloom ({1}). Score {2}.',fl,diffL,r.score))+' '+tr('Play my run:');
+}
+function buildShareCard(r){
+  G.shareCanvas=null;G.shareFile=null;
+  try{
+    const cw=600,chh=315,S=2,cv=mkCanvas(cw*S,chh*S),c=cv.getContext('2d');c.scale(S,S);c.imageSmoothingEnabled=false;
+    const g=c.createLinearGradient(0,0,0,chh);g.addColorStop(0,r.win?'#1a1026':'#140810');g.addColorStop(1,'#050208');c.fillStyle=g;c.fillRect(0,0,cw,chh);
+    c.strokeStyle='rgba(170,190,230,.16)';c.beginPath();for(let i=0;i<110;i++){const x=(i*97)%cw,y=(i*53+i*i)%chh;c.moveTo(x,y);c.lineTo(x-2,y+9)}c.stroke();
+    c.fillStyle='rgba(255,79,123,.5)';c.fillRect(0,0,cw,3);
+    txt(c,'Sorrowbloom',24,14,{font:F_T,size:40,col:'#efe6f4',shadow:'#2a0a14'});
+    txt(c,r.win?'The End':(r.killer==='going home early'?'Gone Home':'You Died'),26,62,{font:F_T,size:26,col:r.win?'#ffd6e4':'#c21e3a'});
+    wrapText(c,epitaph(r),340,16).slice(0,3).forEach((l,i)=>txt(c,l,26,98+i*16,{font:F_X,size:16,col:'#d8cce4'}));
+    const spr=playerSprites(r.char.invisible?CHARS[0]:r.char).down;
+    c.save();c.translate(486,128);c.scale(7,7);if(r.char.invisible)c.globalAlpha=.25;c.drawImage(spr,-8,-12);c.restore();c.globalAlpha=1;
+    txt(c,r.char.name,486,176,{align:'center',font:F_T,size:18});
+    const mods=MODS.filter(x=>r.mods&&r.mods[x.id]).map(x=>tr(x.n)).join(' · ');
+    const rows=[['SCORE',r.score+' · '+tr(DIFFS[r.diff||0].l)],['FLOOR',FLOORS[r.depth-1].ro+' · '+tr(FLOORS[r.depth-1].n)],['KILLS',r.kills],...(mods?[['MODIFIERS',mods]]:[]),['RUN CODE',r.seedStr]];
+    rows.forEach(([k,v],i)=>{txt(c,k,26,160+i*17,{size:9,col:'#8f86a0'});txt(c,fitText(c,String(v),300,9),126,160+i*17,{size:9,col:k==='RUN CODE'?'#ffd23f':'#fff'})});
+    r.items.slice(0,26).forEach((it,i)=>c.drawImage(itemIcon(it),26+(i%26)*21,262,18,18));
+    txt(c,location.host+location.pathname,cw-14,chh-14,{align:'right',font:F_X,size:12,col:'#6a607a'});
+    G.shareCanvas=cv;
+    // the file has to be ready before the tap: phones only allow sharing right inside the tap
+    cv.toBlob(b=>{if(b&&G.shareCanvas===cv){try{G.shareFile=new File([b],'sorrowbloom-'+r.seedStr+'.png',{type:'image/png'})}catch(e){}}},'image/png');
+  }catch(e){console.error(e)}
+}
+function shareRun(){
+  const r=G.run;if(!r)return;
+  const url=shareURL(r.seedStr),text=shareText(r),f=G.shareFile;
+  try{
+    if(f&&navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:'Sorrowbloom',text:text+' '+url}).catch(()=>{});return}
+    if(navigator.share){navigator.share({title:'Sorrowbloom',text,url}).catch(()=>{});return}
+  }catch(e){}
+  // no share sheet (most desktops): save the picture and copy the link instead
+  try{if(G.shareCanvas){const a=document.createElement('a');a.download='sorrowbloom-'+r.seedStr+'.png';a.href=G.shareCanvas.toDataURL('image/png');a.click()}}catch(e){}
+  G.shareMsg='Picture saved.';AU.play('select');
+  try{navigator.clipboard.writeText(text+' '+url).then(()=>{G.shareMsg='Picture saved and link copied.'},()=>{})}catch(e){}
 }
 
 // ---------- run / floor / room flow ----------
@@ -2324,7 +2435,7 @@ function startRun(charId,o){
   const seed=hashStr(seedStr),rng=new RNG(hashStr(seedStr+':pools'));
   let diffId=o.tutorial?0:(Save.d.opts.diff|0);if(!diffOk(diffId))diffId=0;
   const mods={};if(!o.tutorial)for(const x of MODS)if(Save.d.mods&&Save.d.mods[x.id])mods[x.id]=true;
-  const run={seed,seedStr,rng,char:ch,depth:1,items:[],taken:{},diff:diffId,hard:diffId===3||diffId===5,mods,mult:runMult(diffId,mods),daily:!!o.daily,
+  const run={seed,seedStr,rng,char:ch,depth:1,items:[],taken:{},diff:diffId,hard:diffId===3||diffId===5,mods,mult:runMult(diffId,mods),daily:!!o.daily,dailyKey:o.daily?dateKey():null,
     tutorial:!!o.tutorial,kills:0,frames:0,bossKills:0,killer:null,newUnlocks:[],pools:null,candyMap:null,candyKnown:{},hurtBoss:false,hurtRoom:false,secrets:0,win:null,lastHurt:null};
   const pools={t:[],s:[],b:[],c:[]};
   for(const it of ITEMS){if(it.lock&&!isUnlocked(it.lock))continue;if(ch.items.includes(it.id))continue;for(const k of'tsbc')if(it.pool.includes(k))pools[k].push(it.id)}
@@ -2336,7 +2447,7 @@ function startRun(charId,o){
   for(const id of ch.items){const it=ITEM[id];run.taken[id]=1;if(it.active){G.player.active=it;G.player.charge=it.active.charge;run.items.push(it)}else{G.player.items.push(it);run.items.push(it)}}
   recalc(G.player);
   applyHeartMods(G.player,mods);if(mods.sellout)G.player.pins+=20;
-  if(!run.tutorial){Save.d.stats.runs++;Save.d.lastChar=ch.id;charStats(ch.id).runs++}
+  if(!run.tutorial){Save.d.stats.runs++;Save.d.lastChar=ch.id;charStats(ch.id).runs++;clearRunSave()}
   if(run.daily)Save.d.daily[dateKey()]={done:false,score:0,diff:diffId};
   Save.write();
   G.state='play';
@@ -2358,7 +2469,7 @@ function handMeDowns(){
   p.holdT=0;p.holdItem=null;G.banner=null;
   if(got.length)toast('Hand-me-downs',got.join(' · '),'#ff8fc8');
 }
-function enterFloor(d){
+function setupFloor(d,restoring){
   const run=G.run;run.depth=d;G.floorDef=FLOORS[d-1];
   G.floor=run.tutorial?genTutorialFloor():genFloor(new RNG(hashStr(run.seedStr+':floor'+d)),d);
   {const ar=new RNG(hashStr(run.seedStr+':alt'+d));G.floor.alt=run.tutorial?null:(d<=2&&ar.chance(.4))?'opening':(d>=3&&d<=4&&ar.chance(.4))?'angel':null}
@@ -2366,13 +2477,19 @@ function enterFloor(d){
   G.tileSpr=buildTileSprites(G.floorDef,d);
   Music.setSong(makeSong(hashStr(run.seedStr+':song'+d),d));Music.setMode('explore');
   AU.setAmbience(G.floorDef.amb);AU.setMuffle(G.floorDef.water?2400:18000);
-  if(d>=3)grantAch('floor3');if(d>=4)grantAch('floor4');
   const p=G.player;
-  if(p.items.some(i=>i.mood))rollMood(p);
+  if(!restoring){
+    if(d>=3)grantAch('floor3');if(d>=4)grantAch('floor4');
+    if(p.items.some(i=>i.mood))rollMood(p);
+    hooks('floor');
+  }
   for(const it of p.items)if(it.reveal)revealMap(it.reveal);
-  hooks('floor');
   G.void=false;G.border=0;
   initWeather();
+}
+function enterFloor(d){
+  setupFloor(d,false);
+  const p=G.player;
   enterRoom(G.floor.start,null);
   p.x=CX;p.y=CY+10;G.hist=[];
   const card={type:'floor',t:0,dur:150};
@@ -2396,6 +2513,7 @@ function enterRoom(room,fromDir){
   for(const d in room.doors){const dd=room.doors[d];if(!dd.link.secret||dd.link.revealed)dd.to.seen=true}
   if(room.type==='secret'){for(const d in room.doors)room.doors[d].link.revealed=true;if(!room.counted){room.counted=true;G.run.secrets++;Save.d.stats.secrets++;if(Save.d.stats.secrets>=3)grantAch('secret')}}
   G.flowT=0;computeFlow();
+  saveRun();
   if(!room.cleared){
     if(room.type==='boss'){startBoss(room);return}
     if(room.spec.length){
@@ -2425,6 +2543,7 @@ function checkClear(){
   const chance=.5+p.luck*.04+(p.flags.caller?.3:0);
   for(let n=0;n<dropMul();n++)if(FX.chance(chance)){const k=rollDrop(FX,false);if(k)spawnPickup(k,CX+n*14,CY)}
   if(p.flags.caller&&FX.chance(.3)){const k=rollDrop(FX,true);if(k)spawnPickup(k,CX+12,CY)}
+  saveRun();
 }
 
 // ---------- 12. PARTICLES / FX / LIGHTING ----------
@@ -2926,6 +3045,10 @@ const ES={
 'Insomniac':'Insomne','The lights never come on. Everything drops twice as much.':'Las luces nunca se prenden. Todo suelta el doble.',
 'Sellout':'Vendido','Treasure rooms become shops. Start with 20 pins, and everything costs 40% less.':'Los cuartos del tesoro se vuelven tiendas. Empiezas con 20 seguros y todo cuesta 40% menos.',
 'Hand-me-downs':'Heredado','Start with two random items, and one less heart.':'Empiezas con dos objetos al azar y un corazón menos.',
+// resume + sharing
+'CONTINUE':'CONTINUAR',"Couldn't load your last run.":'No se pudo cargar tu última partida.','SHARE':'COMPARTIR','Picture saved and link copied.':'Imagen guardada y enlace copiado.','Picture saved.':'Imagen guardada.',
+'I made it out of Sorrowbloom ({0}). Score {1}.':'Salí de Sorrowbloom ({0}). Puntos: {1}.','I made it to {0} in Sorrowbloom ({1}). Score {2}.':'Llegué hasta {0} en Sorrowbloom ({1}). Puntos: {2}.',
+'Play my run:':'Juega mi partida:','RUN CODE':'CÓDIGO','This run code came from a shared link. Tap to change it.':'Este código vino de un enlace compartido. Tócalo para cambiarlo.',
 // touch settings
 'TOUCH':'TÁCTIL','CONTROL STYLE':'ESTILO DE CONTROL','AIM HELP':'AYUDA AL APUNTAR','AIM LINE':'LÍNEA DE PUNTERÍA','FLICK TO DASH':'DESLIZA PARA ESQUIVAR','LEFT-HANDED':'ZURDO',
 'DASH / FLICK':'ESQUIVAR / DESLIZA','Keyboard keys can be remapped. Touch options are in the TOUCH tab.':'Las teclas se pueden reasignar. Las opciones táctiles están en la pestaña TÁCTIL.',
@@ -3216,15 +3339,20 @@ const titleRain=Array.from({length:110},()=>({x:Math.random()*W,y:Math.random()*
 const BOKEH=Array.from({length:26},(_,i)=>({x:(i*97)%W,y:60+((i*53)%140),r:4+(i*7)%12,col:['#ffb04a','#ff8fc8','#9ad0ff','#ffd27a'][i%4]}));
 function goTitle(){
   if(Updater.ready){Updater.apply();return}
+  G.runSave=loadRunSave();
   G.state='title';G.menu={sel:0};G.run=null;G.player=null;G.trans=null;G.banner=null;
   if(!titleSong)titleSong=makeSong(hashStr('sorrowbloom-title'),1);
   Music.setSong(titleSong);Music.setMode('title');AU.setAmbience('title');AU.setMuffle(18000);
 }
 function onUserGesture(){
   AU.init();
-  if(G.state==='boot'){goTitle();G.skipInput=true}
+  if(G.state==='boot'){goTitle();G.skipInput=true;
+    if(LINK_CODE&&!G.linkUsed){G.linkUsed=true;
+      const ch=CHARS.find(c=>c.id===Save.d.lastChar&&(!c.lock||isUnlocked(c.lock)))||CHARS[0];
+      openSetup(false,ch.id);G.setup.seed=LINK_CODE;G.setup.fromLink=true;
+      try{history.replaceState(null,'',location.pathname)}catch(e){}}}
 }
-function onBlur(){if(G.state==='play'||G.state==='bossintro'){G.prevState=G.state;G.state='pause';G.menu={sel:0};AU.setMuffle(900)}}
+function onBlur(){if(G.state==='play'||G.state==='bossintro'){G.prevState=G.state;G.state='pause';G.menu={sel:0};AU.setMuffle(900)}saveRun()}
 // fullscreen + landscape lock. iPhone Safari has no fullscreen API: there the home screen icon is the fullscreen mode.
 const isFull=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
 const canFull=()=>{const d=document.documentElement;return!!(d.requestFullscreen||d.webkitRequestFullscreen)};
@@ -3277,12 +3405,14 @@ function drawCandle(c,x,y){
 function titleItems(){
   const it=[{id:'run',l:'DESCEND'},{id:'daily',l:'DAILY RUN'},{id:'tutorial',l:'TUTORIAL'},{id:'journal',l:'JOURNAL'},{id:'options',l:'SETTINGS'}];
   if(!Save.d.tutDone)it.unshift(it.splice(2,1)[0]);
+  const rs=G.runSave;if(rs){const ch=CHARS.find(c=>c.id===rs.run.char);it.unshift({id:'continue',l:tr('CONTINUE')+' · '+(ch?ch.name:'')+' '+((FLOORS[rs.run.depth-1]||FLOORS[0]).ro)})}
   const dd=Save.d.daily[dateKey()];if(dd&&dd.done){const d=it.find(i=>i.id==='daily');d.l=tr('DAILY: DONE ({0})',dd.score+(dd.diff?' · '+tr(DIFFS[dd.diff].l):''));d.dis=true}
   return it;
 }
 function updTitle(){
   const items=titleItems(),i=menuNav(items.length);if(i<0)return;
   const id=items[i].id;AU.play('select');
+  if(id==='continue'){continueRun();return}
   if(id==='run'){G.state='select';G.menu={sel:Math.max(0,CHARS.findIndex(c=>c.id===Save.d.lastChar))}}
   else if(id==='daily'){if(items[i].dis){AU.play('denied');return}openSetup(true,'wren')}
   else if(id==='journal'){G.state='journal';G.menu={sel:0,tab:0}}
@@ -3297,7 +3427,8 @@ function renderTitle(c){
   for(let i=0;i<5;i++){const x=CX-110+i*52+((i*37)%20),l=((t*.2+i*30)%60);c.fillStyle='rgba(122,10,31,.7)';c.fillRect(x,72,1.5,l*.3)}
   txt(c,'an emo dungeon crawl',CX,80,{align:'center',font:F_X,size:14,col:'#b8aec8'});
   if(G.state==='boot'){if(t>>5&1)txt(c,'PRESS ANY KEY OR TAP',CX,150,{align:'center',col:'#ff8fc8'});txt(c,'(sound on. it matters.)',CX,166,{align:'center',font:F_X,size:12,col:'#6a607a'});return}
-  drawMenu(c,titleItems(),CX,128,15);
+  {const items=titleItems(),lh=items.length>6?13:15;drawMenu(c,items,CX,items.length>6?120:128,lh)}
+  if(G.titleMsgT>0){G.titleMsgT--;txt(c,G.titleMsg,CX,H-50,{align:'center',font:F_X,size:12,col:'#ff8fa0'})}
   const s=Save.d.stats;
   txt(c,tr('runs {0}   wins {1}   best {2}',s.runs,s.wins,Save.d.best),CX,H-36,{align:'center',font:F_X,size:12,col:'#6a607a'});
   txt(c,tr('{0} move · {1} cry · {2} dash',glyph('move'),glyph('shoot'),glyph('dash')),CX,H-20,{align:'center',font:F_X,size:10,col:'#4a4058'});txt(c,tr('{0} candle · {1} item · {2} use · {3} map',glyph('bomb'),glyph('active'),glyph('use'),glyph('map')),CX,H-11,{align:'center',font:F_X,size:10,col:'#4a4058'});
@@ -3350,7 +3481,7 @@ function setupRows(){
     {l:'CONTROLS',v:()=>curStyle().l,f:()=>tr(curStyle().f)+(touchDevice()?'':' '+tr('(touch screens)')),...cycleRow(TOUCH_STYLES.map(x=>x.id),()=>curStyle().id,v=>{o.touchStyle=v})},
     {l:'AUTO-FIRE',v:()=>o.autofire?'ON':'OFF',f:()=>'Fires at the nearest enemy you have a clear shot at, whenever you are not aiming yourself.',cycle:true,act:()=>{o.autofire=!o.autofire}},
     s.daily?{l:'SEED',v:()=>dateKey(),f:()=>'Everyone gets the same night today.',dis:true}
-      :{l:'SEED',v:()=>s.seed||'RANDOM',f:()=>s.err||'Tap to type a run code from a past run or a friend. Leave it empty for a random night.',seed:true},
+      :{l:'SEED',v:()=>s.seed||'RANDOM',f:()=>s.err||(s.fromLink&&s.seed?'This run code came from a shared link. Tap to change it.':'Tap to type a run code from a past run or a friend. Leave it empty for a random night.'),seed:true},
     ...MODS.map(x=>({l:x.n,v:()=>mods[x.id]?'ON':'OFF',f:()=>x.f,toggle:true,act:()=>{mods[x.id]=!mods[x.id]}})),
     {l:'DESCEND',go:true,f:()=>'Start the run.'}];
 }
@@ -3377,7 +3508,8 @@ function updSetup(){
   const i=menuNav(n);if(i>=0)use(i,1,false);
 }
 function setupTapUp(p){
-  if(!G.setup||G.setup.daily)return;
+  if(G.state==='summary'){if(G.sumT>60&&inRect(p,SHARE_BTN))shareRun();return}
+  if(G.state!=='setup'||!G.setup||G.setup.daily)return;
   const rows=setupRows(),i=rows.findIndex(r=>r.seed);if(i>=0&&inRect(p,setupRect(i,rows.length)))openSeed();
 }
 function renderSetup(c){
@@ -3525,10 +3657,11 @@ function toSummary(){
   const mins=r.frames/3600;
   r.score=Math.max(0,Math.round((r.depth*1000+r.kills*10+r.items.length*25+r.bossKills*500+(won?5000:0)-mins*20)*(r.mult||1)));
   if(r.score>Save.d.best)Save.d.best=r.score;
-  if(r.daily){Save.d.daily[dateKey()]={done:true,score:r.score,diff:r.diff}}
+  if(r.daily){Save.d.daily[r.dailyKey||dateKey()]={done:true,score:r.score,diff:r.diff}}
   if(!r.tutorial){const cs=charStats(r.char.id);cs.best=Math.max(cs.best,r.score);cs.deep=Math.max(cs.deep,r.depth);if(won)cs.wins++}
-  Save.write();
-  G.state='summary';G.sumT=0;Music.setMode('void');AU.setMuffle(18000);
+  Save.write();clearRunSave();
+  G.state='summary';G.sumT=0;G.shareMsg='';Music.setMode('void');AU.setMuffle(18000);
+  buildShareCard(r);
 }
 const CLOSERS=["The rain didn't stop.",'Nobody called.','The candle burned all the way down.','It was a quiet night.','The song ended mid-chorus.','Someone left the light on.'];
 function epitaph(r){
@@ -3536,7 +3669,11 @@ function epitaph(r){
   let s=pas.length>=2?tr('{0} carried {1} and {2}.',nm,tr(pas[pas.length-1].n),tr(pas[0].n)):pas.length?tr('{0} carried {1}.',nm,tr(pas[0].n)):tr('{0} carried nothing at all.',nm);
   return s+' '+(r.win?tr('They made it out.'):tr('They made it to {0}.',tr(FLOORS[r.depth-1].n)))+' '+tr(CLOSERS[hashStr(r.seedStr)%CLOSERS.length]);
 }
-function updSummary(){G.sumT++;if(G.sumT>60&&(Input.pressed('ok')||Input.pressed('back')||Input.clicks.length))goTitle()}
+function updSummary(){
+  G.sumT++;if(G.sumT<=60)return;
+  if(Input.pressed('use')){shareRun();return} // keyboard / pad; taps on SHARE are handled on finger-up (see setupTapUp)
+  if(Input.pressed('ok')||Input.pressed('back')||Input.clicks.some(cl=>!inRect(cl,SHARE_BTN)))goTitle();
+}
 function renderSummary(c){
   const r=G.run,won=!!r.win;
   drawRainBg(c,won?'#120c1a':'#0a0508');
@@ -3551,8 +3688,11 @@ function renderSummary(c){
   const lh=Math.min(11,(172-y0)/lines.length);
   lines.forEach(([k,v],i)=>{txt(c,k,CX-120,y0+i*lh,{col:'#8f86a0',alpha:Math.min(1,Math.max(0,(t-40)/20))});txt(c,String(v),CX-30,y0+i*lh,{col:'#fff',alpha:Math.min(1,Math.max(0,(t-40)/20))})});
   r.items.forEach((it,i)=>{if(t>60+i*3)c.drawImage(itemIcon(it),CX-r.items.length*9.5+i*19,176)});
-  if(r.newUnlocks.length){txt(c,'UNLOCKED',CX,200,{align:'center',col:'#ffd23f'});wrapText(c,r.newUnlocks.map(a=>tr(a.name)).join(' · '),420,12).slice(0,3).forEach((l,i)=>txt(c,l,CX,211+i*11,{align:'center',font:F_X,size:12,col:'#ffe9a0'}))}
-  if(t>60&&(t>>5&1))txt(c,tr('PRESS {0}',glyph('ok')),CX,H-20,{align:'center',col:'#ff8fc8'});
+  if(r.newUnlocks.length){txt(c,'UNLOCKED',CX,198,{align:'center',col:'#ffd23f'});wrapText(c,r.newUnlocks.map(a=>tr(a.name)).join(' · '),420,12).slice(0,2).forEach((l,i)=>txt(c,l,CX,209+i*11,{align:'center',font:F_X,size:12,col:'#ffe9a0'}))}
+  if(t>60){
+    for(const[rc,l,hot]of[[SHARE_BTN,'SHARE',true],[DONE_BTN,'CONTINUE',false]]){c.fillStyle=hot?'rgba(255,79,123,.22)':'rgba(255,255,255,.06)';c.fillRect(...rc);c.strokeStyle=hot?'#ff4f7b':'#5a4a68';c.strokeRect(rc[0]+.5,rc[1]+.5,rc[2]-1,rc[3]-1);txt(c,l,rc[0]+rc[2]/2,rc[1]+5,{align:'center',col:'#fff'})}
+    if(G.shareMsg)txt(c,G.shareMsg,CX,H-42,{align:'center',font:F_X,size:12,col:'#7ff5e6'});
+  }
 }
 const END_TEXT={kill:['You won.',"It didn't feel like winning.",'The room went quiet.','You walked home in the rain.'],hug:['You stopped.','It stopped too.','You sat with it until morning.','It was still there. That was okay.']};
 function updEnding(){G.endT++;updateParticles();const n=END_TEXT[G.run.win].length;if(G.endT>n*140+140||(G.endT>90&&Input.pressed('ok')))toSummary()}
@@ -3650,7 +3790,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.01-1648';
+const BUILD='2026.10.01-1659';
 const Updater={
   ready:false,
   check(){
