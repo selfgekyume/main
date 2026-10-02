@@ -271,8 +271,14 @@ const Input={
 // ---------- 5. AUDIO ENGINE ----------
 // Everything is synthesized. Guitars are double-tracked (hard L/R), driven into a waveshaper and a cab-ish EQ.
 // Drop tuning goes lower every floor: drop C on floor I, down to F#1 in the last room.
+// ----- recorded instruments: Karoryfer Lecolds' Emilyguitar, Growlybass and Big Rusty Drums (all CC0, see audio/README.md) -----
+// each audio/*.mp3 is a sprite: a timing click at .05s, then the samples back to back. SMP_T gives [start, length] in seconds:
+// gtr f<midi> = a guitar note picked hard (for the amp), c<midi> = played softer (for clean parts), bass b<midi>, drums by name.
+// Each key has two takes, so the left and right guitars are different recordings, like a real double-tracked band.
+const AUDIO_V=1; // bump with AUDIO_V in sw.js whenever the recordings change
+const SMP_T={"gtr":{"f37":[[0.15,2.1],[2.37,2.1]],"f40":[[4.59,2.1],[6.81,2.1]],"f42":[[9.03,2.1],[11.25,2.1]],"f45":[[13.47,2.1],[15.69,2.1]],"f48":[[17.91,2.1],[20.13,2.1]],"f51":[[22.35,2.1],[24.57,2.1]],"f54":[[26.79,2.1],[29.01,2.1]],"f57":[[31.23,2.1],[33.45,2.1]],"f60":[[35.67,2.1],[37.89,2.1]],"f63":[[40.11,2.1],[42.33,2.1]],"f66":[[44.55,2.1],[46.77,2.1]],"f69":[[48.99,2.1],[51.21,2.1]],"f72":[[53.43,2.1],[55.65,2.1]],"f75":[[57.87,2.1],[60.09,2.1]],"c51":[[62.31,2.4],[64.83,2.4]],"c54":[[67.35,2.4],[69.87,2.4]],"c57":[[72.39,2.4],[74.91,2.4]],"c60":[[77.43,2.4],[79.95,2.4]],"c63":[[82.47,2.4],[84.99,2.4]],"c66":[[87.51,2.4],[90.03,2.4]],"c69":[[92.55,2.4],[95.07,2.4]],"c72":[[97.59,2.4],[100.11,2.4]],"c75":[[102.63,2.4],[105.15,2.4]],"c78":[[107.67,2.4],[110.19,2.4]],"c81":[[112.71,2.4],[115.23,2.4]],"c84":[[117.75,2.4],[120.27,2.4]],"c86":[[122.79,2.4],[125.31,2.4]]},"bass":{"b25":[[0.15,1.9],[2.17,1.9]],"b28":[[4.19,1.9],[6.21,1.9]],"b30":[[8.23,1.9],[10.25,1.9]],"b33":[[12.27,1.9],[14.29,1.9]],"b36":[[16.31,1.9],[18.33,1.9]],"b39":[[20.35,1.9],[22.37,1.9]],"b42":[[24.39,1.9],[26.41,1.9]],"b45":[[28.43,1.9],[30.45,1.9]],"b48":[[32.47,1.9],[34.49,1.9]]},"drums":{"kick":[[0.15,0.55],[0.82,0.55]],"snare":[[1.49,0.75],[2.36,0.75]],"ghost":[[3.23,0.5]],"hat":[[3.85,0.28],[4.25,0.28]],"ohat":[[4.65,1.1]],"crash":[[5.87,3.2]],"china":[[9.19,2.6]]}};
 const AU={
-  ctx:null,ok:false,muted:false,last:{},curves:{},
+  ctx:null,ok:false,muted:false,last:{},curves:{},sp:{},raw:{},rr:{},
   init(){
     // iOS reports 'interrupted' (not 'suspended') after a call or a trip to the background, so wake on anything but running
     if(this.ctx){if(this.ctx.state!=='running'){this.ctx.resume().catch(()=>{});this.unlock()}return}
@@ -309,17 +315,26 @@ const AU={
     this.drums=c.createGain();this.drums.gain.value=.8;
     const dc=c.createDynamicsCompressor();dc.threshold.value=-14;dc.knee.value=6;dc.ratio.value=3.5;dc.attack.value=.004;dc.release.value=.12;
     this.drums.connect(dc);dc.connect(this.music);
+    // recorded drums get a little shaping: kick with more beater click and less box, snare with body and snap, cymbals without the low rumble
+    const into=(nodes,dest)=>{for(let i=0;i<nodes.length-1;i++)nodes[i].connect(nodes[i+1]);nodes[nodes.length-1].connect(dest);return nodes[0]};
+    this.kBus=into([c.createGain(),bq('peaking',62,1,3),bq('peaking',400,1,-7),bq('peaking',4000,1,11),bq('highshelf',9000,null,-6)],this.drums);
+    const sc=c.createDynamicsCompressor();sc.threshold.value=-22;sc.knee.value=4;sc.ratio.value=4;sc.attack.value=.006;sc.release.value=.09;
+    const sm=c.createGain();sm.gain.value=2.2;this.sBus=into([c.createGain(),bq('peaking',210,1,2),bq('peaking',5500,.9,3),sc,sm],this.drums);
+    this.cBus=into([c.createGain(),bq('highpass',320,.7)],this.drums);
     this.ks={};this.cab=this.cabIR();
     this.gL=this.gtrChain(-.8);this.gR=this.gtrChain(.8);
     // picked bass: some grit and the full low end (it used to be choked off at 260Hz), plus a clean sub underneath
     this.bassIn=c.createGain();
-    const bs=c.createWaveShaper();bs.curve=this.curve(3);bs.oversample='2x';const bo=c.createGain();bo.gain.value=.36;
-    const bchain=[this.bassIn,bq('highpass',38,.7),bq('peaking',850,1,4),bs,bq('lowpass',2400,.7),bo];for(let i=0;i<bchain.length-1;i++)bchain[i].connect(bchain[i+1]);
+    const bs=c.createWaveShaper();bs.curve=this.curve(3);bs.oversample='2x';const bo=c.createGain();bo.gain.value=.44;
+    const bchain=[this.bassIn,bq('highpass',30,.7),bq('peaking',850,1,4),bs,bq('lowpass',3200,.7),bo];for(let i=0;i<bchain.length-1;i++)bchain[i].connect(bchain[i+1]);
     bo.connect(this.music);this.bassOut=bo;
     this.sub=c.createGain();this.sub.gain.value=.55;this.sub.connect(this.music);
     // clean guitar for the quiet parts: a little body and sparkle
-    this.cleanIn=c.createGain();const cchain=[this.cleanIn,bq('highpass',90,.7),bq('peaking',240,.9,3),bq('peaking',3200,.9,3),bq('lowpass',7500,.6)];
-    for(let i=0;i<cchain.length-1;i++)cchain[i].connect(cchain[i+1]);cchain[cchain.length-1].connect(this.music);
+    this.cleanIn=c.createGain();const cchain=[this.cleanIn,bq('highpass',100,.7),bq('peaking',240,.9,2),bq('peaking',3400,.8,7),bq('highshelf',5500,null,6),bq('lowpass',11000,.6)];
+    for(let i=0;i<cchain.length-1;i++)cchain[i].connect(cchain[i+1]);const cend=cchain[cchain.length-1];cend.connect(this.music);
+    // a slow chorus, the classic clean emo sound
+    const cd=c.createDelay(.05);cd.delayTime.value=.012;const cl=c.createOscillator(),clg=c.createGain();cl.frequency.value=.7;clg.gain.value=.0025;cl.connect(clg);clg.connect(cd.delayTime);cl.start();
+    const cw=c.createGain();cw.gain.value=.5;cend.connect(cd);cd.connect(cw);this.panTo(cw,.35,this.music);
     // ambience: its own bus and volume slider. rain and water only where there is rain and water
     this.ambBus=c.createGain();this.ambBus.connect(this.master);
     const rs=c.createBufferSource();rs.buffer=this.noiseBuf;rs.loop=true;
@@ -330,9 +345,36 @@ const AU={
     this.humG=c.createGain();this.humG.gain.value=0;const hlp=bq('lowpass',900,.7);hlp.connect(this.humG);this.humG.connect(this.ambBus);
     this.humA=c.createOscillator();this.humA.type='triangle';this.humA.frequency.value=60;this.humA.connect(hlp);this.humA.start();
     this.humB=c.createOscillator();this.humB.type='sine';this.humB.frequency.value=120;const hb=c.createGain();hb.gain.value=.6;this.humB.connect(hb);hb.connect(hlp);this.humB.start();
+    for(const k in this.raw){const ab=this.raw[k];delete this.raw[k];this.decodeSprite(k,ab,true)}
     this.ok=true;this.applyVolume();
     Music.resync();
     if(Music.song)this.prewarm(Music.song.root);
+  },
+  // fetch and decode the recordings right away (an offline context needs no tap); the synths play until they arrive
+  preload(){
+    if(this.pre||!window.fetch)return;this.pre=true;
+    for(const k of['drums','bass','gtr'])fetch('audio/'+k+'.mp3?v='+AUDIO_V).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(ab=>this.decodeSprite(k,ab,false)).catch(()=>{});
+  },
+  decodeSprite(k,ab,late){
+    const OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;let ctx=this.ctx;
+    if(!ctx&&OC)try{ctx=new OC(1,44100,44100)}catch(e){}
+    if(!ctx){this.raw[k]=ab;return}
+    // old Safari only has the callback form, and some browsers detach the bytes, so decode a copy
+    return new Promise((ok,no)=>{const q=ctx.decodeAudioData(ab.slice(0),ok,no);if(q&&q.then)q.then(ok,no)}).then(buf=>{
+      // some decoders add a little silence at the start: find the timing click to know exactly how much
+      const d=buf.getChannelData(0),n=Math.min(d.length,Math.floor(buf.sampleRate*.14));let mi=0;for(let i=1;i<n;i++)if(Math.abs(d[i])>Math.abs(d[mi]))mi=i;
+      this.sp[k]={buf,delay:mi/buf.sampleRate-.05};
+      if(this.has('gtr')&&this.has('bass'))this.ks={}; // the plucked-string stand-ins aren't needed any more
+    }).catch(()=>{if(!late&&!this.ctx)this.raw[k]=ab;else if(!late)this.decodeSprite(k,ab,true)});
+  },
+  has(k){return!!this.sp[k]},
+  keys(pre,inst){const id=inst+pre;return this.rr[id]||(this.rr[id]=Object.keys(SMP_T[inst]).filter(x=>x[0]===pre).map(x=>+x.slice(1)).sort((a,b)=>a-b))},
+  // the nearest recorded note and how far to repitch it (ties go to the note above, pitched down)
+  seg(inst,pre,m,take){let b=null;for(const k of this.keys(pre,inst))if(b==null||Math.abs(k-m)<=Math.abs(b-m))b=k;const l=SMP_T[inst][pre+b];return{s:l[take%l.length],rate:Math.pow(2,(m-b)/12)}},
+  next(id,n){return this.rr[id+'#']=((this.rr[id+'#']|0)+1)%n},
+  splay(inst,sg,t,rate,dest,dur){
+    const sp=this.sp[inst],b=this.ctx.createBufferSource();b.buffer=sp.buf;b.playbackRate.value=rate;b.connect(dest);
+    const max=sg[1]/rate;b.start(t,sg[0]+sp.delay,(dur==null?max:Math.min(max,dur))*rate);return b;
   },
   applyMono(){if(!this.lim)return;try{this.lim.disconnect()}catch(e){}this.lim.connect(Save.d&&Save.d.opts.mono?this.mono:this.ctx.destination)},
   // older iOS only unlocks Web Audio once a sound actually starts inside a tap: play one silent sample
@@ -393,13 +435,16 @@ const AU={
     return this.curves[k]=c;
   },
   gtrChain(pan,dest){
-    // amp + speaker: tighten the lows, push the mids into the clipper, scoop the boxiness, roll off the fizz
+    // a two-stage high-gain amp: tighten the lows and push the mids into a soft clipper, filter, clip again,
+    // scoop the boxy mids, then a steep speaker roll-off so there's no fizz on top
     const c=this.ctx,inp=c.createGain(),bq=(type,f,q,g)=>{const b=c.createBiquadFilter();b.type=type;b.frequency.value=f;if(q!=null)b.Q.value=q;if(g!=null)b.gain.value=g;return b};
-    const pre=c.createGain();pre.gain.value=.32;
-    const sh=c.createWaveShaper();sh.curve=this.curveAsym(26);sh.oversample='4x';
-    const cab=c.createConvolver();cab.normalize=false;cab.buffer=this.cab; // normalize would shrink a short cab impulse to a whisper
-    const out=c.createGain();out.gain.value=.22;
-    const chain=[inp,bq('highpass',115,.7),bq('peaking',720,.8,7),pre,sh,bq('highpass',85,.7),bq('peaking',115,.9,2.5),bq('peaking',430,1.1,-5),bq('peaking',2500,.9,4),bq('lowpass',5200,.7),bq('lowpass',6600,.5),cab,out];
+    const s1=c.createWaveShaper();s1.curve=this.curveAsym(4);s1.oversample='4x';
+    const s2=c.createWaveShaper();s2.curve=this.curve(2.5);s2.oversample='2x';
+    const g1=c.createGain();g1.gain.value=2.2;const g2=c.createGain();g2.gain.value=1.4;
+    const out=c.createGain();out.gain.value=.3;
+    const chain=[inp,bq('highpass',120,.7),bq('peaking',720,.9,7),bq('lowpass',5000,.7),g1,s1,bq('highpass',45,.7),bq('lowpass',6500,.7),g2,s2,
+      bq('lowshelf',120,null,2),bq('peaking',480,.8,-5),bq('peaking',1500,1,1.5),
+      bq('peaking',105,1.1,3),bq('peaking',2600,1.3,3.5),bq('lowpass',4600,.9),bq('lowpass',5200,.7),bq('lowpass',7600,.7),bq('peaking',8500,2,-6),out];
     for(let i=0;i<chain.length-1;i++)chain[i].connect(chain[i+1]);
     this.panTo(out,pan,dest||this.music);
     return inp;
@@ -436,7 +481,7 @@ const AU={
   },
   // build a song's string buffers ahead of time, a few per frame, so the first chord doesn't hitch
   prewarm(root){
-    if(!this.ok)return;const jobs=[];
+    if(!this.ok||this.has('gtr')&&this.has('bass'))return;const jobs=[];
     for(let m=root-2;m<=root+24;m++)jobs.push([m,'open'],[m,'mute']);for(let m=root-2;m<=root+14;m++)jobs.push([m,'bass']);
     const step=()=>{for(let k=0;k<4&&jobs.length;k++){const[m,kind]=jobs.shift();this.ksBuf(m,kind)}if(jobs.length)setTimeout(step,16)};step();
   },
@@ -450,8 +495,36 @@ const AU={
   noise(t,dur,dest){const s=this.ctx.createBufferSource();s.buffer=this.noiseBuf;s.loop=true;s.connect(dest);s.start(t,Math.random()*1.5);s.stop(t+dur);return s},
 
   // ----- instruments -----
+  // the recorded guitar: the same clean recording a real guitarist would send into an amp
+  gtrRec(t,midi,dur,mode,vel,dest){
+    const c=this.ctx,iv=mode==='open'?[0,7,12]:mode==='mute'?[0,7]:[0];
+    for(let side=0;side<2;side++){
+      // the two guitars are two different takes: different recordings, a hair apart in time and tuning
+      const ts=t+(side?.006+Math.random()*.006:Math.random()*.003),vg=c.createGain(),g=vg.gain,det=Math.pow(2,(side?4:-4)/1200);
+      vg.connect(dest||(side?this.gR:this.gL));let into=vg,end;
+      // palm mute: the hand damps the string, so it's darker and stops almost at once
+      if(mode==='mute'){into=this.filt('lowpass',650+vel*450,.7,vg);g.setValueAtTime(vel,ts);g.setTargetAtTime(0,ts+.05,.04);end=ts+.32}
+      else if(mode==='trem'){g.setValueAtTime(.85*vel,ts);g.setTargetAtTime(0,ts+Math.max(.04,dur*.7),.02);end=ts+dur+.12}
+      else{g.setValueAtTime(.9*vel,ts);g.setValueAtTime(.9*vel,ts+dur);g.setTargetAtTime(0,ts+dur,.08);end=ts+dur+.5}
+      if(mode==='pinch'){
+        // pinch harmonic: a high overtone that squeals, bends up and wobbles, over the low note
+        const k=this.seg('gtr','f',midi+24,side),s=this.splay('gtr',k.s,ts,k.rate*det,into,end-ts);
+        s.playbackRate.setValueAtTime(k.rate*det,ts);s.playbackRate.linearRampToValueAtTime(k.rate*det*1.122,ts+dur*.6);
+        const lfo=c.createOscillator(),lg=c.createGain();lfo.frequency.value=6.5;lg.gain.value=k.rate*.025;lfo.connect(lg);lg.connect(s.playbackRate);lfo.start(ts);lfo.stop(end);
+        const lo=this.seg('gtr','f',midi,side),lg2=this.gain(.4,into);this.splay('gtr',lo.s,ts,lo.rate*det,lg2,end-ts);
+      }else iv.forEach((n,j)=>{const k=this.seg('gtr','f',midi+n,side),sg=this.gain([1,.8,.6][j],into);this.splay('gtr',k.s,ts+j*(mode==='open'?.008:.002),k.rate*det,sg,end-ts-j*.008)});
+    }
+  },
+  bassRec(t,midi,dur,vel,soft){
+    // under the riffs the bass sits an octave below the guitar, like a real band; in the quiet parts it plays up where you can hear it
+    const c=this.ctx,m=soft?midi:midi-12,k=this.seg('bass','b',m,this.next('bass',2)),g=c.createGain();
+    if(soft){g.gain.setValueAtTime(.5*vel,t);g.gain.setTargetAtTime(0,t+dur*.9,.15);g.connect(this.filt('lowpass',1200,.7,this.music));this.splay('bass',k.s,t,k.rate,g,dur+1);return}
+    g.gain.setValueAtTime(vel,t);g.gain.setTargetAtTime(0,t+dur*.9,.04);g.connect(this.bassIn);this.splay('bass',k.s,t,k.rate,g,dur+.3);
+  },
+  drumRec(key,t,v,bus,verb){const l=SMP_T.drums[key],g=this.ctx.createGain();g.gain.value=v;g.connect(bus);if(verb)g.connect(this.gain(verb,this.verb));this.splay('drums',l[this.next(key,l.length)],t,1,g)},
   gtr(t,midi,dur,mode,vel,dest){
     const c=this.ctx;vel=vel||1;
+    if(this.has('gtr')){this.gtrRec(t,midi,dur,mode,vel,dest);return}
     // a power chord when it rings out, root and fifth when it chugs, one string when tremolo picking
     const iv=mode==='open'?[0,7,12]:mode==='mute'?[0,7]:[0],pk=c.createBufferSource(),pg=c.createGain();
     pk.buffer=this.kit.pick;pg.gain.value=.3*vel;pk.connect(pg);pk.start(t);
@@ -479,6 +552,7 @@ const AU={
   },
   bass(t,midi,dur,vel,soft){
     const c=this.ctx;vel=vel||1;
+    if(this.has('bass')){this.bassRec(t,midi,dur,vel,soft);return}
     if(soft){ // clean and round, an octave up, for the quiet sections
       const k=this.ksBuf(midi+12,'bass'),s=c.createBufferSource(),g=c.createGain();s.buffer=k.buf;s.playbackRate.value=k.rate;
       g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(.3*vel,t+.01);g.gain.setTargetAtTime(0,t+dur*.85,.12);s.connect(g);g.connect(this.filt('lowpass',900,.7,this.music));s.start(t);s.stop(t+dur+.8);return}
@@ -489,10 +563,10 @@ const AU={
   },
   // ----- drums: each sound is rendered once into a sample (below), so a hit is one cheap buffer playback -----
   smp(b,t,v,verb){const c=this.ctx,s=c.createBufferSource(),g=c.createGain();s.buffer=b;g.gain.value=v;s.connect(g);g.connect(this.drums);if(verb)g.connect(this.gain(verb,this.verb));s.start(t);return g},
-  kick(t,v){this.smp(this.kit.kick,t,v)},
-  snare(t,v){this.smp(this.kit.snare[Math.random()*3|0],t,v,.3)},
-  hat(t,v,open){this.smp(open?this.kit.ohat:this.kit.hat[Math.random()*2|0],t,v)},
-  crash(t,v,china){this.smp(china?this.kit.china:this.kit.crash,t,v,.6)},
+  kick(t,v){if(this.has('drums'))this.drumRec('kick',t,v*1.6,this.kBus);else this.smp(this.kit.kick,t,v)},
+  snare(t,v){if(this.has('drums'))this.drumRec(v>=.6?'snare':'ghost',t,v>=.6?v*.8:v*1.2,this.sBus,.12);else this.smp(this.kit.snare[Math.random()*3|0],t,v,.3)},
+  hat(t,v,open){if(this.has('drums'))this.drumRec(open?'ohat':'hat',t,v*.32,this.cBus);else this.smp(open?this.kit.ohat:this.kit.hat[Math.random()*2|0],t,v)},
+  crash(t,v,china){if(this.has('drums'))this.drumRec(china?'china':'crash',t,v*.5,this.cBus,.15);else this.smp(china?this.kit.china:this.kit.crash,t,v,.6)},
   drumKit(){
     const c=this.ctx,sr=c.sampleRate;
     const buf=(sec,fill,gain)=>{const n=Math.ceil(sec*sr),b=c.createBuffer(1,n,sr),d=b.getChannelData(0);fill(d,n);if(gain)for(let i=0;i<n;i++)d[i]*=gain;return b};
@@ -527,6 +601,9 @@ const AU={
     return{kick,snare:[snare(),snare(),snare()],hat:[hat(.045),hat(.045)],ohat:hat(.28),crash:cym(false),china:cym(true),pick};
   },
   pluck(t,midi,v,dest){
+    if(this.has('gtr')){ // the same guitar, played clean
+      const k=this.seg('gtr','c',midi,Math.random()*2|0),g=this.ctx.createGain();g.gain.value=.6*v;this.panTo(g,(Math.random()-.5)*.6,dest||this.cleanIn);
+      g.connect(this.gain(.3,this.delay));g.connect(this.gain(.6,this.verb));this.splay('gtr',k.s,t,k.rate,g,2.4);return}
     const c=this.ctx,p=this.ksBuf(midi,'clean'),s=c.createBufferSource();s.buffer=p.buf;s.playbackRate.value=p.rate;
     const g=c.createGain();g.gain.value=.55*v;s.connect(g);
     this.panTo(g,(Math.random()-.5)*.6,dest||this.cleanIn);
@@ -930,23 +1007,23 @@ const itemIcon=it=>iconCanvas(it.icon,it.c1,it.c2);
 // ---------- 8. CONTENT ----------
 const FLOORS=[
   {n:'The Bedroom',ro:'I',base:'#2f2538',b2:'#281f30',wall:'#1a1320',w2:'#291d33',acc:'#ff8fc8',dark:.36,splat:'#4a0f2a',weather:'dust',amb:'bedroom',
-   song:{root:36,bpm:150,scale:'minor'},pool:['moth','weeper','charger','letter','spider'],boss:'moths'},
+   song:{root:40,bpm:150,scale:'minor'},pool:['moth','weeper','charger','letter','spider'],boss:'moths'},
   {n:'Rain Street',ro:'II',base:'#1b1e26',b2:'#161920',wall:'#0f1117',w2:'#1c2030',acc:'#ffb04a',dark:.5,splat:'#2a0d1a',weather:'rain',amb:'rain',
-   song:{root:35,bpm:160,scale:'phry'},pool:['weeper','letter','statickid','spider','charger','moth'],boss:'gutter'},
+   song:{root:39,bpm:160,scale:'phry'},pool:['weeper','letter','statickid','spider','charger','moth'],boss:'gutter'},
   {n:'The Overgrown Chapel',ro:'III',base:'#1e241f',b2:'#191f1a',wall:'#111611',w2:'#1d271e',acc:'#c7ff8a',dark:.6,splat:'#2b0b14',weather:'petals',amb:'chapel',
-   song:{root:34,bpm:140,scale:'hmin'},pool:['wilted','lullaby','choir','moth','totem','mask'],boss:'choir'},
+   song:{root:38,bpm:140,scale:'hmin'},pool:['wilted','lullaby','choir','moth','totem','mask'],boss:'choir'},
   {n:'Static Hospital',ro:'IV',base:'#1a2a2b',b2:'#142223',wall:'#0e1819',w2:'#1d3233',acc:'#7ff5e6',dark:.66,flicker:true,splat:'#3a0a12',weather:'static',amb:'hospital',
-   song:{root:33,bpm:170,scale:'phry'},pool:['statickid','echo','mask','bloodfly','totem','scenekid','charger'],boss:'flatline'},
+   song:{root:37,bpm:170,scale:'phry'},pool:['statickid','echo','mask','bloodfly','totem','scenekid','charger'],boss:'flatline'},
   {n:'The Drowned Memory',ro:'V',base:'#152036',b2:'#111a2d',wall:'#0a1121',w2:'#16233d',acc:'#6fb3ff',dark:.55,water:true,splat:'#1a1640',weather:'bubbles',amb:'water',
-   song:{root:32,bpm:130,scale:'minor'},pool:['hand','weeper','letter','echo','choir','mosher'],boss:'bride'},
+   song:{root:36,bpm:130,scale:'minor'},pool:['hand','weeper','letter','echo','choir','mosher'],boss:'bride'},
   {n:'Ashfield',ro:'VI',base:'#181112',b2:'#130d0e',wall:'#0b0708',w2:'#1f1314',acc:'#ff6a2a',dark:.58,splat:'#3a1208',weather:'ash',amb:'ash',
-   song:{root:31,bpm:180,scale:'phry'},pool:['cinder','bloodfly','mask','mosher','scenekid','hand','totem'],boss:'saint'},
+   song:{root:35,bpm:180,scale:'phry'},pool:['cinder','bloodfly','mask','mosher','scenekid','hand','totem'],boss:'saint'},
   {n:'The Last Room',ro:'VII',base:'#222024',b2:'#1c1a1e',wall:'#0f0e10',w2:'#1b1a1d',acc:'#ff4f7b',dark:.38,splat:'#2a2a2a',weather:'snowash',amb:'last',
-   song:{root:30,bpm:155,scale:'hmin'},pool:['echo','scenekid','choir','hand','mask','cinder','lullaby'],boss:'you'},
+   song:{root:34,bpm:155,scale:'hmin'},pool:['echo','scenekid','choir','hand','mask','cinder','lullaby'],boss:'you'},
 ];
 // floor II, some nights: the mall after it closes. Mannequins move only while you aren't aiming at them.
 const MALL={n:'The Mall After Close',ro:'II',base:'#26212b',b2:'#211c26',wall:'#141118',w2:'#221c28',acc:'#ffd23f',dark:.5,splat:'#3a1030',weather:'none',amb:'mall',tex:7,
-  song:{root:35,bpm:150,scale:'hmin'},pool:['mannequin','mannequin','letter','charger','spider','statickid'],boss:'mascot'};
+  song:{root:39,bpm:150,scale:'hmin'},pool:['mannequin','mannequin','letter','charger','spider','statickid'],boss:'mascot'};
 const CHARS=[
   {id:'wren',name:'Wren',desc:'Hood up. Headphones in. Still here.',hair:'#141019',hi:'#3b2f52',hood:'#2b1e3d',hood2:'#1a1226',skin:'#eadfe0',skin2:'#bfaab4',tear:'#3a2c66',
    hearts:3,black:0,dmg:3.5,rate:2.7,spd:0,candles:1,pins:0,items:[]},
@@ -4309,7 +4386,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.01-2156';
+const BUILD='2026.10.02-0001';
 const Updater={
   ready:false,
   check(){
@@ -4336,7 +4413,7 @@ function initApp(){
     si.addEventListener('keydown',e=>{if(e.key==='Escape'){e.preventDefault();closeSeed(false)}})}
 }
 function boot(){
-  Save.load();applyBinds();View.init();Input.init(View.cv);applyVideo();initApp();
+  Save.load();AU.preload();applyBinds();View.init();Input.init(View.cv);applyVideo();initApp();
   // Heavier used to be its own toggle on the title screen; it's a difficulty now
   if(Save.d.hard){if(isUnlocked('mode:hard'))Save.d.opts.diff=3;Save.d.hard=false;Save.write()}
   G.state='boot';

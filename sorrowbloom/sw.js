@@ -2,8 +2,12 @@
 // The game page is network-first, so a phone with signal always gets the newest build and falls back to the
 // cached copy offline. Icons and fonts are served from cache and refreshed in the background.
 // version.json is never cached: the page uses it to notice updates.
-const CACHE='sorrowbloom-2026.10.01-2156';
+// The recorded instruments (audio/*.mp3) live in their own cache that survives game updates, so they download once.
+// Changing them means bumping AUDIO_V here and in index.html.
+const CACHE='sorrowbloom-2026.10.02-0001';
 const CORE=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png','icon-maskable-512.png'];
+const AUDIO_V=1,AUDIO='sorrowbloom-audio-'+AUDIO_V;
+const AUDIO_FILES=['gtr','bass','drums'].map(k=>`audio/${k}.mp3?v=${AUDIO_V}`);
 const FONT_CSS='https://fonts.googleapis.com/css2?family=Pirata+One&family=Silkscreen&family=VT323&display=swap';
 const FONT_HOSTS=['fonts.googleapis.com','fonts.gstatic.com'];
 
@@ -21,16 +25,22 @@ self.addEventListener('install',e=>{
         await Promise.all(files.map(u=>fetch(u,{mode:'cors'}).then(r=>r.ok&&c.put(u,r)).catch(()=>{})));
       }
     }catch(err){}
+    try{const a=await caches.open(AUDIO);for(const f of AUDIO_FILES)if(!(await a.match(f)))await a.add(f)}catch(err){}
     await self.skipWaiting();
   })());
 });
 
 self.addEventListener('activate',e=>{
   e.waitUntil((async()=>{
-    for(const k of await caches.keys())if(k.startsWith('sorrowbloom-')&&k!==CACHE)await caches.delete(k);
+    for(const k of await caches.keys())if(k.startsWith('sorrowbloom-')&&k!==CACHE&&k!==AUDIO)await caches.delete(k);
     await self.clients.claim();
   })());
 });
+
+async function audioFirst(req){
+  const a=await caches.open(AUDIO),hit=await a.match(req);if(hit)return hit;
+  const res=await fetch(req);if(res.ok)a.put(req,res.clone());return res;
+}
 
 function timeout(ms){return new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms))}
 
@@ -56,6 +66,7 @@ self.addEventListener('fetch',e=>{
   const req=e.request;if(req.method!=='GET')return;
   const url=new URL(req.url),same=url.origin===self.location.origin;
   if(same&&url.pathname.endsWith('/version.json'))return;
+  if(same&&url.pathname.includes('/audio/')){e.respondWith(audioFirst(req));return}
   if(req.mode==='navigate'||(same&&(url.pathname.endsWith('/')||url.pathname.endsWith('.html')))){e.respondWith(networkFirst(req));return}
   if(same||FONT_HOSTS.includes(url.hostname))e.respondWith(staleWhileRevalidate(req));
 });
