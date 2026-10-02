@@ -7,10 +7,10 @@ click at 0.05 s, then the samples back to back; `SMP_T` in `index.html` says whe
 | --- | --- | --- |
 | `gtr.mp3` | [Emilyguitar](https://github.com/sfzinstruments/karoryfer.emilyguitar) | Epiphone Emily the Strange, recorded direct. Single notes every 3 semitones from C#2, two takes each, picked hard (for the amp) and softer (for clean parts). |
 | `bass.mp3` | [Growlybass](https://github.com/sfzinstruments/karoryfer.growlybass) | Squier Jazz Bass, recorded direct. Notes every 3 semitones from C#1, two takes each. |
-| `drums.mp3` | [Big Rusty Drums](https://github.com/sfzinstruments/karoryfer.big-rusty-drums) | 24" kick, 14" snare (rimshots and center hits), 14" hi-hats, 17" crash, 18" china. Close and overhead mics mixed. |
+| `drums.mp3` | [Big Rusty Drums](https://github.com/sfzinstruments/karoryfer.big-rusty-drums) | 24" kick, 14" snare (rimshots and center hits), 14" hi-hats, 17" crash, 18" china, three toms, 22" ride and its bell. Close and overhead mics mixed. |
 
 All three libraries are by Karoryfer Lecolds and released under CC0 1.0 (public domain). Thank you!
 
 The files are built by trimming each sample to its attack, fading the tail and normalizing it, then encoding the
-sprite as mono 44.1 kHz MP3 (112 kbps for guitar and bass, 128 kbps for drums). If you change them, bump `AUDIO_V`
-in both `index.html` and `sw.js` so installed copies download the new ones.
+sprite as mono 44.1 kHz MP3 (112 kbps for guitar and bass, 128 kbps for drums). If you change one, bump its number in
+`AUDIO_V` in both `index.html` and `sw.js` so installed copies download the new one.

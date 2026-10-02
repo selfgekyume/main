@@ -19,7 +19,11 @@ Each folder is a standalone browser game published with GitHub Pages and played 
 - Music uses real recordings: `audio/*.mp3` (CC0 guitar, bass and drums, see `audio/README.md`) are decoded at startup
   by `AU.preload` and played by `gtrRec`/`bassRec`/`drumRec`. The guitar runs through the amp in `AU.gtrChain`. Until the
   recordings are decoded (or if they fail), the synth versions play instead (`ksBuf` strings, `drumKit` samples). The
-  audio files have their own service-worker cache, so if you change them bump `AUDIO_V` in both `index.html` and `sw.js`.
+  audio files have their own service-worker cache, so if you change one bump its number in `AUDIO_V` in both `index.html`
+  and `sw.js`. The amp's knobs are `AU.AMP` (gain, bass, mid, treble, presence, 0-10).
+- Songs are written by hand in `SONGS`, one per floor (`FLOORS[i].song.tune`), plus `mall` and `title`, in a tracker
+  notation explained above it (one token per 16th note). Every song needs the sections the music modes ask for: explore,
+  verseA, verseB, chorus, blast, breakdown, bdHeavy, intro, end.
 - Sound effects are synthesized recipes in `SFX`, played with `AU.play(name,{x})`, where `x` pans the sound to where it
   happened and `AU.gaps` limits how often a sound repeats. `AU.play` swallows errors, so test a new recipe by calling
   `SFX[name](AU,t,o)` directly. Keep steady noise (hiss, hum) out of the mix: players hear it.

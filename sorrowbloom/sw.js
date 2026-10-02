@@ -3,11 +3,11 @@
 // cached copy offline. Icons and fonts are served from cache and refreshed in the background.
 // version.json is never cached: the page uses it to notice updates.
 // The recorded instruments (audio/*.mp3) live in their own cache that survives game updates, so they download once.
-// Changing them means bumping AUDIO_V here and in index.html.
-const CACHE='sorrowbloom-2026.10.02-0001';
+// Changing one means bumping its number in AUDIO_V here and in index.html; stale copies are dropped on activate.
+const CACHE='sorrowbloom-2026.10.02-1129';
 const CORE=['./','index.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png','icon-maskable-512.png'];
-const AUDIO_V=1,AUDIO='sorrowbloom-audio-'+AUDIO_V;
-const AUDIO_FILES=['gtr','bass','drums'].map(k=>`audio/${k}.mp3?v=${AUDIO_V}`);
+const AUDIO_V={gtr:1,bass:1,drums:2},AUDIO='sorrowbloom-audio-1';
+const AUDIO_FILES=Object.keys(AUDIO_V).map(k=>`audio/${k}.mp3?v=${AUDIO_V[k]}`);
 const FONT_CSS='https://fonts.googleapis.com/css2?family=Pirata+One&family=Silkscreen&family=VT323&display=swap';
 const FONT_HOSTS=['fonts.googleapis.com','fonts.gstatic.com'];
 
@@ -33,6 +33,7 @@ self.addEventListener('install',e=>{
 self.addEventListener('activate',e=>{
   e.waitUntil((async()=>{
     for(const k of await caches.keys())if(k.startsWith('sorrowbloom-')&&k!==CACHE&&k!==AUDIO)await caches.delete(k);
+    try{const a=await caches.open(AUDIO);for(const r of await a.keys())if(!AUDIO_FILES.some(f=>r.url.endsWith(f)))await a.delete(r)}catch(err){}
     await self.clients.claim();
   })());
 });

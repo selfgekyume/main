@@ -275,8 +275,8 @@ const Input={
 // each audio/*.mp3 is a sprite: a timing click at .05s, then the samples back to back. SMP_T gives [start, length] in seconds:
 // gtr f<midi> = a guitar note picked hard (for the amp), c<midi> = played softer (for clean parts), bass b<midi>, drums by name.
 // Each key has two takes, so the left and right guitars are different recordings, like a real double-tracked band.
-const AUDIO_V=1; // bump with AUDIO_V in sw.js whenever the recordings change
-const SMP_T={"gtr":{"f37":[[0.15,2.1],[2.37,2.1]],"f40":[[4.59,2.1],[6.81,2.1]],"f42":[[9.03,2.1],[11.25,2.1]],"f45":[[13.47,2.1],[15.69,2.1]],"f48":[[17.91,2.1],[20.13,2.1]],"f51":[[22.35,2.1],[24.57,2.1]],"f54":[[26.79,2.1],[29.01,2.1]],"f57":[[31.23,2.1],[33.45,2.1]],"f60":[[35.67,2.1],[37.89,2.1]],"f63":[[40.11,2.1],[42.33,2.1]],"f66":[[44.55,2.1],[46.77,2.1]],"f69":[[48.99,2.1],[51.21,2.1]],"f72":[[53.43,2.1],[55.65,2.1]],"f75":[[57.87,2.1],[60.09,2.1]],"c51":[[62.31,2.4],[64.83,2.4]],"c54":[[67.35,2.4],[69.87,2.4]],"c57":[[72.39,2.4],[74.91,2.4]],"c60":[[77.43,2.4],[79.95,2.4]],"c63":[[82.47,2.4],[84.99,2.4]],"c66":[[87.51,2.4],[90.03,2.4]],"c69":[[92.55,2.4],[95.07,2.4]],"c72":[[97.59,2.4],[100.11,2.4]],"c75":[[102.63,2.4],[105.15,2.4]],"c78":[[107.67,2.4],[110.19,2.4]],"c81":[[112.71,2.4],[115.23,2.4]],"c84":[[117.75,2.4],[120.27,2.4]],"c86":[[122.79,2.4],[125.31,2.4]]},"bass":{"b25":[[0.15,1.9],[2.17,1.9]],"b28":[[4.19,1.9],[6.21,1.9]],"b30":[[8.23,1.9],[10.25,1.9]],"b33":[[12.27,1.9],[14.29,1.9]],"b36":[[16.31,1.9],[18.33,1.9]],"b39":[[20.35,1.9],[22.37,1.9]],"b42":[[24.39,1.9],[26.41,1.9]],"b45":[[28.43,1.9],[30.45,1.9]],"b48":[[32.47,1.9],[34.49,1.9]]},"drums":{"kick":[[0.15,0.55],[0.82,0.55]],"snare":[[1.49,0.75],[2.36,0.75]],"ghost":[[3.23,0.5]],"hat":[[3.85,0.28],[4.25,0.28]],"ohat":[[4.65,1.1]],"crash":[[5.87,3.2]],"china":[[9.19,2.6]]}};
+const AUDIO_V={gtr:1,bass:1,drums:2}; // bump a file's number here and in sw.js whenever it changes
+const SMP_T={"gtr":{"f37":[[0.15,2.1],[2.37,2.1]],"f40":[[4.59,2.1],[6.81,2.1]],"f42":[[9.03,2.1],[11.25,2.1]],"f45":[[13.47,2.1],[15.69,2.1]],"f48":[[17.91,2.1],[20.13,2.1]],"f51":[[22.35,2.1],[24.57,2.1]],"f54":[[26.79,2.1],[29.01,2.1]],"f57":[[31.23,2.1],[33.45,2.1]],"f60":[[35.67,2.1],[37.89,2.1]],"f63":[[40.11,2.1],[42.33,2.1]],"f66":[[44.55,2.1],[46.77,2.1]],"f69":[[48.99,2.1],[51.21,2.1]],"f72":[[53.43,2.1],[55.65,2.1]],"f75":[[57.87,2.1],[60.09,2.1]],"c51":[[62.31,2.4],[64.83,2.4]],"c54":[[67.35,2.4],[69.87,2.4]],"c57":[[72.39,2.4],[74.91,2.4]],"c60":[[77.43,2.4],[79.95,2.4]],"c63":[[82.47,2.4],[84.99,2.4]],"c66":[[87.51,2.4],[90.03,2.4]],"c69":[[92.55,2.4],[95.07,2.4]],"c72":[[97.59,2.4],[100.11,2.4]],"c75":[[102.63,2.4],[105.15,2.4]],"c78":[[107.67,2.4],[110.19,2.4]],"c81":[[112.71,2.4],[115.23,2.4]],"c84":[[117.75,2.4],[120.27,2.4]],"c86":[[122.79,2.4],[125.31,2.4]]},"bass":{"b25":[[0.15,1.9],[2.17,1.9]],"b28":[[4.19,1.9],[6.21,1.9]],"b30":[[8.23,1.9],[10.25,1.9]],"b33":[[12.27,1.9],[14.29,1.9]],"b36":[[16.31,1.9],[18.33,1.9]],"b39":[[20.35,1.9],[22.37,1.9]],"b42":[[24.39,1.9],[26.41,1.9]],"b45":[[28.43,1.9],[30.45,1.9]],"b48":[[32.47,1.9],[34.49,1.9]]},"drums":{"kick":[[0.15,0.55],[0.82,0.55]],"snare":[[1.49,0.75],[2.36,0.75]],"ghost":[[3.23,0.5]],"hat":[[3.85,0.28],[4.25,0.28]],"ohat":[[4.65,1.1]],"crash":[[5.87,3.2]],"china":[[9.19,2.6]],"tom1":[[11.91,0.9],[12.93,0.9]],"tom2":[[13.95,1],[15.07,1]],"tom3":[[16.19,1.2],[17.51,1.2]],"ride":[[18.83,1.6],[20.55,1.6]],"bell":[[22.27,1.6]]}};
 const AU={
   ctx:null,ok:false,muted:false,last:{},curves:{},sp:{},raw:{},rr:{},
   init(){
@@ -320,9 +320,9 @@ const AU={
     this.kBus=into([c.createGain(),bq('peaking',62,1,3),bq('peaking',400,1,-7),bq('peaking',4000,1,11),bq('highshelf',9000,null,-6)],this.drums);
     const sc=c.createDynamicsCompressor();sc.threshold.value=-22;sc.knee.value=4;sc.ratio.value=4;sc.attack.value=.006;sc.release.value=.09;
     const sm=c.createGain();sm.gain.value=2.2;this.sBus=into([c.createGain(),bq('peaking',210,1,2),bq('peaking',5500,.9,3),sc,sm],this.drums);
-    this.cBus=into([c.createGain(),bq('highpass',320,.7)],this.drums);
+    this.cBus=into([c.createGain(),bq('highpass',550,.7),bq('peaking',900,1,-3)],this.drums);
     this.ks={};this.cab=this.cabIR();
-    this.gL=this.gtrChain(-.8);this.gR=this.gtrChain(.8);
+    this.gL=this.gtrChain(-.8);this.gR=this.gtrChain(.8);this.gLd=this.gtrChain(0,null,true);
     // picked bass: some grit and the full low end (it used to be choked off at 260Hz), plus a clean sub underneath
     this.bassIn=c.createGain();
     const bs=c.createWaveShaper();bs.curve=this.curve(3);bs.oversample='2x';const bo=c.createGain();bo.gain.value=.44;
@@ -353,7 +353,7 @@ const AU={
   // fetch and decode the recordings right away (an offline context needs no tap); the synths play until they arrive
   preload(){
     if(this.pre||!window.fetch)return;this.pre=true;
-    for(const k of['drums','bass','gtr'])fetch('audio/'+k+'.mp3?v='+AUDIO_V).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(ab=>this.decodeSprite(k,ab,false)).catch(()=>{});
+    for(const k of['drums','bass','gtr'])fetch('audio/'+k+'.mp3?v='+AUDIO_V[k]).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(ab=>this.decodeSprite(k,ab,false)).catch(()=>{});
   },
   decodeSprite(k,ab,late){
     const OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;let ctx=this.ctx;
@@ -434,19 +434,23 @@ const AU={
     for(let i=0;i<n;i++){const x=i*2/(n-1)-1;c[i]=Math.tanh(k*x)/tk}
     return this.curves[k]=c;
   },
-  gtrChain(pan,dest){
-    // a two-stage high-gain amp: tighten the lows and push the mids into a soft clipper, filter, clip again,
-    // scoop the boxy mids, then a steep speaker roll-off so there's no fizz on top
-    const c=this.ctx,inp=c.createGain(),bq=(type,f,q,g)=>{const b=c.createBiquadFilter();b.type=type;b.frequency.value=f;if(q!=null)b.Q.value=q;if(g!=null)b.gain.value=g;return b};
-    const s1=c.createWaveShaper();s1.curve=this.curveAsym(4);s1.oversample='4x';
-    const s2=c.createWaveShaper();s2.curve=this.curve(2.5);s2.oversample='2x';
-    const g1=c.createGain();g1.gain.value=2.2;const g2=c.createGain();g2.gain.value=1.4;
-    const out=c.createGain();out.gain.value=.3;
-    const chain=[inp,bq('highpass',120,.7),bq('peaking',720,.9,7),bq('lowpass',5000,.7),g1,s1,bq('highpass',45,.7),bq('lowpass',6500,.7),g2,s2,
-      bq('lowshelf',120,null,2),bq('peaking',480,.8,-5),bq('peaking',1500,1,1.5),
-      bq('peaking',105,1.1,3),bq('peaking',2600,1.3,3.5),bq('lowpass',4600,.9),bq('lowpass',5200,.7),bq('lowpass',7600,.7),bq('peaking',8500,2,-6),out];
+  // the amp's knobs, 0-10 like the real thing
+  AMP:{gain:9,bass:5.5,mid:4.5,treble:6.5,presence:6},
+  gtrChain(pan,dest,lead){
+    // three gain stages, cranked. The lows are cut before any clipping (that's what keeps palm mutes tight instead of
+    // flubby) and the mids and pick attack are pushed into it. Then a Marshall-style tone stack and a 4x12 speaker.
+    const c=this.ctx,A=this.AMP,inp=c.createGain(),knob=v=>(v-5)*2.4,bq=(type,f,q,g)=>{const b=c.createBiquadFilter();b.type=type;b.frequency.value=f;if(q!=null)b.Q.value=q;if(g!=null)b.gain.value=g;return b};
+    const gn=v=>{const g=c.createGain();g.gain.value=v;return g},sh=(curve,os)=>{const w=c.createWaveShaper();w.curve=curve;w.oversample=os;return w};
+    const out=gn(lead?.2:.26);
+    const chain=[inp,bq('highpass',lead?260:170,.7),bq('peaking',850,.8,8),bq('highshelf',2800,null,5),bq('lowpass',7000,.7),
+      gn(1.5+A.gain*1.3),sh(this.curveAsym(5),'4x'),bq('highpass',70,.7),bq('lowpass',8500,.7),
+      gn(3),sh(this.curve(3),'4x'),bq('highpass',50,.7),
+      gn(1.6),sh(this.curve(1.6),'2x'),
+      bq('lowshelf',120,null,knob(A.bass)),bq('peaking',650,.65,knob(A.mid)-4),bq('highshelf',2400,null,knob(A.treble)),bq('highshelf',4500,null,(A.presence-5)*1.5),
+      bq('highpass',85,.7),bq('peaking',115,1.2,2.5),bq('peaking',2500,1.2,3),bq('lowpass',4800,.9),bq('lowpass',6000,.7),bq('lowpass',8500,.7),bq('peaking',9000,2,-6),out];
     for(let i=0;i<chain.length-1;i++)chain[i].connect(chain[i+1]);
     this.panTo(out,pan,dest||this.music);
+    if(lead){out.connect(this.gain(.25,this.delay));out.connect(this.gain(.15,this.verb))}
     return inp;
   },
   // speaker cabinet impulse: short, boxy and resonant, built from damped sines
@@ -497,15 +501,16 @@ const AU={
   // ----- instruments -----
   // the recorded guitar: the same clean recording a real guitarist would send into an amp
   gtrRec(t,midi,dur,mode,vel,dest){
+    // m=palm-muted power chord, mute1=palm-muted single note, open=power chord, note=single ringing note, trem, pinch
     const c=this.ctx,iv=mode==='open'?[0,7,12]:mode==='mute'?[0,7]:[0];
     for(let side=0;side<2;side++){
       // the two guitars are two different takes: different recordings, a hair apart in time and tuning
       const ts=t+(side?.006+Math.random()*.006:Math.random()*.003),vg=c.createGain(),g=vg.gain,det=Math.pow(2,(side?4:-4)/1200);
       vg.connect(dest||(side?this.gR:this.gL));let into=vg,end;
-      // palm mute: the hand damps the string, so it's darker and stops almost at once
-      if(mode==='mute'){into=this.filt('lowpass',650+vel*450,.7,vg);g.setValueAtTime(vel,ts);g.setTargetAtTime(0,ts+.05,.04);end=ts+.32}
-      else if(mode==='trem'){g.setValueAtTime(.85*vel,ts);g.setTargetAtTime(0,ts+Math.max(.04,dur*.7),.02);end=ts+dur+.12}
-      else{g.setValueAtTime(.9*vel,ts);g.setValueAtTime(.9*vel,ts+dur);g.setTargetAtTime(0,ts+dur,.08);end=ts+dur+.5}
+      // every note stops dead when it's done, like a noise gate on a high-gain amp: no mush between chugs
+      if(mode==='mute'||mode==='mute1'){const hold=Math.min(.085,dur*.85);into=this.filt('lowpass',1100+vel*600,.7,vg);g.setValueAtTime(vel,ts);g.setValueAtTime(vel,ts+hold);g.linearRampToValueAtTime(0,ts+hold+.02);end=ts+hold+.03}
+      else if(mode==='trem'){const hold=Math.max(.03,dur*.85);g.setValueAtTime(.85*vel,ts);g.setValueAtTime(.85*vel,ts+hold);g.linearRampToValueAtTime(0,ts+hold+.012);end=ts+hold+.02}
+      else{const hold=Math.max(.03,dur-.02);g.setValueAtTime(.9*vel,ts);g.setValueAtTime(.9*vel,ts+hold);g.linearRampToValueAtTime(0,ts+hold+.04);end=ts+hold+.05}
       if(mode==='pinch'){
         // pinch harmonic: a high overtone that squeals, bends up and wobbles, over the low note
         const k=this.seg('gtr','f',midi+24,side),s=this.splay('gtr',k.s,ts,k.rate*det,into,end-ts);
@@ -515,11 +520,19 @@ const AU={
       }else iv.forEach((n,j)=>{const k=this.seg('gtr','f',midi+n,side),sg=this.gain([1,.8,.6][j],into);this.splay('gtr',k.s,ts+j*(mode==='open'?.008:.002),k.rate*det,sg,end-ts-j*.008)});
     }
   },
+  // lead guitar: single notes through its own amp in the middle, with vibrato on the long ones and a little echo
+  lead(t,midi,dur,vel){
+    vel=vel||1;if(!this.has('gtr')){this.ssaw(t,midi,dur,.035*vel);return}
+    const c=this.ctx,k=this.seg('gtr','f',midi,this.next('lead',2)),g=c.createGain(),hold=Math.max(.03,dur-.03);g.connect(this.gLd);
+    g.gain.setValueAtTime(vel,t);g.gain.setValueAtTime(vel,t+hold);g.gain.linearRampToValueAtTime(0,t+hold+.05);
+    const s=this.splay('gtr',k.s,t,k.rate,g,hold+.06);
+    if(dur>.3){const l=c.createOscillator(),lg=c.createGain();l.frequency.value=5.6;lg.gain.setValueAtTime(0,t);lg.gain.linearRampToValueAtTime(0,t+.12);lg.gain.linearRampToValueAtTime(k.rate*.022,t+Math.min(.5,dur*.7));l.connect(lg);lg.connect(s.playbackRate);l.start(t);l.stop(t+hold+.1)}
+  },
   bassRec(t,midi,dur,vel,soft){
     // under the riffs the bass sits an octave below the guitar, like a real band; in the quiet parts it plays up where you can hear it
     const c=this.ctx,m=soft?midi:midi-12,k=this.seg('bass','b',m,this.next('bass',2)),g=c.createGain();
     if(soft){g.gain.setValueAtTime(.5*vel,t);g.gain.setTargetAtTime(0,t+dur*.9,.15);g.connect(this.filt('lowpass',1200,.7,this.music));this.splay('bass',k.s,t,k.rate,g,dur+1);return}
-    g.gain.setValueAtTime(vel,t);g.gain.setTargetAtTime(0,t+dur*.9,.04);g.connect(this.bassIn);this.splay('bass',k.s,t,k.rate,g,dur+.3);
+    const hold=Math.max(.04,dur*.9);g.gain.setValueAtTime(vel,t);g.gain.setValueAtTime(vel,t+hold);g.gain.linearRampToValueAtTime(0,t+hold+.03);g.connect(this.bassIn);this.splay('bass',k.s,t,k.rate,g,hold+.05);
   },
   drumRec(key,t,v,bus,verb){const l=SMP_T.drums[key],g=this.ctx.createGain();g.gain.value=v;g.connect(bus);if(verb)g.connect(this.gain(verb,this.verb));this.splay('drums',l[this.next(key,l.length)],t,1,g)},
   gtr(t,midi,dur,mode,vel,dest){
@@ -565,7 +578,9 @@ const AU={
   smp(b,t,v,verb){const c=this.ctx,s=c.createBufferSource(),g=c.createGain();s.buffer=b;g.gain.value=v;s.connect(g);g.connect(this.drums);if(verb)g.connect(this.gain(verb,this.verb));s.start(t);return g},
   kick(t,v){if(this.has('drums'))this.drumRec('kick',t,v*1.6,this.kBus);else this.smp(this.kit.kick,t,v)},
   snare(t,v){if(this.has('drums'))this.drumRec(v>=.6?'snare':'ghost',t,v>=.6?v*.8:v*1.2,this.sBus,.12);else this.smp(this.kit.snare[Math.random()*3|0],t,v,.3)},
-  hat(t,v,open){if(this.has('drums'))this.drumRec(open?'ohat':'hat',t,v*.32,this.cBus);else this.smp(open?this.kit.ohat:this.kit.hat[Math.random()*2|0],t,v)},
+  hat(t,v,open){if(this.has('drums'))this.drumRec(open?'ohat':'hat',t,v*(open?.22:.32),this.cBus);else this.smp(open?this.kit.ohat:this.kit.hat[Math.random()*2|0],t,v)},
+  tom(t,n,v){if(this.has('drums'))this.drumRec('tom'+n,t,(v||.9)*1.1,this.kBus);else{const g=this.gain(0,this.drums);g.gain.setValueAtTime(.5*(v||.9),t);g.gain.exponentialRampToValueAtTime(.001,t+.35);const o=this.osc('sine',[0,190,140,95][n],t,t+.36,g);o.frequency.exponentialRampToValueAtTime([0,120,90,60][n],t+.3)}},
+  ride(t,v,bell){if(this.has('drums'))this.drumRec(bell?'bell':'ride',t,v*.45,this.cBus);else this.smp(this.kit.hat[0],t,v*.7)},
   crash(t,v,china){if(this.has('drums'))this.drumRec(china?'china':'crash',t,v*.5,this.cBus,.15);else this.smp(china?this.kit.china:this.kit.crash,t,v,.6)},
   drumKit(){
     const c=this.ctx,sr=c.sampleRate;
@@ -704,87 +719,246 @@ const SFX={
 // Sections are 16th-note step grids. Explore = twinkly clean emo guitar; combat = chugs, blast beats, trancecore choruses;
 // the last enemy in a room triggers a breakdown; bosses get a riser, a bass drop and a BLEGH.
 const SCALES={phry:[0,1,3,5,7,8,10],hmin:[0,2,3,5,7,8,11],minor:[0,2,3,5,7,8,10]};
-const VERSE_RH=['x-xxx-xxx-xx-xxx','xx-x-xx-x-xx-x-x','x-x-xxx-x-xxxx-x','xxx-xx-xxx-x-xx-','x--xx-x--xx-x-x-','x-xx-xx-x-xx-xxx'];
-const EMO_CH={maj7:[0,7,11,16,19],add9:[0,7,14,16,19],m9:[0,7,10,14,15],six:[0,7,9,16,21],sus2:[0,7,12,14,19]};
-const COMBAT_ORDER=['verseA','verseA','blast','verseB','chorus','verseB','blast','chorus'];
-const BOSS1=['bdHeavy','verseA','blast','verseB','blast','breakdown'];
+// ---------- 6b. THE SONGS: written by hand, one for each floor, the mall and the title screen ----------
+// Each section is a few lanes in a tracker notation, one token per 16th note ('|' between bars is only for reading).
+// Guitar (g), bass (b), lead (ld), clean guitar (cl) and synth (sy) lanes are space-separated tokens:
+//   a number is semitones above the song's root; guitar notes add how they're played:
+//   m palm-muted power chord · s palm-muted single note · o open power chord · n single ringing note · t tremolo · p pinch harmonic.
+//   '.' keeps the last note ringing and '-' is silence. Lead, clean and synth notes can stack with '+' (12+15).
+// Drum lanes are one character per 16th: kick k (x, X loud, g soft), snare s (x, X, g ghost), hats h (x closed, X loud,
+// o open, r ride, b ride bell), cymbals c (c crash, z china), toms t (1 high, 2 mid, 3 floor).
+// Without a bass lane the bass follows the guitar an octave down. pd is a pad chord per bar; fx puts BLEGHs, drops and risers on steps.
+const SONGS=(()=>{
+  const rp=(x,n)=>Array(n).fill(x).join(' ');                                    // repeat a token
+  const TR=(...ns)=>ns.map(n=>rp(n+'t',4)).join(' ');                            // tremolo picking, a beat per note
+  const ARP=(...ns)=>ns.map(n=>n+' .').join(' ');                                // clean notes on eighths
+  const P332=(a,b,c,d,e,f)=>`${a} . . ${b} . . ${c} . ${d} . . ${e} . . ${f} .`; // the 3+3+2 emo picking feel
+  const Q=(a,b,c,d)=>`${a} . . . ${b} . . . ${c} . . . ${d} . . .`;              // quarter notes
+  const HOLD=(...ns)=>ns.map(n=>n+' '+rp('.',15)).join(' | ');                    // one note per bar, held
+  const D={rock:'x.......x.x.....',back:'....x.......x...',back2:'....x.......x.xx',h8:'x.x.x.x.x.x.x.x.',o8:'o.o.o.o.o.o.o.o.',r8:'r.r.r.r.r.r.r.r.',
+    hq:'x...x...x...x...',dbl:'xxxxxxxxxxxxxxxx',gal:'x.xxx.xxx.xxx.xx',blK:'x.x.x.x.x.x.x.x.',blS:'.x.x.x.x.x.x.x.x',skS:'..x...x...x...x.',
+    half:'........x.......',c1:'c...............',cq:'c...c...c...c...',ch:'c.......c.......',z2:'z.......z.......',zq:'z...z...z...z...',
+    four:'x...x...x...x...',off:'..o...o...o...o.',no:'................'};
+  const L=(...bars)=>bars.map(b=>D[b]||b).join('|');                             // a drum lane from named bars
+  const end=g=>({g:g+' '+rp('.',15),k:'x...............',c:'c...............'});
+
+  const songs={
+  // I. THE BEDROOM: E minor, 150. Bright, nostalgic emo/post-hardcore.
+  bedroom:{root:40,bpm:150,scale:'minor',sec:{
+    explore:{cl:[P332(8,19,24,15,19,27),P332(7,19,22,15,19,27),P332(5,19,24,12,19,26),P332(10,17,24,22,17,29),
+                 P332(12,19,26,22,19,27),P332(8,19,26,15,19,24),P332(5,15,19,12,19,24),P332(7,19,23,14,19,24)].join(' | '),
+      b:HOLD(-4,-5,-7,-2,0,-4,-7,-5),softBass:true},
+    verseA:{g:'0m - 0m 0m - 0m 0m - 0m - 0m 0m 3o . 2o . | 0m - 0m 0m - 0m 0m - 8o . . . 7o . 5o .',
+      k:L('x.xx.xx.x.xxx.x.','x.xx.xx.x...x.x.'),s:L('back','back'),h:L('h8','h8'),c:L('c1','no')},
+    verseB:{g:'0m 0m 0m 0m 3o . . . 0m 0m 0m 0m 5o . . . | 0m 0m 0m 0m 7o . . . 8o . . . 10o . . .',
+      ld:'19 . . . 22 . . . 24 . . . 22 . 19 . | 26 . . . 24 . . . 22 . . . 19 . . .',
+      k:L('x.x.x...x.x.x...','x.x.x...x...x...'),s:L('back','....x.......x.xx'),h:L('r8','r8'),c:L('c1','no')},
+    chorus:{g:['0o . . . . . . . 0m 0m 0o . . . . .','8o . . . . . . . 8m 8m 8o . . . . .','3o . . . . . . . 3m 3m 3o . . . . .','10o . . . . . . . 10m 10m 10o . . . 7o .'].join(' | '),
+      ld:['19 . . . 19 . 22 . 24 . . . . . 22 .','24 . . . . . 22 . 20 . . . 19 . . .','19 . . . 15 . 19 . 22 . . . . . 19 .','22 . . . . . 26 . 24 . . . 22 . . .'].join(' | '),
+      k:L('rock','rock','rock','x.......x.x...x.'),s:L('back','back','back','back2'),h:L('o8','o8','o8','o8'),c:L('c1','c1','c1','c1')},
+    blast:{g:TR(19,22,24,22)+' | '+TR(20,19,15,14),b:'0 '+rp('.',15)+' | -4 '+rp('.',7)+' -5 '+rp('.',7),
+      k:L('dbl','dbl'),s:L('back','back'),c:L('ch','c.......c...c.c.')},
+    breakdown:{g:'0m - - 0m - - 0m - 0m 0m - - 0m - 1o . | 0m - - 0m - - 0m - 0m 0m - - 6o . 5o .',
+      k:L('x..x..x.xx..x...','x..x..x.xx..x.x.'),s:L('half','half'),c:L('z2','z2')},
+    bdHeavy:{tempo:.75,g:'0m - - - - - 0m - - - 0m - 0m - - - | 0m - - - - - 0m - - - 1o . . . . .',
+      k:L('x.....x...x.x...','x.....x...x.....'),s:L('half','half'),c:L('zq','z...z...z.......'),fx:{0:['blegh','drop']}},
+    intro:{g:'0o '+rp('.',15)+' | 1o '+rp('.',11)+' 0m 0m 0m 0m',k:L('x...............','x...........xxxx'),s:L('no','........g.g.xxxX'),c:L('c1','no'),fx:{0:'riser32'}},
+    end:end('0o')}},
+
+  // II. RAIN STREET: D minor, 166. Driving, rainy post-hardcore.
+  rain:{root:38,bpm:166,scale:'minor',sec:{
+    explore:{cl:[ARP(12,19,26,19,27,19,26,19),ARP(8,15,19,15,24,15,19,15),ARP(15,22,29,22,31,22,29,22),ARP(14,17,22,17,24,17,22,17),
+                 ARP(17,24,27,24,31,24,27,24),ARP(8,15,19,15,26,15,19,15),ARP(7,12,19,12,27,19,12,19),ARP(7,14,19,14,23,19,14,19)].join(' | '),
+      b:HOLD(0,-4,3,2,-7,-4,-5,-5),softBass:true},
+    verseA:{g:'0m - 0m - 0m - 0m - 0m - 0m - 3o . 5o . | 0m - 0m - 0m - 0m - 8o . . . 7o . 5o .',
+      k:L('blK','x.x.x.x.x...x.x.'),s:L('back','back'),h:L('h8','h8'),c:L('c1','no')},
+    verseB:{g:'0o . . 0o . . 0o . 3o . . 3o . . 5o . | 8o . . 8o . . 8o . 7o . . 7o . . 5n 3n',
+      ld:'24 . . . 26 . 27 . 26 . . . 24 . 22 . | 20 . . . 22 . 24 . 19 . . . . . . .',
+      k:L('x..x..x.x..x..x.','x..x..x.x..x..x.'),s:L('back','back2'),h:L('o8','o8'),c:L('c1','no')},
+    chorus:{g:['0o . . . . . . . . . . . 0m 0m 0m 0m','8o . . . . . . . . . . . 8m 8m 8m 8m','3o . . . . . . . . . . . 3m 3m 3m 3m','10o . . . . . . . 10o . . . 7o . . .'].join(' | '),
+      ld:['24 . . . 27 . 26 . 24 . . . 22 . 24 .','22 . . . 20 . 19 . 15 . . . . . 17 .','15 . . . 19 . 22 . 24 . . . 26 . 27 .','26 . . . . . 24 . 22 . . . 23 . . .'].join(' | '),
+      k:L('rock','rock','rock','x.......x...x.x.'),s:L('back','back','back','back2'),h:L('o8','o8','o8','o8'),c:L('c1','c1','c1','c1')},
+    blast:{g:TR(12,15,17,15)+' | '+TR(20,19,17,11),b:'0 '+rp('.',15)+' | -4 '+rp('.',7)+' -5 '+rp('.',7),
+      k:L('blK','blK'),s:L('blS','blS'),c:L('cq','cq')},
+    breakdown:{g:'0m - 0m - - - 0m - 0m - - - 0m 0m 0m - | 0m - 0m - - - 0m - 1o . . . 0m 0m 0m 0m',
+      k:L('x.x...x.x...xxx.','x.x...x.x...xxxx'),s:L('half','half'),c:L('z2','z2')},
+    bdHeavy:{tempo:.75,g:'0m - - - - - - - 0m - - 0m - - 0m - | 6o . . . . . . . 5o . . . 1o . . .',
+      k:L('x.......x..x..x.','x.......x...x...'),s:L('half','half'),c:L('zq','z2'),fx:{0:['blegh','drop']}},
+    intro:{g:'0o '+rp('.',15)+' | 8o . . . . . . . 10o . . . . . . .',k:L('x...............','x.......x...xxxx'),s:L('no','........g.g.xxxX'),c:L('c1','no'),fx:{0:'riser32'}},
+    end:end('0o')}},
+
+  // III. THE OVERGROWN CHAPEL: C# harmonic minor, 140. Dramatic metalcore with a choir behind it.
+  chapel:{root:37,bpm:140,scale:'hmin',sec:{
+    explore:{cl:[ARP(12,19,26,27,26,19,15,19),ARP(8,15,22,24,22,15,12,15),ARP(5,12,19,20,24,20,19,12),ARP(7,14,17,23,26,23,17,14),
+                 ARP(12,19,24,27,31,27,24,19),ARP(8,15,19,24,27,24,19,15),ARP(5,12,17,20,24,20,17,12),ARP(7,14,19,23,26,23,19,14)].join(' | '),
+      b:HOLD(0,-4,-7,-5,0,-4,-7,-5),softBass:true,pd:[[12,19,27],[8,15,24],[5,12,20],[7,14,23],[12,19,27],[8,15,24],[5,12,20],[7,14,23]]},
+    verseA:{g:'0m - 0m 0m - 0m - 0m 0m - 0m 0m 11n . 12n . | 0m - 0m 0m - 0m - 0m 8o . . . 7o . . .',
+      k:L('x.xx.x.xx.xxx.x.','x.xx.x.xx...x...'),s:L('back','back'),h:L('h8','h8'),c:L('c1','no')},
+    verseB:{g:'0m - 0m 0m 0m - 0m 0m 3o . . . 5o . . . | 0m - 0m 0m 0m - 0m 0m 8o . . . 7o . 11n 12n',
+      ld:'19 . . . 20 . 19 . 24 . . . 22 . . . | 19 . . . 15 . 14 . 15 . . . 11 . 12 .',
+      k:L('x.xxx.xxx...x...','x.xxx.xxx...x...'),s:L('back','back'),h:L('r8','r8'),c:L('c1','no')},
+    chorus:{g:['0o . . . . . . . 0m 0m 0o . . . . .','8o . . . . . . . 8m 8m 8o . . . . .','3o . . . . . . . 3m 3m 3o . . . . .','7o . . . . . . . 7m 7m 7o . . . . .'].join(' | '),
+      ld:['19 . . . 20 . 19 . 15 . . . 14 . 15 .','20 . . . 19 . 15 . 12 . . . . . 15 .','19 . . . 22 . 24 . 27 . . . 26 . 24 .','23 . . . . . 24 . 26 . . . 23 . . .'].join(' | '),
+      pd:[[12,19,27],[8,15,24],[15,19,22],[19,23,26]],
+      k:L('rock','rock','rock','x.......x.x..xxx'),s:L('back','back','back','back2'),h:L('o8','o8','o8','o8'),c:L('c1','c1','c1','c1')},
+    blast:{g:TR(12,11,12,15)+' | '+TR(20,19,15,11),b:'0 '+rp('.',15)+' | -4 '+rp('.',7)+' -5 '+rp('.',7),
+      k:L('dbl','dbl'),s:L('back','back'),c:L('ch','ch')},
+    breakdown:{g:'0m - - 0m - - 0m - - 0m - - 0m 0m - - | 0m - - 0m - - 0m - 8o . . . 7o . . .',
+      k:L('x..x..x..x..xx..','x..x..x.x...x...'),s:L('half','half'),c:L('z2','z2')},
+    bdHeavy:{tempo:.8,g:'0m - - - - - - - - - - - 0m - 0m - | 1o . . . . . . . 0m - - - 0m - 0m 0m',
+      k:L('x...........x.x.','x.......x...x.xx'),s:L('half','half'),c:L('zq','zq'),fx:{0:['blegh','drop'],16:'growl'}},
+    intro:{g:'0o '+rp('.',15)+' | 7o '+rp('.',15),pd:[[12,19,27],[11,19,26]],k:L('x...............','x.......x...xxxx'),s:L('no','........g.g.xxxX'),c:L('c1','no'),fx:{0:'riser32'}},
+    end:end('0o')}},
+
+  // IV. STATIC HOSPITAL: F phrygian, 172. Twitchy, mathy, cold.
+  hospital:{root:41,bpm:172,scale:'phry',sec:{
+    explore:{cl:[P332(12,19,24,27,24,19),P332(13,20,24,29,24,20),P332(10,17,20,24,25,17),P332(8,15,19,24,19,15),
+                 P332(12,19,24,27,24,19),P332(13,20,24,29,24,20),P332(5,12,20,27,20,12),P332(7,19,20,24,20,19)].join(' | '),
+      b:HOLD(0,1,-2,-4,0,1,-7,-5),softBass:true},
+    verseA:{g:'0m - - 0m - - 1n . . 0m - - 3n . 1n . | 0m - - 0m - - 1n . . 0m - - 6o . . .',
+      k:L('x..x..x..x..x...','x..x..x..x..x...'),s:L('back','back'),h:L('h8','h8'),c:L('c1','no')},
+    verseB:{g:'0o . . - 0o . . - 1o . . - 0m 0m 0m 0m | 0o . . - 0o . . - 13n . 12n . 10n . 8n .',
+      k:L('x...x...x...xxxx','x...x...x.x.x.x.'),s:L('back','back'),h:L('hq','hq'),c:L('c...c...c.......','c...c...........')},
+    chorus:{g:['0o . . . . . . . . . . . 0m - 0m -','1o . . . . . . . . . . . 1m - 1m -','10o . . . . . . . . . . . 10m - 10m -','8o . . . . . . . 7o . . . 1o . . .'].join(' | '),
+      ld:['24 . . . 25 . 24 . 20 . . . 19 . 20 .','25 . . . 27 . 25 . 24 . . . . . 22 .','22 . . . 24 . 25 . 27 . . . 29 . 27 .','32 . . . . . 31 . 29 . . . 25 . 24 .'].join(' | '),
+      k:L('rock','rock','rock','x.......x...x...'),s:L('back','back','back','back2'),h:L('o8','o8','o8','o8'),c:L('c1','c1','c1','c1')},
+    blast:{g:TR(12,13,12,15)+' | '+TR(13,12,10,8),b:'0 '+rp('.',15)+' | 1 '+rp('.',7)+' -2 . . . -4 . . .',
+      k:L('blK','blK'),s:L('blS','blS'),c:L('cq','cq')},
+    breakdown:{g:'0m 0m - 0m - - 0m 0m - 0m - - 0m - - - | 0m 0m - 0m - - 0m 0m - - 6o . . . . .',
+      k:L('xx.x..xx.x..x...','xx.x..xx..x.....'),s:L('half','half'),c:L('z2','z2')},
+    bdHeavy:{tempo:.75,g:'0m - - - 0m - - - 0m - - - 0m 0m 0m 0m | 1o . . . . . . . 0m - 0m - 0m 0m 0m 0m',
+      k:L('x...x...x...xxxx','x.......x.x.xxxx'),s:L('half','half'),c:L('zq','z.......z...z...'),fx:{0:['blegh','drop']}},
+    intro:{g:'0o . . . . . . . 1o . . . . . . . | 0o . . . . . . . 1o . . . 0m 0m 0m 0m',k:L('x.......x.......','x.......x...xxxx'),s:L('no','........g.g.xxxX'),c:L('c1','no'),fx:{0:'riser32'}},
+    end:end('0o')}},
+
+  // V. THE DROWNED MEMORY: D# minor, 112. Slow, huge and dreamy, under water.
+  drowned:{root:39,bpm:112,scale:'minor',sec:{
+    explore:{cl:[ARP(12,19,26,27,26,19,14,19),ARP(8,15,19,24,27,24,19,15),ARP(5,12,19,20,24,20,19,12),ARP(10,17,22,24,29,24,22,17),
+                 ARP(12,19,24,27,31,27,24,19),ARP(8,15,19,24,26,24,19,15),ARP(7,15,22,24,27,24,22,15),ARP(7,14,19,24,23,19,14,7)].join(' | '),
+      b:HOLD(0,-4,-7,-2,0,-4,-5,-5),softBass:true,clv:.5},
+    verseA:{g:'0o . . . . . . . 0m 0m - 0m 3o . 5o . | 8o . . . . . . . 7o . . . 5o . . .',
+      k:L('x.......xx.xx.x.','x.......x...x...'),s:L('back','back'),h:L('h8','h8'),c:L('c1','no')},
+    verseB:{g:'0o '+rp('.',11)+' 1o . . . | 0o . . . . . . . 8o . . . 7o . . .',
+      ld:'19 . . . . . . . 22 . . . 24 . . . | 27 . . . . . . . 26 . . . 24 . . .',
+      k:L('x.......x.......','x.......x.....x.'),s:L('half','half'),h:L('hq','hq'),c:L('c1','no')},
+    chorus:{g:['0o . . . . . . . . . . . . . 0m 0m','8o . . . . . . . . . . . . . 8m 8m','3o . . . . . . . . . . . . . 3m 3m','10o . . . . . . . 7o . . . . . . .'].join(' | '),
+      ld:['27 . . . . . 26 . 24 . . . . . 22 .','24 . . . . . 22 . 19 . . . . . . .','22 . . . 24 . 26 . 27 . . . . . 26 .','24 . . . . . . . 22 . . . 19 . . .'].join(' | '),
+      k:L('rock','rock','rock','x.......x.x..xxx'),s:L('back','back','back','back2'),h:L('o8','o8','o8','o8'),c:L('c1','c1','c1','c1')},
+    blast:{g:'0o . . . . . . . 3o . . . . . . . | 8o . . . . . . . 10o . . . . . . .',
+      k:L('dbl','dbl'),s:L('back','back'),c:L('ch','ch')},
+    breakdown:{g:'0m - - - - - 0m - - - 0m - - - - - | 0m - - - - - 0m - - - 1o . . . . .',
+      k:L('x.....x...x.....','x.....x...x.....'),s:L('half','half'),c:L('z2','z2')},
+    bdHeavy:{tempo:.8,g:'0m '+rp('-',15)+' | 0m - - - - - 0m - - - 0m - 1o . . .',
+      k:L('x...............','x.....x...x.x...'),s:L('half','half'),c:L('z2','z2'),fx:{0:['blegh','drop']}},
+    intro:{g:'0o '+rp('.',15)+' | 8o '+rp('.',15),k:L('x...............','x.......x...xxxx'),s:L('no','........g.g.xxxX'),c:L('c1','no'),fx:{0:'riser32'}},
+    end:end('0o')}},
+
+  // VI. ASHFIELD: C# phrygian, 184. Fast thrash and melodic death metal, harmonized leads.
+  ash:{root:37,bpm:184,scale:'phry',sec:{
+    explore:{cl:[Q(12,19,27,19),Q(13,20,24,20),Q(10,17,22,17),Q(8,15,20,24),Q(12,19,24,27),Q(13,20,25,29),Q(8,15,20,27),Q(13,20,25,24)].join(' | '),
+      b:HOLD(0,1,-2,-4,0,1,-4,1),softBass:true,clv:.55},
+    verseA:{g:'0s 0s 0s 0s 0s 0s 0s 0s 1n . 0s 0s 3n . 0s 0s | 0s 0s 0s 0s 0s 0s 0s 0s 6n . 5n . 3n . 1n .',
+      k:L('blK','blK'),s:L('skS','skS'),h:L('r8','r8'),c:L('c1','no')},
+    verseB:{g:'0m - 0m 0m 0m - 0m 0m 3o . 3m 3m 1o . 1m 1m | 0m - 0m 0m 0m - 0m 0m 8o . . . 10o . . .',
+      ld:'24+27 . . . 25+29 . . . 27+31 . . . 25+29 . . . | 24+27 . . . 22+25 . . . 20+24 . . . 22+25 . . .',
+      k:L('gal','gal'),s:L('back','back'),c:L('c1','c.......c.......')},
+    chorus:{g:['0o . . . . . . . 0m 0m 0m 0m 0o . . .','1o . . . . . . . 1m 1m 1m 1m 1o . . .','8o . . . . . . . 8m 8m 8m 8m 8o . . .','10o . . . . . . . 10m 10m 10m 10m 13o . . .'].join(' | '),
+      ld:['24 . . . 25 . 27 . 24 . . . 22 . 20 .','25 . . . 24 . 25 . 29 . . . . . 27 .','27 . . . 25 . 24 . 20 . . . 24 . 25 .','27 . . . . . 29 . 31 . . . 29 . 25 .'].join(' | '),
+      k:L('rock','rock','rock','x.......x.x.xxxx'),s:L('back','back','back','back2'),h:L('o8','o8','o8','o8'),c:L('c1','c1','c1','c1')},
+    blast:{g:TR(12,13,15,13)+' | '+TR(20,19,17,13),ld:'27 '+rp('.',7)+' 29 '+rp('.',7)+' | 32 '+rp('.',7)+' 29 . . . 25 . . .',
+      b:'0 '+rp('.',15)+' | -4 '+rp('.',7)+' 1 '+rp('.',7),k:L('blK','blK'),s:L('blS','blS'),c:L('cq','cq')},
+    breakdown:{g:'0m - 0m - - 0m - - 0m - 0m - - 0m - - | 0m - 0m - - 0m - - 6o . . . 5o . . .',
+      k:L('x.x..x..x.x..x..','x.x..x..x...x...'),s:L('half','half'),c:L('z2','z2')},
+    bdHeavy:{tempo:.7,g:'0m - - - - - 0m - - - 0m - - - 0m - | 1o . . . . . . . 0m 0m 0m 0m 0m 0m 0m 0m',
+      k:L('x.....x...x...x.','x.......xxxxxxxx'),s:L('half','half'),c:L('zq','z2'),fx:{0:['blegh','drop']}},
+    intro:{g:'0o '+rp('.',15)+' | 1o '+rp('.',11)+' 0s 0s 0s 0s',k:L('x...............','x.......x...xxxx'),s:L('no','........g.g.xxxX'),c:L('c1','no'),fx:{0:'riser32'}},
+    end:end('0o')}},
+
+  // VII. THE LAST ROOM: G minor, 148. The big emotional finale; the chorus lifts into the major.
+  last:{root:43,bpm:148,scale:'minor',sec:{
+    explore:{cl:[ARP(12,19,26,27,26,19,14,19),ARP(8,15,19,24,26,24,19,15),ARP(3,10,15,17,22,17,15,10),ARP(2,10,14,17,22,17,14,10),
+                 ARP(5,12,15,19,20,19,15,12),ARP(8,15,19,24,27,24,19,15),ARP(7,15,19,22,27,22,19,15),ARP(7,14,19,24,23,19,14,7)].join(' | '),
+      b:HOLD(0,-4,-9,-10,-7,-4,-5,-5),softBass:true},
+    verseA:{g:'0m - 0m - 0m 0m - 0m 3o . . . 5o . . . | 0m - 0m - 0m 0m - 0m 8o . . . 7o . 5o .',
+      k:L('x.x.xx.xx...x...','x.x.xx.xx...x.x.'),s:L('back','....x...........'),h:L('h8','x.x.x.x.x.x.....'),t:L('no','............1233'),c:L('c1','no')},
+    verseB:{g:'0o . . . . . . . 8o . . . . . . . | 3o . . . . . . . 10o . . . . . . .',
+      ld:'26 . . . 27 . 26 . 24 . . . 22 . 19 . | 22 . . . 24 . 26 . 24 . . . . . . .',
+      k:L('rock','rock'),s:L('back','back2'),h:L('r8','r8'),c:L('c1','no')},
+    chorus:{g:['8o . . . . . . . 8m 8m 8o . . . . .','3o . . . . . . . 3m 3m 3o . . . . .','10o . . . . . . . 10m 10m 10o . . . . .','0o . . . . . . . 0m 0m 0o . 0m 0m 0m 0m'].join(' | '),
+      ld:['19 . . . 24 . . . 22 . . . 19 . 17 .','15 . . . . . 17 . 19 . . . . . 22 .','24 . . . 22 . 19 . 17 . . . 15 . 17 .','19 . . . . . . . 15 . . . 14 . 12 .'].join(' | '),
+      k:L('rock','rock','rock','x.......x.x.....'),s:L('back','back','back','....x...........'),h:L('o8','o8','o8','o.o.o.o.o.o.....'),t:L('no','no','no','............3321'),c:L('c1','c1','c1','c1')},
+    blast:{g:TR(19,17,15,14)+' | '+TR(15,14,12,11),b:'0 '+rp('.',15)+' | -4 '+rp('.',7)+' -5 '+rp('.',7),
+      k:L('dbl','dbl'),s:L('back','back'),c:L('ch','ch')},
+    breakdown:{g:'0m - - 0m - - 0m - 0m - - 0m - - 0m - | 0m - - 0m - - 0m - 1o . . . 6o . . .',
+      k:L('x..x..x.x..x..x.','x..x..x.x...x...'),s:L('half','half'),c:L('z2','z2')},
+    bdHeavy:{tempo:.75,g:'0m - - - - - - - 0m - - - 0m - - - | 0m - - - 0m - - - 1o . . . . . . .',
+      k:L('x.......x...x...','x...x...x.......'),s:L('half','half'),c:L('zq','zq'),fx:{0:['blegh','drop'],16:'growl'}},
+    intro:{g:'0o '+rp('.',15)+' | 8o . . . . . . . 10o . . . . . . .',k:L('x...............','x.......x...xxxx'),s:L('no','........g.g.xxxX'),c:L('c1','no'),fx:{0:'riser32'}},
+    end:end('0o')}},
+
+  // II (sometimes). THE MALL AFTER CLOSE: F# minor, 160. Bouncy mallcore with trance synths.
+  mall:{root:42,bpm:160,scale:'minor',sec:{
+    explore:{cl:[ARP(3,10,14,19,22,19,14,10),ARP(8,15,19,24,27,24,19,15),ARP(5,12,15,20,24,20,15,12),ARP(10,17,19,26,22,19,17,10),
+                 ARP(12,19,22,26,27,26,22,19),ARP(8,15,19,24,27,24,19,15),ARP(5,12,15,19,20,19,15,12),ARP(7,14,17,23,26,23,17,14)].join(' | '),
+      b:HOLD(3,-4,-7,-2,0,-4,-7,-5),softBass:true},
+    verseA:{g:'0m - 0m - 12n - 0m 0m - 0m 10n - 0m - 8n 7n | 0m - 0m - 12n - 0m 0m - 0m 3o . . . 5o .',
+      k:L('x.x...xx.x..x...','x.x...xx.x..x.x.'),s:L('back','back'),h:L('h8','h8'),c:L('c1','no')},
+    verseB:{g:'0m 0m - 0m 0m - 0m - 8m 8m - 8m 8m - 8m - | 3m 3m - 3m 3m - 3m - 10m 10m - 10m 10m - 10m -',
+      sy:'24 31 27 31 24 31 27 31 20 27 24 27 20 27 24 27 | 27 34 31 34 27 34 31 34 22 29 26 29 22 29 26 29',
+      k:L('four','four'),s:L('back','back'),h:L('off','off'),c:L('c1','no')},
+    chorus:{g:['8o . . . . . . . 8m 8m 8o . . . . .','3o . . . . . . . 3m 3m 3o . . . . .','10o . . . . . . . 10m 10m 10o . . . . .','0o . . . . . . . 0m 0m 0o . 0m 0m 0m 0m'].join(' | '),
+      sy:['27 . . . 26 . 24 . 26 . . . 19 . . .','24 . . . 22 . 19 . 22 . . . . . 15 .','26 . . . 24 . 22 . 20 . . . 22 . 26 .','27 . . . . . 26 . 24 . . . . . . .'].join(' | '),
+      k:L('four','four','four','x...x...x...xxxx'),s:L('back','back','back','back2'),h:L('off','off','off','off'),c:L('c1','c1','c1','c1')},
+    blast:{g:'0m - - 0m - - 0m - - 0m - - 0m - 0m - | 0m - - 0m - - 0m - - 0m - - 12n . 10n .',
+      sy:'24 31 27 31 24 31 27 31 20 27 24 27 20 27 24 27 | 27 34 31 34 27 34 31 34 22 29 26 29 22 29 26 29',
+      k:L('four','four'),s:L('back','back'),h:L('off','off'),c:L('ch','ch')},
+    breakdown:{g:'0m - - 0m - - 0m - 0m - - 0m - - 0m - | 0m - - 0m - - 0m - 6o . . . 5o . . .',
+      k:L('x..x..x.x..x..x.','x..x..x.x...x...'),s:L('half','half'),c:L('z2','z2')},
+    bdHeavy:{tempo:.75,g:'0m - - - - - 0m - - - 0m - - - - - | 0m - - - - - 0m - - - 1o . . . . .',
+      k:L('x.....x...x.....','x.....x...x.....'),s:L('half','half'),c:L('zq','zq'),fx:{0:['blegh','drop']}},
+    intro:{g:'0o '+rp('.',15)+' | 10o '+rp('.',11)+' 0m 0m 0m 0m',sy:'24 . . . . . . . . . . . . . . . | 22 . . . . . . . . . . . . . . .',k:L('x...............','x.......x...xxxx'),s:L('no','........g.g.xxxX'),c:L('c1','no'),fx:{0:'riser32'}},
+    end:end('0o')}},
+  };
+  // the title screen: its own theme over the bedroom song
+  songs.title={root:40,bpm:132,scale:'minor',sec:Object.assign({},songs.bedroom.sec,{
+    explore:{cl:[ARP(12,19,26,27,26,19,22,19),ARP(8,15,19,24,26,24,19,15),ARP(3,10,15,19,24,19,15,10),ARP(10,17,22,24,29,24,22,17),
+                 ARP(12,19,22,26,31,26,22,19),ARP(8,15,19,22,26,22,19,15),ARP(5,12,15,19,22,19,15,12),ARP(7,14,19,24,23,19,14,11)].join(' | '),
+      b:HOLD(0,-4,3,-2,0,-4,-7,-5),softBass:true,clv:.5}})};
+  return songs;
+})();
+const COMBAT_ORDER=['verseA','verseA','verseB','chorus','verseA','blast','chorus','chorus'];
+const BOSS1=['bdHeavy','verseA','blast','verseB','chorus','breakdown'];
 const BOSS2=['chorus','blast','verseB','chorus','blast','bdHeavy'];
 const blank=n=>Array.from({length:n},()=>({}));
-function genVerse(r,song){
-  const len=32,st=blank(len),sc=song.scale,rh=r.pick(VERSE_RH),rh2=r.chance(.5)?rh:r.pick(VERSE_RH);
-  for(let i=0;i<len;i++){const row=i<16?rh:rh2;if(row[i&15]==='x')st[i].g={n:0,m:'mute'}}
-  st[0].g={n:0,m:'open',d:2};
-  const hits=r.int(2,4);
-  for(let h=0;h<hits;h++){const i=r.pick([3,6,7,10,11,14])+(r.chance(.5)?16:0);st[i].g={n:r.pick([1,1,sc[2],sc[3],6,sc[4],sc[5]]),m:r.chance(.55)?'open':'mute',d:r.pick([1,2,2,3])}}
-  if(r.chance(.6)){const run=[sc[r.int(2,4)],sc[r.int(1,3)],1,0];for(let j=0;j<4;j++)st[28+j].g={n:run[j],m:'mute'}}
-  if(r.chance(.55))st[r.pick([12,24])].g={n:0,m:'pinch',d:3};
-  for(let b=0;b<2;b++){st[b*16+4].s=1;st[b*16+12].s=1;for(let p=0;p<16;p+=2)st[b*16+p].h=.5}
-  st[0].c=1;if(r.chance(.6))st[16].x=.8;
-  return{name:'verse',len,st,bpm:song.bpm,heavy:true,kf:true,bf:true};
-}
-function genBlast(r,song){
-  const len=32,st=blank(len),sc=song.scale,mel=[];
-  for(let b=0;b<8;b++)mel.push(b%2===0?0:r.pick([1,sc[2],sc[3],6,sc[4],sc[5]]));
-  if(r.chance(.5))mel[7]=r.pick([1,6]);
-  for(let i=0;i<len;i++){st[i].g={n:mel[i>>2],m:'trem',d:1,v:.9};st[i].k=.65;if(i%4===2)st[i].s=.9;if(i%4===0)st[i].h=.6}
-  st[0].c=1;st[16].c=1;
-  return{name:'blast',len,st,bpm:song.bpm,heavy:true,bf:true};
-}
-function partition16(r){const g=[];let s=0;while(s<16){let n=r.chance(.6)?3:2;if(s+n>16)n=16-s;if(16-s-n===1)n+=1;g.push(n);s+=n}return g}
-function genBreakdown(r,song,heavy){
-  const len=32,st=blank(len),gr=partition16(r);
-  for(let b=0;b<2;b++){let p=b*16;for(const n of gr){st[p].g={n:0,m:'mute'};if(heavy&&n>=3&&r.chance(.35))st[p+1].g={n:0,m:'mute'};p+=n}}
-  st[0].g={n:0,m:'open',d:gr[0]};st[0].c=1;
-  const lastStart=16+gr.slice(0,-1).reduce((a,b)=>a+b,0);
-  st[lastStart].g={n:r.pick([1,6,1,7]),m:'open',d:gr[gr.length-1]};
-  st[8].s=1;st[24].s=1;
-  for(let p=0;p<len;p+=4){if(heavy)st[p].x=.6;else st[p].h=.5}
-  if(heavy){st[0].v={w:'eh',f:95,d:6,vol:1};st[0].drop=true;if(r.chance(.7))st[16].v={w:'oo',f:70,d:5,vol:.8}}
-  else if(r.chance(.5))st[16].v={w:'oo',f:80,d:4,vol:.7};
-  return{name:heavy?'bdHeavy':'breakdown',len,st,bpm:Math.round(song.bpm*(heavy?.6:.75)),heavy:true,kf:true,bf:true};
-}
-function genChorus(r,song){
-  const len=64,st=blank(len),R=song.root,prog=r.pick([[0,8,3,10],[0,10,8,7],[0,5,8,10],[8,10,0,0]]);
-  const arp=[0,1,2,3,2,1,2,3];
-  for(let b=0;b<4;b++){
-    const o=prog[b],p=b*16,q=(o===0||o===5||o===7)?3:4,tri=[0,q,7,12],base=R+36+o;
-    st[p].g={n:o,m:'open',d:7};st[p+8].g={n:o,m:'open',d:4};
-    st[p+12].g={n:o,m:'mute'};st[p+13].g={n:o,m:'mute'};st[p+14].g={n:o,m:'mute'};
-    for(let i=0;i<16;i++){st[p+i].sy=[base+tri[arp[i%8]]];st[p+i].syv=.045;st[p+i].syd=.9}
-    st[p].pd=[base-12,base-12+q,base-5];st[p].pdd=16;
-    for(let i=0;i<16;i+=4)st[p+i].k=1;
-    st[p+4].s=1;st[p+12].s=1;
-    for(let i=2;i<16;i+=4){st[p+i].o=.45;st[p+i].b={n:o,d:1.6,v:.9}}
+// turn a section's lanes into the 16th-note steps the sequencer plays
+function compileSec(src,song){
+  const tok=l=>l?l.replace(/\|/g,' ').trim().split(/\s+/):[],lane=l=>l?l.replace(/[\s|]/g,''):'';
+  const G=tok(src.g),Bs=tok(src.b),Ld=tok(src.ld),Cl=tok(src.cl),Sy=tok(src.sy),K=lane(src.k),Sn=lane(src.s),H=lane(src.h),Cy=lane(src.c),Tm=lane(src.t);
+  const len=Math.max(16,G.length,Bs.length,Ld.length,Cl.length,Sy.length,K.length,Sn.length,H.length,Cy.length,Tm.length),st=blank(len);
+  const held=(a,i)=>{let d=1;while(i+d<a.length&&a[i+d]==='.')d++;return d},notes=x=>/^-?\d+(\+-?\d+)*$/.test(x)?x.split('+').map(Number):null;
+  const MODE={m:'mute',s:'mute1',o:'open',n:'note',t:'trem',p:'pinch'};
+  G.forEach((x,i)=>{const m=/^(-?\d+)([msontp])$/.exec(x);if(m)st[i].g={n:+m[1],m:MODE[m[2]],d:held(G,i)}});
+  Bs.forEach((x,i)=>{if(/^-?\d+$/.test(x))st[i].b={n:+x,d:held(Bs,i),v:1,soft:!!src.softBass}});
+  Ld.forEach((x,i)=>{const n=notes(x);if(n)st[i].ld=n.map(v=>({n:v,d:held(Ld,i)}))});
+  Cl.forEach((x,i)=>{const n=notes(x);if(n){st[i].cl=n.map(v=>song.root+v);st[i].clv=(i%16===0?1.25:1)*(src.clv||.45)}});
+  Sy.forEach((x,i)=>{const n=notes(x);if(n){st[i].sy=n.map(v=>song.root+v);st[i].syd=held(Sy,i);st[i].syv=.04}});
+  const v={x:.9,X:1,g:.35};
+  for(let i=0;i<len;i++){const e=st[i];
+    if(K[i]&&K[i]!=='.')e.k=v[K[i]]||.9;
+    if(Sn[i]&&Sn[i]!=='.')e.s=v[Sn[i]]||.9;
+    const h=H[i];if(h==='x')e.h=.5;else if(h==='X')e.h=.75;else if(h==='o')e.o=.5;else if(h==='r')e.rd=.6;else if(h==='b'){e.rd=.7;e.bell=1}
+    if(Cy[i]==='c')e.c=1;else if(Cy[i]==='z')e.x=.85;
+    if(Tm[i]>='1'&&Tm[i]<='3')e.tm=+Tm[i];
   }
-  st[0].c=1;st[32].c=1;
-  return{name:'chorus',len,st,bpm:song.bpm,heavy:true,bf:false};
-}
-function genExplore(r,song){
-  const len=64,st=blank(len),R=song.root+24;
-  const prog=r.pick([[[8,'maj7'],[3,'add9'],[10,'six'],[0,'m9']],[[0,'m9'],[8,'maj7'],[5,'m9'],[10,'add9']],[[3,'maj7'],[10,'sus2'],[8,'maj7'],[0,'m9']],[[8,'add9'],[10,'sus2'],[3,'maj7'],[7,'m9']]]);
-  const pat=r.pick([[0,2,1,3,2,4,3,2],[0,3,1,4,2,3,1,4],[0,1,2,3,4,3,2,1],[0,2,4,2,3,1,4,2]]);
-  for(let b=0;b<4;b++){
-    const o=prog[b][0],q=prog[b][1],sh=o>6?-12:0,tones=EMO_CH[q].map(x=>R+o+x+sh),p=b*16;
-    for(let i=0;i<8;i++){st[p+i*2].cl=[tones[pat[i]]];st[p+i*2].clv=i===0?.6:.42}
-    if(r.chance(.5)){const i=r.pick([5,11,13]);st[p+i].cl=[tones[r.int(2,4)]];st[p+i].clv=.3}
-    st[p].pd=[tones[0]-12,tones[1]-12,tones[2]-12];st[p].pdd=16;
-    st[p].b={n:o+sh,d:14,v:1,soft:true};
-  }
-  return{name:'explore',len,st,bpm:song.bpm,heavy:false};
-}
-function genEnd(song){const st=blank(16);st[0].g={n:0,m:'open',d:12};st[0].c=1;st[0].x=.8;st[0].k=1;return{name:'end',len:16,st,bpm:song.bpm,heavy:false,bf:true}}
-function genIntro(song){
-  const st=blank(32);st[0].ri=32;st[0].g={n:0,m:'open',d:15,v:.5};st[16].g={n:1,m:'open',d:16,v:.55};
-  for(let i=24;i<32;i++)st[i].s=.25+(i-24)*.09;
-  return{name:'intro',len:32,st,bpm:song.bpm,heavy:false};
+  (src.pd||[]).forEach((ch,b)=>{if(ch&&st[b*16]){st[b*16].pd=ch.map(n=>song.root+n);st[b*16].pdd=16}});
+  for(const k in src.fx||{})for(const f of[].concat(src.fx[k])){const e=st[k];
+    if(f==='blegh')e.v={w:'eh',f:95,d:6,vol:1};else if(f==='growl')e.v={w:'oo',f:72,d:5,vol:.8};else if(f==='drop')e.drop=true;else if(f.startsWith('riser'))e.ri=+f.slice(5)||32}
+  return{name:src.name,len,st,bpm:Math.round(song.bpm*(src.tempo||1)),heavy:!!src.g,kf:false,bf:!src.b};
 }
 function makeSong(seed,depth,def){
-  const r=new RNG(seed),f=(def||FLOORS[depth-1]).song;
-  const song={root:f.root,bpm:f.bpm,scale:SCALES[f.scale],sec:{}};
-  const S=song.sec;
-  S.explore=genExplore(r,song);S.verseA=genVerse(r,song);S.verseB=genVerse(r,song);S.blast=genBlast(r,song);
-  S.breakdown=genBreakdown(r,song,false);S.bdHeavy=genBreakdown(r,song,true);S.chorus=genChorus(r,song);
-  S.end=genEnd(song);S.intro=genIntro(song);
+  const f=(def||FLOORS[depth-1]).song,src=SONGS[f&&f.tune]||SONGS.bedroom;
+  const song={root:src.root,bpm:src.bpm,scale:SCALES[src.scale]||SCALES.minor,sec:{}};
+  for(const k in src.sec)song.sec[k]=compileSec(Object.assign({name:k},src.sec[k]),song);
   return song;
 }
 const Music={
@@ -835,12 +1009,15 @@ const Music={
     if(s.s)this.push(t,'snare');
     if(s.drop&&this.rep===0)this.push(t,'drop');
     if(!au)return;
-    if(g){const dur=(g.d||1)*sd;AU.gtr(t,R+g.n,dur,g.m,g.v||1);if(sec.bf&&g.m!=='pinch')AU.bass(t,R+g.n,g.m==='mute'?sd*.9:dur,1)}
+    if(g){const dur=(g.d||1)*sd,mu=g.m==='mute'||g.m==='mute1';AU.gtr(t,R+g.n,dur,g.m,g.v||1);if(sec.bf&&g.m!=='pinch'&&g.m!=='trem')AU.bass(t,R+g.n,mu?sd*.9:dur,1)}
+    if(s.ld)for(const n of s.ld)AU.lead(t,R+n.n,n.d*sd,n.v||1);
     if(s.b)AU.bass(t,R+s.b.n,s.b.d*sd,s.b.v||1,s.b.soft);
     if(kv)AU.kick(t,kv);
     if(s.s)AU.snare(t,s.s);
     if(s.h)AU.hat(t,s.h,false);
     if(s.o)AU.hat(t,s.o,true);
+    if(s.tm)AU.tom(t,s.tm,.9);
+    if(s.rd)AU.ride(t,s.rd,s.bell);
     if(s.c)AU.crash(t,s.c,false);
     if(s.x)AU.crash(t,s.x,true);
     if(s.cl)for(const m of s.cl)AU.pluck(t,m+this.tr,s.clv||.5);
@@ -1007,23 +1184,23 @@ const itemIcon=it=>iconCanvas(it.icon,it.c1,it.c2);
 // ---------- 8. CONTENT ----------
 const FLOORS=[
   {n:'The Bedroom',ro:'I',base:'#2f2538',b2:'#281f30',wall:'#1a1320',w2:'#291d33',acc:'#ff8fc8',dark:.36,splat:'#4a0f2a',weather:'dust',amb:'bedroom',
-   song:{root:40,bpm:150,scale:'minor'},pool:['moth','weeper','charger','letter','spider'],boss:'moths'},
+   song:{tune:'bedroom'},pool:['moth','weeper','charger','letter','spider'],boss:'moths'},
   {n:'Rain Street',ro:'II',base:'#1b1e26',b2:'#161920',wall:'#0f1117',w2:'#1c2030',acc:'#ffb04a',dark:.5,splat:'#2a0d1a',weather:'rain',amb:'rain',
-   song:{root:39,bpm:160,scale:'phry'},pool:['weeper','letter','statickid','spider','charger','moth'],boss:'gutter'},
+   song:{tune:'rain'},pool:['weeper','letter','statickid','spider','charger','moth'],boss:'gutter'},
   {n:'The Overgrown Chapel',ro:'III',base:'#1e241f',b2:'#191f1a',wall:'#111611',w2:'#1d271e',acc:'#c7ff8a',dark:.6,splat:'#2b0b14',weather:'petals',amb:'chapel',
-   song:{root:38,bpm:140,scale:'hmin'},pool:['wilted','lullaby','choir','moth','totem','mask'],boss:'choir'},
+   song:{tune:'chapel'},pool:['wilted','lullaby','choir','moth','totem','mask'],boss:'choir'},
   {n:'Static Hospital',ro:'IV',base:'#1a2a2b',b2:'#142223',wall:'#0e1819',w2:'#1d3233',acc:'#7ff5e6',dark:.66,flicker:true,splat:'#3a0a12',weather:'static',amb:'hospital',
-   song:{root:37,bpm:170,scale:'phry'},pool:['statickid','echo','mask','bloodfly','totem','scenekid','charger'],boss:'flatline'},
+   song:{tune:'hospital'},pool:['statickid','echo','mask','bloodfly','totem','scenekid','charger'],boss:'flatline'},
   {n:'The Drowned Memory',ro:'V',base:'#152036',b2:'#111a2d',wall:'#0a1121',w2:'#16233d',acc:'#6fb3ff',dark:.55,water:true,splat:'#1a1640',weather:'bubbles',amb:'water',
-   song:{root:36,bpm:130,scale:'minor'},pool:['hand','weeper','letter','echo','choir','mosher'],boss:'bride'},
+   song:{tune:'drowned'},pool:['hand','weeper','letter','echo','choir','mosher'],boss:'bride'},
   {n:'Ashfield',ro:'VI',base:'#181112',b2:'#130d0e',wall:'#0b0708',w2:'#1f1314',acc:'#ff6a2a',dark:.58,splat:'#3a1208',weather:'ash',amb:'ash',
-   song:{root:35,bpm:180,scale:'phry'},pool:['cinder','bloodfly','mask','mosher','scenekid','hand','totem'],boss:'saint'},
+   song:{tune:'ash'},pool:['cinder','bloodfly','mask','mosher','scenekid','hand','totem'],boss:'saint'},
   {n:'The Last Room',ro:'VII',base:'#222024',b2:'#1c1a1e',wall:'#0f0e10',w2:'#1b1a1d',acc:'#ff4f7b',dark:.38,splat:'#2a2a2a',weather:'snowash',amb:'last',
-   song:{root:34,bpm:155,scale:'hmin'},pool:['echo','scenekid','choir','hand','mask','cinder','lullaby'],boss:'you'},
+   song:{tune:'last'},pool:['echo','scenekid','choir','hand','mask','cinder','lullaby'],boss:'you'},
 ];
 // floor II, some nights: the mall after it closes. Mannequins move only while you aren't aiming at them.
 const MALL={n:'The Mall After Close',ro:'II',base:'#26212b',b2:'#211c26',wall:'#141118',w2:'#221c28',acc:'#ffd23f',dark:.5,splat:'#3a1030',weather:'none',amb:'mall',tex:7,
-  song:{root:39,bpm:150,scale:'hmin'},pool:['mannequin','mannequin','letter','charger','spider','statickid'],boss:'mascot'};
+  song:{tune:'mall'},pool:['mannequin','mannequin','letter','charger','spider','statickid'],boss:'mascot'};
 const CHARS=[
   {id:'wren',name:'Wren',desc:'Hood up. Headphones in. Still here.',hair:'#141019',hi:'#3b2f52',hood:'#2b1e3d',hood2:'#1a1226',skin:'#eadfe0',skin2:'#bfaab4',tear:'#3a2c66',
    hearts:3,black:0,dmg:3.5,rate:2.7,spd:0,candles:1,pins:0,items:[]},
@@ -3878,7 +4055,7 @@ function goTitle(){
   if(Updater.ready){Updater.apply();return}
   G.runSave=loadRunSave();
   G.state='title';G.menu={sel:0};G.run=null;G.player=null;G.trans=null;G.banner=null;
-  if(!titleSong)titleSong=makeSong(hashStr('sorrowbloom-title'),1);
+  if(!titleSong)titleSong=makeSong(0,1,{song:{tune:'title'}});
   Music.setSong(titleSong);Music.setMode('title');AU.setAmbience('title');AU.setMuffle(18000);
 }
 function onUserGesture(){
@@ -4386,7 +4563,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.02-0001';
+const BUILD='2026.10.02-1129';
 const Updater={
   ready:false,
   check(){
