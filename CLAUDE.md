@@ -25,6 +25,8 @@ Each folder is a standalone browser game published with GitHub Pages and played 
   notation explained above it (one token per 16th note). Every song needs the sections the music modes ask for: explore,
   verseA, verseB, chorus, blast, breakdown, bdHeavy, intro, end, and for bosses bossBlast and bossHalf (`BOSS1`/`2`/`3`).
   Riff sections play a drum fill in their last bar every other time round (`FILLS`, or a section's own `fill`).
+- Calm rooms (title, explore) have three arrangements per song, picked in Settings > Audio > Calm music (`opts.calm`):
+  `explore` (classic), `exploreB` (twinkle, built by `twinkle()`) and `exploreC` (dreamy, built by `dreamy()`).
 - Sound effects are synthesized recipes in `SFX`, played with `AU.play(name,{x})`, where `x` pans the sound to where it
   happened and `AU.gaps` limits how often a sound repeats. `AU.play` swallows errors, so test a new recipe by calling
   `SFX[name](AU,t,o)` directly. Keep steady noise (hiss, hum) out of the mix: players hear it.

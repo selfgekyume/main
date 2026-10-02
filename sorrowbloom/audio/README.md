@@ -7,6 +7,7 @@ click at 0.05 s, then the samples back to back; `SMP_T` in `index.html` says whe
 | --- | --- | --- |
 | `gtr.mp3` | [Emilyguitar](https://github.com/sfzinstruments/karoryfer.emilyguitar) | Epiphone Emily the Strange, recorded direct. Single notes every 3 semitones from C#2, two takes each, picked hard (for the amp) and softer (for clean parts). |
 | `gtrx.mp3` | [Emilyguitar](https://github.com/sfzinstruments/karoryfer.emilyguitar) | The player's hand muting the strings (release samples), at their natural level, for when a part stops dead. |
+| `drumx.mp3` | [Big Rusty Drums](https://github.com/sfzinstruments/karoryfer.big-rusty-drums) | A soft kit for the calm rooms: cross-stick, a gentle kick, soft hi-hat and soft ride, played softly and kept at their natural level. |
 | `bass.mp3` | [Growlybass](https://github.com/sfzinstruments/karoryfer.growlybass) | Squier Jazz Bass, recorded direct. Notes every 3 semitones from C#1, two takes each. |
 | `drums.mp3` | [Big Rusty Drums](https://github.com/sfzinstruments/karoryfer.big-rusty-drums) | 24" kick, 14" snare (rimshots and center hits), 14" hi-hats, 17" crash, 18" china, three toms, 22" ride and its bell. Close and overhead mics mixed. |
 
