@@ -3615,7 +3615,7 @@ const ES={
 'HEAVIER MODE':'MODO PESADO','{0} choose   {1} descend   {2} back':'{0} elegir   {1} descender   {2} volver',
 'Journal':'Diario','ITEMS':'OBJETOS','ENEMIES':'ENEMIGOS','UNLOCKS':'LOGROS','Not found yet.':'Aún no encontrado.','Locked: {0}':'Bloqueado: {0}',
 'Defeated.':'Derrotado.','Not defeated yet.':'Aún no derrotado.','Killed at least once.':'Eliminado al menos una vez.','Not met yet.':'Aún no visto.',
-'{0} switch tab   {1} browse   {2} back':'{0} cambiar pestaña   {1} explorar   {2} volver','Paused':'Pausa','RESUME':'CONTINUAR','QUIT RUN':'ABANDONAR',
+'{0} switch tab   {1} browse   {2} back':'{0} cambiar pestaña   {1} explorar   {2} volver','Paused':'Pausa','RESUME':'CONTINUAR','GUIDE':'GUÍA','QUIT RUN':'ABANDONAR',
 'FLOOR':'PISO','SEED':'SEMILLA','DAILY':'DIARIA','daily':'diaria','HEAVIER':'PESADO','DAMAGE':'DAÑO','TEARS/S':'LÁGRIMAS/S','RANGE':'ALCANCE','SPEED':'VELOCIDAD',
 'SHOT SPEED':'VEL. DE TIRO','LUCK':'SUERTE','WEAPON':'ARMA','tears':'lágrimas','The End':'Fin','Gone Home':'Te Fuiste a Casa','You Died':'Moriste','KILLED BY':'MUERTO POR',
 'TIME':'TIEMPO','KILLS':'BAJAS','SCORE':'PUNTOS','(best)':'(récord)','nothing, in the end':'nada, al final','something':'algo','going home early':'irse temprano a casa',
@@ -4348,7 +4348,7 @@ function drawCandle(c,x,y){
 }
 function titleItems(){
   const wb=(Save.d.weekly||{})[weekKey()];
-  const it=[{id:'run',l:'DESCEND'},{id:'daily',l:'DAILY RUN'},{id:'tutorial',l:'TUTORIAL'},{id:'weekly',l:tr('WEEKLY CHALLENGE')+(wb?' · '+wb.best:'')},{id:'modes',l:'MORE MODES'},{id:'journal',l:'JOURNAL'},{id:'options',l:'SETTINGS'}];
+  const it=[{id:'run',l:'DESCEND'},{id:'daily',l:'DAILY RUN'},{id:'tutorial',l:'TUTORIAL'},{id:'weekly',l:tr('WEEKLY CHALLENGE')+(wb?' · '+wb.best:'')},{id:'modes',l:'MORE MODES'},{id:'journal',l:'JOURNAL'},{id:'guide',l:'GUIDE'},{id:'options',l:'SETTINGS'}];
   if(Save.d.tutDone)it.splice(2,1);
   else it.unshift(it.splice(2,1)[0]);
   const rs=G.runSave;if(rs){const ch=CHARS.find(c=>c.id===rs.run.char);it.unshift({id:'continue',l:tr('CONTINUE')+' · '+(ch?ch.name:'')+' '+((FLOORS[rs.run.depth-1]||FLOORS[0]).ro)})}
@@ -4366,6 +4366,7 @@ function updTitle(){
   else if(id==='journal'){G.state='journal';G.menu={sel:0,tab:0}}
   else if(id==='options'){G.state='options';G.optBack='title';G.menu={sel:0,tab:0}}
   else if(id==='tutorial')startTutorial();
+  else if(id==='guide')openGuide();
 }
 function renderTitle(c){
   drawRainBg(c);drawCandle(c,58,200);
@@ -4375,7 +4376,7 @@ function renderTitle(c){
   for(let i=0;i<5;i++){const x=CX-110+i*52+((i*37)%20),l=((t*.2+i*30)%60);c.fillStyle='rgba(122,10,31,.7)';c.fillRect(x,72,1.5,l*.3)}
   txt(c,'an emo dungeon crawl',CX,80,{align:'center',font:F_X,size:14,col:'#b8aec8'});
   if(G.state==='boot'){if(t>>5&1)txt(c,'PRESS ANY KEY OR TAP',CX,150,{align:'center',col:'#ff8fc8'});txt(c,'(sound on. it matters.)',CX,166,{align:'center',font:F_X,size:12,col:'#6a607a'});return}
-  {const items=titleItems(),lh=items.length>6?13:15;drawMenu(c,items,CX,items.length>6?120:128,lh)}
+  {const items=titleItems(),n=items.length,lh=n>8?12:n>6?13:15;drawMenu(c,items,CX,n>8?114:n>6?120:128,lh)}
   if(G.titleMsgT>0){G.titleMsgT--;txt(c,G.titleMsg,CX,H-50,{align:'center',font:F_X,size:12,col:'#ff8fa0'})}
   const s=Save.d.stats;
   txt(c,tr('runs {0}   wins {1}   best {2}',s.runs,s.wins,Save.d.best),CX,H-36,{align:'center',font:F_X,size:12,col:'#6a607a'});
@@ -4598,21 +4599,29 @@ function renderJournal(c){
   }
   drawBackBtn(c);txt(c,tr('{0} switch tab   {1} browse   {2} back',glyph('tabs'),glyph('nav'),glyph('back')),CX,H-6,{align:'center',font:F_X,size:10,col:'#4a4058',base:'bottom'});
 }
+const PAUSE_ITEMS=['RESUME','GUIDE','SETTINGS','QUIT RUN'];
+// the guide opens in its own window so the game stays where it was (paused, and the run is saved on blur)
+function openGuide(){
+  let w=null;
+  try{w=window.open('guide.html','sorrowbloom-guide')}catch(e){}
+  if(w){try{w.focus()}catch(e){}}else{saveRun();location.href='guide.html'}
+}
 function updPause(){
-  const items=['RESUME','SETTINGS','QUIT RUN'];
+  const items=PAUSE_ITEMS;
   if(Input.pressed('pause')&&G.menu.t>2){resume();return}
   G.menu.t=(G.menu.t||0)+1;
   const i=menuNav(items.length);
   if(i===0)resume();
-  if(i===1){G.state='options';G.optBack='pause';G.menu={sel:0,tab:0}}
-  if(i===2&&G.run.tutorial){goTitle();return}
-  if(i===2){G.run.killer='going home early';G.player.dead=true;Save.d.stats.deaths++;toSummary()}
+  if(i===1){AU.play('select');openGuide()}
+  if(i===2){G.state='options';G.optBack='pause';G.menu={sel:0,tab:0}}
+  if(i===3&&G.run.tutorial){goTitle();return}
+  if(i===3){G.run.killer='going home early';G.player.dead=true;Save.d.stats.deaths++;toSummary()}
 }
 function resume(){G.state=G.prevState==='bossintro'?'bossintro':'play';G.prevState=null;AU.setMuffle(G.floorDef.water?2400:18000);G.lowHP=null}
 function renderPause(c){
   c.fillStyle='rgba(5,2,8,.82)';c.fillRect(0,0,W,H);
   txt(c,'Paused',90,30,{align:'center',font:F_T,size:26});
-  drawMenu(c,['RESUME','SETTINGS','QUIT RUN'],90,80,16);
+  drawMenu(c,PAUSE_ITEMS,90,74,15);
   txt(c,'CONTROLS',20,150,{col:'#a89cb8'});[['move','move'],['cry','shoot'],['dash','dash'],['candle','bomb'],['item','active'],['use','use'],['map','map'],['pause','pause']].forEach(([l,a],k)=>{txt(c,l,20,162+k*9,{size:8,col:'#6a607a'});txt(c,glyph(a),84,162+k*9,{size:8,col:'#d8cce4'})});
   const p=G.player,r=G.run;
   txt(c,fitText(c,(G.run.mode==='rush'?tr('ROUND {0} / {1}',G.run.round+1,ROUNDS.length)+' · '+tr(G.floorDef.n):tr('FLOOR')+' '+G.floorDef.ro+' · '+tr(G.floorDef.n)+(G.run.loop?' · '+tr('LOOP {0}',G.run.loop+1):''))+(G.floor.curse?' · '+tr(CURSES[G.floor.curse].n):''),W-200),190,22,{col:G.floorDef.acc});
@@ -4793,7 +4802,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.02-1916';
+const BUILD='2026.10.02-2128';
 const Updater={
   ready:false,
   check(){

@@ -5,6 +5,9 @@ Each folder is a standalone browser game published with GitHub Pages and played 
 ## sorrowbloom/
 
 - `index.html` is the whole game. `sw.js` makes it work offline; `manifest.webmanifest` and the icons make it installable.
+- `guide.html` is the player guide (opened from GUIDE on the title and pause menus, cached offline by `sw.js`). Its item,
+  character and enemy lists are written out by hand, so when you add or change items, characters, enemies, bosses, rooms,
+  modes or unlocks, update the guide to match.
 - After any change to the game, run `sh sorrowbloom/bump-version.sh`. It writes one build stamp into `index.html`,
   `sw.js` and `version.json`. Installed copies compare that stamp to decide when to update, so skipping it means
   phones keep the old version.
