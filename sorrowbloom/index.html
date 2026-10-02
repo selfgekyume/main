@@ -93,7 +93,7 @@ const Save={
   d:null,
   fresh(){return{ach:{},seenI:{},gotI:{},seenE:{},bossK:{},
     stats:{runs:0,wins:0,deaths:0,kills:0,secrets:0,confess:0},
-    opts:{lang:(navigator.language||'').toLowerCase().startsWith('es')?'es':'en',master:1,music:.75,sfx:.8,ambVol:.8,mono:false,calm:'a',shake:1,flash:true,hints:true,autofire:false,aim:false,dmgNums:false,fps:false,crt:true,grain:true,pixel:false,hiContrast:false,touchSize:1,diff:0,timer:false,touchStyle:'twin',touchAssist:true,aimLine:true,flick:true,lefty:false,binds:{}},daily:{},best:0,hard:false,lastChar:'wren',tutDone:false,mods:{},chars:{},weekly:{},bestSplits:{},texts:{},bank:0,merch:{owned:{},on:{}}}},
+    opts:{lang:(navigator.language||'').toLowerCase().startsWith('es')?'es':'en',master:1,music:.75,sfx:.8,ambVol:.8,mono:false,calm2:'mix',shake:1,flash:true,hints:true,autofire:false,aim:false,dmgNums:false,fps:false,crt:true,grain:true,pixel:false,hiContrast:false,touchSize:1,diff:0,timer:false,touchStyle:'twin',touchAssist:true,aimLine:true,flick:true,lefty:false,binds:{}},daily:{},best:0,hard:false,lastChar:'wren',tutDone:false,mods:{},chars:{},weekly:{},bestSplits:{},texts:{},bank:0,merch:{owned:{},on:{}}}},
   load(){
     let s=null;try{s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){s=null}
     const f=this.fresh();
@@ -772,7 +772,8 @@ const SCALES={phry:[0,1,3,5,7,8,10],hmin:[0,2,3,5,7,8,11],minor:[0,2,3,5,7,8,10]
 // o open, r ride, b ride bell), cymbals c (c crash, z china), toms t (1 high, 2 mid, 3 floor).
 // Without a bass lane the bass follows the guitar an octave down. pd is a pad chord per bar; fx puts BLEGHs, drops and risers on steps.
 // Riff sections get a drum fill in their last bar every other time they're played (fill:{...} to write one, fill:false for none).
-// Calm rooms come in three arrangements (Settings > Audio > Calm music): explore (classic), exploreB (twinkle), exploreC (dreamy).
+// Calm rooms come in three arrangements: explore (classic), exploreB (twinkle), exploreC (dreamy). Each floor picks one with
+// song.calm (a/b/c) in FLOORS, treasure and secret rooms get another, and Settings > Audio > Calm music can force one.
 // Clean lanes cl and cl2 are two guitars (panned by clPan/cl2Pan); a clean note can end in w (volume swell, no pick attack)
 // or h (a chiming natural harmonic). The soft kit for calm rooms: kick q, snare r (cross-stick), hats h (soft) or q (soft ride),
 // toms a/b/c (soft high/mid/floor). dly:true syncs the echo to dotted eighths.
@@ -1173,20 +1174,22 @@ function drumLanes(st,src){
 }
 function makeSong(seed,depth,def){
   const f=(def||FLOORS[depth-1]).song,src=SONGS[f&&f.tune]||SONGS.bedroom;
-  const song={root:src.root,bpm:src.bpm,scale:SCALES[src.scale]||SCALES.minor,sec:{}};
+  const song={root:src.root,bpm:src.bpm,scale:SCALES[src.scale]||SCALES.minor,sec:{},calm:(f&&f.calm)||'a'};
   for(const k in src.sec)song.sec[k]=compileSec(Object.assign({name:k},src.sec[k]),song);
   return song;
 }
 const Music={
   song:null,mode:'off',sec:null,pos:0,rep:0,nextT:0,cyc:0,tr:0,bpmMul:1,heavy:false,evq:[],beats:[],pending:false,clockAudio:false,plays:{},fillOn:false,dlyOn:false,
-  setSong(s){this.song=s;this.pending=true;this.cyc=0;this.plays={};AU.prewarm(s.root)},
+  setSong(s){this.song=s;this.pending=true;this.cyc=0;this.plays={};this.roomCalm=null;AU.prewarm(s.root)},
+  setRoomCalm(k){if(k===this.roomCalm)return;this.roomCalm=k;if(this.mode==='explore')this.pending=true},
   setMode(m){if(m===this.mode)return;this.mode=m;this.pending=true;this.cyc=0},
   resync(){this.clockAudio=AU.running();this.nextT=AU.now()+.08;this.evq.length=0;this.beats.length=0},
   pick(){
     const S=this.song&&this.song.sec;if(!S)return null;
     this.tr=0;this.bpmMul=1;
     switch(this.mode){
-      case 'title':case 'explore':case 'void':return S[{b:'exploreB',c:'exploreC'}[Save.d.opts.calm]]||S.explore; // Settings > Audio > Calm music
+      // calm music: Settings > Audio > Calm music, or on MIXED the floor's own choice (special rooms get a different one)
+      case 'title':case 'explore':case 'void':{const o=Save.d.opts.calm2,k=o&&o!=='mix'?o:(this.roomCalm||this.song.calm||'a');return S[{b:'exploreB',c:'exploreC'}[k]]||S.explore}
       case 'combat':return S[COMBAT_ORDER[this.cyc++%COMBAT_ORDER.length]];
       case 'last':return S.breakdown;
       case 'clear':this.mode='explore';this.cyc=0;return S.end;
@@ -1408,23 +1411,23 @@ const itemIcon=it=>iconCanvas(it.icon,it.c1,it.c2);
 // ---------- 8. CONTENT ----------
 const FLOORS=[
   {n:'The Bedroom',ro:'I',base:'#2f2538',b2:'#281f30',wall:'#1a1320',w2:'#291d33',acc:'#ff8fc8',dark:.36,splat:'#4a0f2a',weather:'dust',amb:'bedroom',
-   song:{tune:'bedroom'},pool:['moth','weeper','charger','letter','spider'],boss:'moths'},
+   song:{tune:'bedroom',calm:'b'},pool:['moth','weeper','charger','letter','spider'],boss:'moths'},
   {n:'Rain Street',ro:'II',base:'#1b1e26',b2:'#161920',wall:'#0f1117',w2:'#1c2030',acc:'#ffb04a',dark:.5,splat:'#2a0d1a',weather:'rain',amb:'rain',
-   song:{tune:'rain'},pool:['weeper','letter','statickid','spider','charger','moth'],boss:'gutter'},
+   song:{tune:'rain',calm:'a'},pool:['weeper','letter','statickid','spider','charger','moth'],boss:'gutter'},
   {n:'The Overgrown Chapel',ro:'III',base:'#1e241f',b2:'#191f1a',wall:'#111611',w2:'#1d271e',acc:'#c7ff8a',dark:.6,splat:'#2b0b14',weather:'petals',amb:'chapel',
-   song:{tune:'chapel'},pool:['wilted','lullaby','choir','moth','totem','mask'],boss:'choir'},
+   song:{tune:'chapel',calm:'c'},pool:['wilted','lullaby','choir','moth','totem','mask'],boss:'choir'},
   {n:'Static Hospital',ro:'IV',base:'#1a2a2b',b2:'#142223',wall:'#0e1819',w2:'#1d3233',acc:'#7ff5e6',dark:.66,flicker:true,splat:'#3a0a12',weather:'static',amb:'hospital',
-   song:{tune:'hospital'},pool:['statickid','echo','mask','bloodfly','totem','scenekid','charger'],boss:'flatline'},
+   song:{tune:'hospital',calm:'b'},pool:['statickid','echo','mask','bloodfly','totem','scenekid','charger'],boss:'flatline'},
   {n:'The Drowned Memory',ro:'V',base:'#152036',b2:'#111a2d',wall:'#0a1121',w2:'#16233d',acc:'#6fb3ff',dark:.55,water:true,splat:'#1a1640',weather:'bubbles',amb:'water',
-   song:{tune:'drowned'},pool:['hand','weeper','letter','echo','choir','mosher'],boss:'bride'},
+   song:{tune:'drowned',calm:'c'},pool:['hand','weeper','letter','echo','choir','mosher'],boss:'bride'},
   {n:'Ashfield',ro:'VI',base:'#181112',b2:'#130d0e',wall:'#0b0708',w2:'#1f1314',acc:'#ff6a2a',dark:.58,splat:'#3a1208',weather:'ash',amb:'ash',
-   song:{tune:'ash'},pool:['cinder','bloodfly','mask','mosher','scenekid','hand','totem'],boss:'saint'},
+   song:{tune:'ash',calm:'a'},pool:['cinder','bloodfly','mask','mosher','scenekid','hand','totem'],boss:'saint'},
   {n:'The Last Room',ro:'VII',base:'#222024',b2:'#1c1a1e',wall:'#0f0e10',w2:'#1b1a1d',acc:'#ff4f7b',dark:.38,splat:'#2a2a2a',weather:'snowash',amb:'last',
-   song:{tune:'last'},pool:['echo','scenekid','choir','hand','mask','cinder','lullaby'],boss:'you'},
+   song:{tune:'last',calm:'b'},pool:['echo','scenekid','choir','hand','mask','cinder','lullaby'],boss:'you'},
 ];
 // floor II, some nights: the mall after it closes. Mannequins move only while you aren't aiming at them.
 const MALL={n:'The Mall After Close',ro:'II',base:'#26212b',b2:'#211c26',wall:'#141118',w2:'#221c28',acc:'#ffd23f',dark:.5,splat:'#3a1030',weather:'none',amb:'mall',tex:7,
-  song:{tune:'mall'},pool:['mannequin','mannequin','letter','charger','spider','statickid'],boss:'mascot'};
+  song:{tune:'mall',calm:'b'},pool:['mannequin','mannequin','letter','charger','spider','statickid'],boss:'mascot'};
 const CHARS=[
   {id:'wren',name:'Wren',desc:'Hood up. Headphones in. Still here.',hair:'#141019',hi:'#3b2f52',hood:'#2b1e3d',hood2:'#1a1226',skin:'#eadfe0',skin2:'#bfaab4',tear:'#3a2c66',
    hearts:3,black:0,dmg:3.5,rate:2.7,spd:0,candles:1,pins:0,items:[]},
@@ -3228,6 +3231,8 @@ function enterRoom(room,fromDir){
   if(room.type==='secret'){for(const d in room.doors)room.doors[d].link.revealed=true;if(!room.counted){room.counted=true;G.run.secrets++;Save.d.stats.secrets++;if(Save.d.stats.secrets>=3)grantAch('secret')}}
   G.flowT=0;computeFlow();
   saveRun();
+  // treasure and secret rooms sound different from the rest of the floor
+  Music.setRoomCalm(room.type==='treasure'||room.type==='secret'?(Music.song&&Music.song.calm==='c'?'b':'c'):null);
   if(!room.cleared){
     if(room.type==='boss'){startBoss(room);return}
     if(room.spec.length){
@@ -3621,7 +3626,7 @@ const ES={
 'BACK':'VOLVER','ARROWS':'FLECHAS','MOUSE':'RATÓN','SPACE':'ESPACIO','LEFT STICK':'STICK IZQ.','RIGHT STICK':'STICK DER.','LEFT THUMB':'PULGAR IZQ.',
 'RIGHT THUMB':'PULGAR DER.','tap the map':'toca el mapa','tap':'toca','DASH':'ESQUIVAR','ITEM':'OBJETO','USE':'USAR','CNDL':'VELA',
 // settings
-'GENERAL':'GENERAL','AUDIO':'AUDIO','AMBIENCE':'AMBIENTE','MONO AUDIO':'AUDIO MONO','CALM MUSIC':'MÚSICA TRANQUILA','CLASSIC':'CLÁSICA','TWINKLE':'DESTELLOS','DREAMY':'SOÑADORA','VIDEO':'VIDEO','DATA':'DATOS','LANGUAGE':'IDIOMA','BUTTON HINTS':'AYUDAS DE BOTONES','AUTO-FIRE':'DISPARO AUTOMÁTICO',
+'GENERAL':'GENERAL','AUDIO':'AUDIO','AMBIENCE':'AMBIENTE','MONO AUDIO':'AUDIO MONO','CALM MUSIC':'MÚSICA TRANQUILA','MIXED':'MEZCLADA','CLASSIC':'CLÁSICA','TWINKLE':'DESTELLOS','DREAMY':'SOÑADORA','VIDEO':'VIDEO','DATA':'DATOS','LANGUAGE':'IDIOMA','BUTTON HINTS':'AYUDAS DE BOTONES','AUTO-FIRE':'DISPARO AUTOMÁTICO',
 'AIM ASSIST':'AYUDA DE PUNTERÍA','DAMAGE NUMBERS':'NÚMEROS DE DAÑO','SHOW FPS':'MOSTRAR FPS','MASTER VOLUME':'VOLUMEN GENERAL','MUSIC':'MÚSICA','SFX':'EFECTOS',
 'MUTE ALL':'SILENCIAR TODO','SCREEN SHAKE':'TEMBLOR DE PANTALLA','FLASHING':'DESTELLOS','SCANLINES':'LÍNEAS CRT','FILM GRAIN':'GRANO DE PELÍCULA',
 'PIXEL-PERFECT SCALING':'ESCALADO PÍXEL PERFECTO','FULLSCREEN':'PANTALLA COMPLETA','HIGH-CONTRAST BULLETS':'BALAS DE ALTO CONTRASTE',
@@ -4227,7 +4232,7 @@ function optRows(tab){
   if(tab===0)rows=[{l:'LANGUAGE',v:()=>o.lang==='es'?'Español':'English',act:()=>{o.lang=o.lang==='es'?'en':'es';applyVideo()}},
     {l:'BUTTON HINTS',...tog('hints')},{l:'SPEEDRUN TIMER',...tog('timer')},{l:'AUTO-FIRE',...tog('autofire')},{l:'AIM ASSIST',...tog('aim')},{l:'DAMAGE NUMBERS',...tog('dmgNums')},{l:'SHOW FPS',...tog('fps')}];
   else if(tab===1)rows=[{l:'MASTER VOLUME',...sl('master',0,1,()=>AU.applyVolume())},{l:'MUSIC',...sl('music',0,1,()=>AU.applyVolume())},{l:'SFX',...sl('sfx',0,1,()=>AU.applyVolume())},{l:'AMBIENCE',...sl('ambVol',0,1,()=>AU.applyVolume())},{l:'MONO AUDIO',...tog('mono',()=>AU.applyMono())},
-    {l:'CALM MUSIC',v:()=>({a:'CLASSIC',b:'TWINKLE',c:'DREAMY'}[o.calm]||'CLASSIC'),act:d=>{const L=['a','b','c'];o.calm=L[(Math.max(0,L.indexOf(o.calm))+(d<0?2:1))%3];if(['title','explore','void'].includes(Music.mode))Music.pending=true}},
+    {l:'CALM MUSIC',v:()=>({mix:'MIXED',a:'CLASSIC',b:'TWINKLE',c:'DREAMY'}[o.calm2]||'MIXED'),act:d=>{const L=['mix','a','b','c'];o.calm2=L[(Math.max(0,L.indexOf(o.calm2))+(d<0?3:1))%4];if(['title','explore','void'].includes(Music.mode))Music.pending=true}},
     {l:'MUTE ALL',v:()=>onoff(AU.muted),act:()=>{AU.muted=!AU.muted;AU.applyVolume()}}];
   else if(tab===2)rows=[{l:'SCREEN SHAKE',...sl('shake',0,1)},{l:'FLASHING',v:()=>o.flash?'ON':'REDUCED',act:()=>{o.flash=!o.flash}},{l:'SCANLINES',...tog('crt',applyVideo)},{l:'FILM GRAIN',...tog('grain')},
     {l:'PIXEL-PERFECT SCALING',...tog('pixel',applyVideo)},{l:'HIGH-CONTRAST BULLETS',...tog('hiContrast')},{l:'FULLSCREEN',v:()=>onoff(isFull()||isInstalled()),act:()=>toggleFull()}];
@@ -4280,7 +4285,7 @@ function goTitle(){
   if(Updater.ready){Updater.apply();return}
   G.runSave=loadRunSave();
   G.state='title';G.menu={sel:0};G.run=null;G.player=null;G.trans=null;G.banner=null;
-  if(!titleSong)titleSong=makeSong(0,1,{song:{tune:'title'}});
+  if(!titleSong)titleSong=makeSong(0,1,{song:{tune:'title',calm:'c'}});
   Music.setSong(titleSong);Music.setMode('title');AU.setAmbience('title');AU.setMuffle(18000);
 }
 function onUserGesture(){
@@ -4788,7 +4793,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.02-1716';
+const BUILD='2026.10.02-1916';
 const Updater={
   ready:false,
   check(){
