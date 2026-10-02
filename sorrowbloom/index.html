@@ -297,8 +297,10 @@ const AU={
     this.master=c.createGain();
     // mix bus compression slow enough to let drum hits punch through before it reacts (the limiter after it catches the peaks)
     const comp=c.createDynamicsCompressor();comp.threshold.value=-16;comp.knee.value=8;comp.ratio.value=3.5;comp.attack.value=.025;comp.release.value=.25;
-    const lim=c.createDynamicsCompressor();lim.threshold.value=-3;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.001;lim.release.value=.06;
-    this.master.connect(comp);comp.connect(lim);this.out=this.lim=lim;
+    const lim=c.createDynamicsCompressor();lim.threshold.value=-4.5;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=0;lim.release.value=.06;
+    // and a soft clipper after the limiter for anything that slips past it, so the output never hits full scale and crackles
+    const clip=c.createWaveShaper(),cc=new Float32Array(2049);for(let i=0;i<cc.length;i++){const x=i/1024-1,a=Math.abs(x);cc[i]=Math.sign(x)*(a<.85?a:.85+.15*Math.tanh((a-.85)/.15))}clip.curve=cc;
+    this.master.connect(comp);comp.connect(lim);lim.connect(clip);this.out=this.lim=clip;
     // MONO AUDIO: sum to one channel (and back out to both ears) for playing with one earbud
     this.mono=c.createGain();this.mono.channelCount=1;this.mono.channelCountMode='explicit';this.mono.channelInterpretation='speakers';this.mono.connect(c.destination);
     this.applyMono();
@@ -4647,7 +4649,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.02-1351';
+const BUILD='2026.10.02-1356';
 const Updater={
   ready:false,
   check(){
