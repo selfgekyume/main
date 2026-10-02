@@ -273,10 +273,11 @@ const Input={
 // Drop tuning goes lower every floor: drop C on floor I, down to F#1 in the last room.
 // ----- recorded instruments: Karoryfer Lecolds' Emilyguitar, Growlybass and Big Rusty Drums (all CC0, see audio/README.md) -----
 // each audio/*.mp3 is a sprite: a timing click at .05s, then the samples back to back. SMP_T gives [start, length] in seconds:
-// gtr f<midi> = a guitar note picked hard (for the amp), c<midi> = played softer (for clean parts), bass b<midi>, drums by name.
+// gtr f<midi> = a guitar note picked hard (for the amp), c<midi> = played softer (for clean parts), bass b<midi>, drums by name,
+// gtrx r<midi> = the player's hand muting the strings, for when a part stops dead.
 // Each key has two takes, so the left and right guitars are different recordings, like a real double-tracked band.
-const AUDIO_V={gtr:1,bass:1,drums:2}; // bump a file's number here and in sw.js whenever it changes
-const SMP_T={"gtr":{"f37":[[0.15,2.1],[2.37,2.1]],"f40":[[4.59,2.1],[6.81,2.1]],"f42":[[9.03,2.1],[11.25,2.1]],"f45":[[13.47,2.1],[15.69,2.1]],"f48":[[17.91,2.1],[20.13,2.1]],"f51":[[22.35,2.1],[24.57,2.1]],"f54":[[26.79,2.1],[29.01,2.1]],"f57":[[31.23,2.1],[33.45,2.1]],"f60":[[35.67,2.1],[37.89,2.1]],"f63":[[40.11,2.1],[42.33,2.1]],"f66":[[44.55,2.1],[46.77,2.1]],"f69":[[48.99,2.1],[51.21,2.1]],"f72":[[53.43,2.1],[55.65,2.1]],"f75":[[57.87,2.1],[60.09,2.1]],"c51":[[62.31,2.4],[64.83,2.4]],"c54":[[67.35,2.4],[69.87,2.4]],"c57":[[72.39,2.4],[74.91,2.4]],"c60":[[77.43,2.4],[79.95,2.4]],"c63":[[82.47,2.4],[84.99,2.4]],"c66":[[87.51,2.4],[90.03,2.4]],"c69":[[92.55,2.4],[95.07,2.4]],"c72":[[97.59,2.4],[100.11,2.4]],"c75":[[102.63,2.4],[105.15,2.4]],"c78":[[107.67,2.4],[110.19,2.4]],"c81":[[112.71,2.4],[115.23,2.4]],"c84":[[117.75,2.4],[120.27,2.4]],"c86":[[122.79,2.4],[125.31,2.4]]},"bass":{"b25":[[0.15,1.9],[2.17,1.9]],"b28":[[4.19,1.9],[6.21,1.9]],"b30":[[8.23,1.9],[10.25,1.9]],"b33":[[12.27,1.9],[14.29,1.9]],"b36":[[16.31,1.9],[18.33,1.9]],"b39":[[20.35,1.9],[22.37,1.9]],"b42":[[24.39,1.9],[26.41,1.9]],"b45":[[28.43,1.9],[30.45,1.9]],"b48":[[32.47,1.9],[34.49,1.9]]},"drums":{"kick":[[0.15,0.55],[0.82,0.55]],"snare":[[1.49,0.75],[2.36,0.75]],"ghost":[[3.23,0.5]],"hat":[[3.85,0.28],[4.25,0.28]],"ohat":[[4.65,1.1]],"crash":[[5.87,3.2]],"china":[[9.19,2.6]],"tom1":[[11.91,0.9],[12.93,0.9]],"tom2":[[13.95,1],[15.07,1]],"tom3":[[16.19,1.2],[17.51,1.2]],"ride":[[18.83,1.6],[20.55,1.6]],"bell":[[22.27,1.6]]}};
+const AUDIO_V={gtr:1,bass:1,drums:2,gtrx:1}; // bump a file's number here and in sw.js whenever it changes
+const SMP_T={"gtr":{"f37":[[0.15,2.1],[2.37,2.1]],"f40":[[4.59,2.1],[6.81,2.1]],"f42":[[9.03,2.1],[11.25,2.1]],"f45":[[13.47,2.1],[15.69,2.1]],"f48":[[17.91,2.1],[20.13,2.1]],"f51":[[22.35,2.1],[24.57,2.1]],"f54":[[26.79,2.1],[29.01,2.1]],"f57":[[31.23,2.1],[33.45,2.1]],"f60":[[35.67,2.1],[37.89,2.1]],"f63":[[40.11,2.1],[42.33,2.1]],"f66":[[44.55,2.1],[46.77,2.1]],"f69":[[48.99,2.1],[51.21,2.1]],"f72":[[53.43,2.1],[55.65,2.1]],"f75":[[57.87,2.1],[60.09,2.1]],"c51":[[62.31,2.4],[64.83,2.4]],"c54":[[67.35,2.4],[69.87,2.4]],"c57":[[72.39,2.4],[74.91,2.4]],"c60":[[77.43,2.4],[79.95,2.4]],"c63":[[82.47,2.4],[84.99,2.4]],"c66":[[87.51,2.4],[90.03,2.4]],"c69":[[92.55,2.4],[95.07,2.4]],"c72":[[97.59,2.4],[100.11,2.4]],"c75":[[102.63,2.4],[105.15,2.4]],"c78":[[107.67,2.4],[110.19,2.4]],"c81":[[112.71,2.4],[115.23,2.4]],"c84":[[117.75,2.4],[120.27,2.4]],"c86":[[122.79,2.4],[125.31,2.4]]},"bass":{"b25":[[0.15,1.9],[2.17,1.9]],"b28":[[4.19,1.9],[6.21,1.9]],"b30":[[8.23,1.9],[10.25,1.9]],"b33":[[12.27,1.9],[14.29,1.9]],"b36":[[16.31,1.9],[18.33,1.9]],"b39":[[20.35,1.9],[22.37,1.9]],"b42":[[24.39,1.9],[26.41,1.9]],"b45":[[28.43,1.9],[30.45,1.9]],"b48":[[32.47,1.9],[34.49,1.9]]},"drums":{"kick":[[0.15,0.55],[0.82,0.55]],"snare":[[1.49,0.75],[2.36,0.75]],"ghost":[[3.23,0.5]],"hat":[[3.85,0.28],[4.25,0.28]],"ohat":[[4.65,1.1]],"crash":[[5.87,3.2]],"china":[[9.19,2.6]],"tom1":[[11.91,0.9],[12.93,0.9]],"tom2":[[13.95,1],[15.07,1]],"tom3":[[16.19,1.2],[17.51,1.2]],"ride":[[18.83,1.6],[20.55,1.6]],"bell":[[22.27,1.6]]},"gtrx":{"r37":[[0.15,0.1758],[0.44578,0.1465]],"r40":[[0.71227,0.1758],[1.00805,0.1758]],"r42":[[1.30383,0.2],[1.62383,0.2]],"r45":[[1.94383,0.1465],[2.21032,0.1172]],"r48":[[2.44751,0.1172],[2.68469,0.1465]],"r51":[[2.95118,0.1758],[3.24696,0.1465]]}};
 const AU={
   ctx:null,ok:false,muted:false,last:{},curves:{},sp:{},raw:{},rr:{},
   init(){
@@ -294,7 +295,8 @@ const AU={
     this.noiseBuf=nb;
     this.kit=this.drumKit();
     this.master=c.createGain();
-    const comp=c.createDynamicsCompressor();comp.threshold.value=-16;comp.knee.value=8;comp.ratio.value=4;comp.attack.value=.004;comp.release.value=.18;
+    // mix bus compression slow enough to let drum hits punch through before it reacts (the limiter after it catches the peaks)
+    const comp=c.createDynamicsCompressor();comp.threshold.value=-16;comp.knee.value=8;comp.ratio.value=3.5;comp.attack.value=.025;comp.release.value=.25;
     const lim=c.createDynamicsCompressor();lim.threshold.value=-3;lim.knee.value=0;lim.ratio.value=20;lim.attack.value=.001;lim.release.value=.06;
     this.master.connect(comp);comp.connect(lim);this.out=this.lim=lim;
     // MONO AUDIO: sum to one channel (and back out to both ears) for playing with one earbud
@@ -358,7 +360,7 @@ const AU={
   // fetch and decode the recordings right away (an offline context needs no tap); the synths play until they arrive
   preload(){
     if(this.pre||!window.fetch)return;this.pre=true;
-    for(const k of['drums','bass','gtr'])fetch('audio/'+k+'.mp3?v='+AUDIO_V[k]).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(ab=>this.decodeSprite(k,ab,false)).catch(()=>{});
+    for(const k of Object.keys(AUDIO_V))fetch('audio/'+k+'.mp3?v='+AUDIO_V[k]).then(r=>{if(!r.ok)throw 0;return r.arrayBuffer()}).then(ab=>this.decodeSprite(k,ab,false)).catch(()=>{});
   },
   decodeSprite(k,ab,late){
     const OC=window.OfflineAudioContext||window.webkitOfflineAudioContext;let ctx=this.ctx;
@@ -439,6 +441,9 @@ const AU={
     for(let i=0;i<n;i++){const x=i*2/(n-1)-1;c[i]=Math.tanh(k*x)/tk}
     return this.curves[k]=c;
   },
+  // how notes die away (seconds): palm-mute damping, how long a mute may ring into a gap, the final cut, and an open chord's release.
+  // the amp compresses everything, so these are short: the input has to drop a long way before you hear it fade
+  TAIL:{damp:.02,ring:.25,cut:.015,open:.012,early:.05,chk:.015,chkMute:.0015},
   // the amp's knobs, 0-10 like the real thing
   AMP:{gain:9,bass:5.5,mid:4.5,treble:6.5,presence:6},
   gtrChain(pan,dest,lead){
@@ -446,16 +451,17 @@ const AU={
     // flubby) and the mids and pick attack are pushed into it. Then a Marshall-style tone stack and a 4x12 speaker.
     const c=this.ctx,A=this.AMP,inp=c.createGain(),knob=v=>(v-5)*2.4,bq=(type,f,q,g)=>{const b=c.createBiquadFilter();b.type=type;b.frequency.value=f;if(q!=null)b.Q.value=q;if(g!=null)b.gain.value=g;return b};
     const gn=v=>{const g=c.createGain();g.gain.value=v;return g},sh=(curve,os)=>{const w=c.createWaveShaper();w.curve=curve;w.oversample=os;return w};
-    const out=gn(lead?.2:.26);
+    const out=gn(lead?.15:.18);
     const chain=[inp,bq('highpass',lead?260:170,.7),bq('peaking',850,.8,8),bq('highshelf',2800,null,5),bq('lowpass',7000,.7),
       gn(1.5+A.gain*1.3),sh(this.curveAsym(5),'4x'),bq('highpass',70,.7),bq('lowpass',8500,.7),
       gn(3),sh(this.curve(3),'4x'),bq('highpass',50,.7),
       gn(1.6),sh(this.curve(1.6),'2x'),
       bq('lowshelf',120,null,knob(A.bass)),bq('peaking',650,.65,knob(A.mid)-4),bq('highshelf',2400,null,knob(A.treble)),bq('highshelf',4500,null,(A.presence-5)*1.5),
-      bq('highpass',85,.7),bq('peaking',115,1.2,2.5),bq('peaking',2500,1.2,3),bq('lowpass',4800,.9),bq('lowpass',6000,.7),bq('lowpass',8500,.7),bq('peaking',9000,2,-6),out];
+      bq('highpass',85,.7),bq('peaking',115,1.2,2.5),bq('peaking',2500,1.2,3),bq('lowpass',4800,.9),bq('lowpass',6000,.7),bq('lowpass',8500,.7),bq('peaking',9000,2,-6),bq('peaking',4200,1.2,-2.5),out];
     for(let i=0;i<chain.length-1;i++)chain[i].connect(chain[i+1]);
     this.panTo(out,pan,dest||this.music);
     if(lead){out.connect(this.gain(.25,this.delay));out.connect(this.gain(.15,this.verb))}
+    else if(this.room)out.connect(this.gain(.05,this.room)); // a little of the room, so a stop lands in a space instead of dead silence
     return inp;
   },
   // speaker cabinet impulse: short, boxy and resonant, built from damped sines
@@ -505,17 +511,22 @@ const AU={
 
   // ----- instruments -----
   // the recorded guitar: the same clean recording a real guitarist would send into an amp
-  gtrRec(t,midi,dur,mode,vel,dest){
+  gtrRec(t,midi,dur,mode,vel,dest,rest){
     // m=palm-muted power chord, mute1=palm-muted single note, open=power chord, note=single ringing note, trem, pinch
     const c=this.ctx,iv=mode==='open'?[0,7,12]:mode==='mute'?[0,7]:[0];
     for(let side=0;side<2;side++){
       // the two guitars are two different takes: different recordings, a hair apart in time and tuning
       const ts=t+(side?.006+Math.random()*.006:Math.random()*.003),vg=c.createGain(),g=vg.gain,det=Math.pow(2,(side?4:-4)/1200);
       vg.connect(dest||(side?this.gR:this.gL));let into=vg,end;
-      // every note stops dead when it's done, like a noise gate on a high-gain amp: no mush between chugs
-      if(mode==='mute'||mode==='mute1'){const hold=Math.min(.085,dur*.85);into=this.filt('lowpass',1100+vel*600,.7,vg);g.setValueAtTime(vel,ts);g.setValueAtTime(vel,ts+hold);g.linearRampToValueAtTime(0,ts+hold+.02);end=ts+hold+.03}
-      else if(mode==='trem'){const hold=Math.max(.03,dur*.85);g.setValueAtTime(.85*vel,ts);g.setValueAtTime(.85*vel,ts+hold);g.linearRampToValueAtTime(0,ts+hold+.012);end=ts+hold+.02}
-      else{const hold=Math.max(.03,dur-.02);g.setValueAtTime(.9*vel,ts);g.setValueAtTime(.9*vel,ts+hold);g.linearRampToValueAtTime(0,ts+hold+.04);end=ts+hold+.05}
+      // notes end the way a player stops them: palm mutes ring into the gap and die away under the hand, open chords
+      // fade in a tenth of a second, and a deliberate stop before a rest gets the little 'chk' of the strings being muted
+      const TL=this.TAIL;
+      if(mode==='mute'||mode==='mute1'){const ring=Math.max(dur*.9,Math.min(dur+rest,TL.ring));into=this.filt('lowpass',1100+vel*600,.7,vg);
+        g.setValueAtTime(vel,ts);g.setTargetAtTime(0,ts+.015,TL.damp);g.setTargetAtTime(0,ts+ring,TL.cut);end=ts+ring+.18;
+        if(rest>=.12)this.gtrStop(ts+ring,midi,side,dest,TL.chkMute)}
+      else if(mode==='trem'){const hold=Math.max(.03,dur*.9);g.setValueAtTime(.85*vel,ts);g.setValueAtTime(.85*vel,ts+hold);g.setTargetAtTime(0,ts+hold,.015);end=ts+hold+.1}
+      else{const hold=Math.max(.03,dur-(rest>0?TL.early:.015));g.setValueAtTime(.9*vel,ts);g.setValueAtTime(.9*vel,ts+hold);g.setTargetAtTime(0,ts+hold,TL.open);end=ts+hold+.22;
+        if(rest>0&&mode!=='pinch')this.gtrStop(ts+dur-.01,midi,side,dest,TL.chk)}
       if(mode==='pinch'){
         // pinch harmonic: a high overtone that squeals, bends up and wobbles, over the low note
         const k=this.seg('gtr','f',midi+24,side),s=this.splay('gtr',k.s,ts,k.rate*det,into,end-ts);
@@ -525,6 +536,8 @@ const AU={
       }else iv.forEach((n,j)=>{const k=this.seg('gtr','f',midi+n,side),sg=this.gain([1,.8,.6][j],into);this.splay('gtr',k.s,ts+j*(mode==='open'?.008:.002),k.rate*det,sg,end-ts-j*.008)});
     }
   },
+  // the hand muting the strings, through the same amp
+  gtrStop(t,midi,side,dest,v){if(!this.has('gtrx'))return;const k=this.seg('gtrx','r',midi,side),g=this.gain(v,dest||(side?this.gR:this.gL));this.splay('gtrx',k.s,t,1,g)},
   // lead guitar: single notes through its own amp in the middle, with vibrato on the long ones and a little echo
   lead(t,midi,dur,vel){
     vel=vel||1;if(!this.has('gtr')){this.ssaw(t,midi,dur,.035*vel);return}
@@ -537,15 +550,15 @@ const AU={
     // under the riffs the bass sits an octave below the guitar, like a real band; in the quiet parts it plays up where you can hear it
     const c=this.ctx,m=soft?midi:midi-12,k=this.seg('bass','b',m,this.next('bass',2)),g=c.createGain();
     if(soft){g.gain.setValueAtTime(.5*vel,t);g.gain.setTargetAtTime(0,t+dur*.9,.15);g.connect(this.filt('lowpass',1200,.7,this.music));this.splay('bass',k.s,t,k.rate,g,dur+1);return}
-    const hold=Math.max(.04,dur*.9);g.gain.setValueAtTime(vel,t);g.gain.setValueAtTime(vel,t+hold);g.gain.linearRampToValueAtTime(0,t+hold+.03);g.connect(this.bassIn);this.splay('bass',k.s,t,k.rate,g,hold+.05);
+    const hold=Math.max(.04,dur*.95);g.gain.setValueAtTime(vel,t);g.gain.setValueAtTime(vel,t+hold);g.gain.setTargetAtTime(0,t+hold,.03);g.connect(this.bassIn);this.splay('bass',k.s,t,k.rate,g,hold+.2);
   },
   drumRec(key,t,v,bus,room,gate){
     const l=SMP_T.drums[key],g=this.ctx.createGain();v*=.94+Math.random()*.12;g.connect(bus);if(room)g.connect(this.gain(room,this.room));
     if(gate){g.gain.setValueAtTime(v,t);g.gain.setValueAtTime(v,t+gate);g.gain.linearRampToValueAtTime(0,t+gate+.07)}else g.gain.value=v;
     this.splay('drums',l[this.next(key,l.length)],t,1,g,gate?gate+.08:null)},
-  gtr(t,midi,dur,mode,vel,dest){
+  gtr(t,midi,dur,mode,vel,dest,rest){
     const c=this.ctx;vel=vel||1;
-    if(this.has('gtr')){this.gtrRec(t,midi,dur,mode,vel,dest);return}
+    if(this.has('gtr')){this.gtrRec(t,midi,dur,mode,vel,dest,rest||0);return}
     // a power chord when it rings out, root and fifth when it chugs, one string when tremolo picking
     const iv=mode==='open'?[0,7,12]:mode==='mute'?[0,7]:[0],pk=c.createBufferSource(),pg=c.createGain();
     pk.buffer=this.kit.pick;pg.gain.value=.3*vel;pk.connect(pg);pk.start(t);
@@ -998,7 +1011,9 @@ function compileSec(src,song){
   const len=Math.max(16,G.length,Bs.length,Ld.length,Cl.length,Sy.length,...['k','s','h','c','t'].map(k=>lane(src[k]).length)),st=blank(len);
   const held=(a,i)=>{let d=1;while(i+d<a.length&&a[i+d]==='.')d++;return d},notes=x=>/^-?\d+(\+-?\d+)*$/.test(x)?x.split('+').map(Number):null;
   const MODE={m:'mute',s:'mute1',o:'open',n:'note',t:'trem',p:'pinch'};
-  G.forEach((x,i)=>{const m=/^(-?\d+)([msontp])$/.exec(x);if(m)st[i].g={n:+m[1],m:MODE[m[2]],d:held(G,i)}});
+  // r = how many silent steps follow the note: palm mutes ring into them, and a deliberate stop gets the sound of the hand muting the strings
+  const rests=(a,i)=>{let r=0;while(i+r<a.length&&a[i+r]==='-')r++;return r};
+  G.forEach((x,i)=>{const m=/^(-?\d+)([msontp])$/.exec(x);if(m){const d=held(G,i);st[i].g={n:+m[1],m:MODE[m[2]],d,r:rests(G,i+d)}}});
   Bs.forEach((x,i)=>{if(/^-?\d+$/.test(x))st[i].b={n:+x,d:held(Bs,i),v:1,soft:!!src.softBass}});
   Ld.forEach((x,i)=>{const n=notes(x);if(n)st[i].ld=n.map(v=>({n:v,d:held(Ld,i)}))});
   Cl.forEach((x,i)=>{const n=notes(x);if(n){st[i].cl=n.map(v=>song.root+v);st[i].clv=(i%16===0?1.25:1)*(src.clv||.45)}});
@@ -1078,7 +1093,7 @@ const Music={
     if(d.s)this.push(t,'snare');
     if(s.drop&&this.rep===0)this.push(t,'drop');
     if(!au)return;
-    if(g){const dur=(g.d||1)*sd,mu=g.m==='mute'||g.m==='mute1';AU.gtr(t,R+g.n,dur,g.m,g.v||1);if(sec.bf&&g.m!=='pinch'&&g.m!=='trem')AU.bass(t,R+g.n,mu?sd*.9:dur,1)}
+    if(g){const dur=(g.d||1)*sd,rest=(g.r||0)*sd,mu=g.m==='mute'||g.m==='mute1';AU.gtr(t,R+g.n,dur,g.m,g.v||1,null,rest);if(sec.bf&&g.m!=='pinch'&&g.m!=='trem')AU.bass(t,R+g.n,mu?Math.max(sd*.9,Math.min(dur+rest,.3)):dur,1)}
     if(s.ld)for(const n of s.ld)AU.lead(t,R+n.n,n.d*sd,n.v||1);
     if(s.b)AU.bass(t,R+s.b.n,s.b.d*sd,s.b.v||1,s.b.soft);
     if(kv)AU.kick(t,kv);
@@ -4632,7 +4647,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.02-1311';
+const BUILD='2026.10.02-1351';
 const Updater={
   ready:false,
   check(){
