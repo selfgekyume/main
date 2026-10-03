@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sorrowbloom Guide</title>
+<meta name="description" content="How to play Sorrowbloom: characters, items, rooms, bosses, modes, unlocks and secrets.">
+<meta name="theme-color" content="#050208">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Silkscreen&family=VT323&display=swap">
+<style>
+/* Same night as the game: always dark. Short cards and tables, one tab at a time, search across all of it. */
+:root{--bg:#050208;--panel:#0b0714;--panel2:#110a1c;--line:#241a33;--line2:#3a2c4a;--ink:#e9e1f0;--mute:#8f86a0;--dim:#5a5068;
+  --pink:#ff8fc8;--red:#ff4f7b;--blood:#c21e3a;--gold:#ffd23f;--teal:#4fc3c3;--violet:#b48cff;color-scheme:dark}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%;scroll-padding-top:110px}
+body{margin:0;background:var(--bg);color:var(--ink);font:20px/1.28 VT323,ui-monospace,monospace;-webkit-tap-highlight-color:transparent}
+a{color:var(--pink)}
+.wrap{max-width:960px;margin:0 auto;padding:0 16px}
+header{padding-top:env(safe-area-inset-top)}
+.bar{display:flex;align-items:center;gap:12px;padding:12px 0 8px}
+.stick{position:sticky;top:0;z-index:5;background:rgba(5,2,8,.94);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border-bottom:1px solid var(--line);padding-top:8px}
+.back{font:11px Silkscreen,monospace;color:var(--ink);text-decoration:none;border:1px solid var(--line2);padding:7px 10px;white-space:nowrap;background:var(--panel)}
+.back:hover,.back:focus-visible{border-color:var(--red);outline:none}
+h1{margin:0;font:36px/1 "Pirata One",serif;color:#efe6f4;text-shadow:2px 2px 0 #7a0a1f;flex:1;min-width:0}
+h1 small{display:block;font:15px VT323,monospace;color:var(--mute);text-shadow:none;margin-top:2px}
+#q{width:100%;font:21px VT323,monospace;color:var(--ink);background:var(--panel);border:1px solid var(--line2);padding:7px 10px;border-radius:0;outline:none;-webkit-appearance:none;appearance:none}
+#q:focus{border-color:var(--pink)}
+nav{display:flex;gap:6px;overflow-x:auto;padding:7px 0 8px;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button,.chip{font:10px Silkscreen,monospace;color:#a89cb8;background:var(--panel);border:1px solid var(--line2);padding:7px 9px;white-space:nowrap;cursor:pointer;border-radius:0}
+nav button[aria-selected=true],.chip.on{color:#fff;border-color:var(--red);background:rgba(255,79,123,.15)}
+nav button:focus-visible,.chip:focus-visible{outline:1px solid var(--pink);outline-offset:1px}
+main{padding:14px 0 40px}
+section{display:none}
+section.show{display:block}
+body.searching section{display:block}
+body.searching section.empty,body.searching .grp.empty,body.searching .s.miss,body.searching .filters{display:none}
+h2{font:30px/1 "Pirata One",serif;margin:6px 0 4px;color:#efe6f4}
+h3{font:12px Silkscreen,monospace;color:var(--pink);margin:22px 0 8px;letter-spacing:.02em}
+.lede{color:var(--mute);margin:0 0 12px}
+p{margin:6px 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:8px}
+.card{background:var(--panel);border:1px solid var(--line);padding:9px 11px}
+.card h4{margin:0 0 3px;font:23px/1.05 "Pirata One",serif;color:#fff;font-weight:400}
+.card .d{margin:3px 0 0}
+.item{padding:7px 10px}
+.item .hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px}
+.item h4{margin:0}
+.item .tags{margin:0}
+.item .d{margin-top:2px}
+.item .lock{margin-top:2px}
+.card .meta{color:var(--mute);font-size:17px}
+.tags{display:flex;flex-wrap:wrap;gap:4px;margin:3px 0 2px}
+.tag{font:8px/1 Silkscreen,monospace;padding:3px 5px 3px;border:1px solid var(--line2);color:#b8aec8;text-transform:uppercase}
+.tag.t{color:var(--gold);border-color:#5a4a10}.tag.s{color:var(--teal);border-color:#1f4a4a}.tag.b{color:#ff6a7a;border-color:#5a1420}.tag.c{color:#d08ad0;border-color:#4a1f4a}
+.tag.act{color:#fff;border-color:#fff3}.tag.wpn{color:#ffb347;border-color:#5a3a10}
+.lock{color:#d8a0b0;font-size:17px;margin-top:4px}
+.lock b{font:9px Silkscreen,monospace;color:var(--red);font-weight:400}
+table{width:100%;border-collapse:collapse;background:var(--panel);border:1px solid var(--line)}
+th{font:9px Silkscreen,monospace;color:var(--mute);text-align:left;padding:7px 8px;border-bottom:1px solid var(--line2);font-weight:400}
+td{padding:6px 8px;border-top:1px solid var(--line);vertical-align:top}
+td:first-child{color:#fff;white-space:nowrap}
+td.w{white-space:normal}
+.tbl{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.num{color:var(--gold)}
+.k{display:inline-block;font:9px/1 Silkscreen,monospace;color:#fff;border:1px solid var(--line2);border-bottom-width:2px;padding:4px 5px 3px;margin:1px 2px 1px 0;background:var(--panel2);vertical-align:2px}
+.steps{counter-reset:s;display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(270px,1fr))}
+.steps .card{position:relative;padding-left:44px}
+.steps .card::before{counter-increment:s;content:counter(s);position:absolute;left:10px;top:8px;font:26px "Pirata One",serif;color:var(--red)}
+.tip{border-left:3px solid var(--pink);background:var(--panel2);padding:7px 10px;margin:8px 0}
+.tip .lb{font:9px Silkscreen,monospace;color:var(--pink);font-weight:400;margin-right:6px}
+ul.tight{margin:4px 0;padding-left:20px}
+ul.tight li{margin:2px 0}
+.stat{display:grid;grid-template-columns:62px 1fr 40px;align-items:center;gap:6px;font-size:17px;color:var(--mute)}
+.stat i{display:block;height:6px;background:var(--line2);position:relative}
+.stat i::after{content:"";position:absolute;inset:0;width:var(--v);background:var(--red)}
+.stat span:last-child{text-align:right;color:var(--ink)}
+.hearts{letter-spacing:2px;font-size:22px}
+.hr{color:var(--blood)}.hb{color:#6a3a8a}.hc{color:#bfe8ff}
+.filters{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 12px}
+.count{color:var(--mute);font-size:17px;margin:-4px 0 10px}
+.spoil{position:relative;cursor:pointer}
+.spoil .in{filter:blur(7px);opacity:.45;user-select:none;-webkit-user-select:none;transition:filter .25s,opacity .25s}
+.spoil.open{cursor:auto}
+.spoil.open .in{filter:none;opacity:1;user-select:auto;-webkit-user-select:auto}
+.spoil .sb{position:relative}
+.spoil .veil{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font:10px Silkscreen,monospace;color:var(--pink);text-align:center;padding:8px}
+.spoil.open .veil{display:none}
+.spoil h4{filter:none}
+.btn{font:10px Silkscreen,monospace;color:#fff;background:var(--panel);border:1px solid var(--red);padding:8px 10px;cursor:pointer}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:6px 0}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;display:inline-block;border:1px solid #fff3}
+#none{display:none;color:var(--mute);text-align:center;padding:30px 0}
+body.searching.nores #none{display:block}
+footer{border-top:1px solid var(--line);color:var(--dim);font-size:17px;padding:14px 0 calc(24px + env(safe-area-inset-bottom));text-align:center}
+@media (max-width:560px){
+  body{font-size:19px}
+  h1{font-size:30px}
+  td:first-child{white-space:normal;min-width:84px}
+  .grid{gap:6px}
+  .grid,.steps{grid-template-columns:1fr}
+  td{padding:6px 6px}
+}
+@media (prefers-reduced-motion:reduce){.spoil .in{transition:none}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="bar">
+      <a class="back" id="back" href="./">‹ PLAY</a>
+      <h1>Sorrowbloom<small>the field guide · everything the night won't tell you</small></h1>
+    </div>
+  </div>
+</header>
+<div class="stick">
+  <div class="wrap">
+    <input id="q" type="search" placeholder="Search: items, bosses, rooms…" autocomplete="off" aria-label="Search the guide">
+    <nav id="tabs" role="tablist" aria-label="Guide sections"></nav>
+  </div>
+</div>
+
+<main class="wrap" id="main">
+
+<!-- ================= START ================= -->
+<section id="start" data-name="Start">
+  <h2>The night in a minute</h2>
+  <p class="lede">A dungeon crawl through seven floors of one bad night. Cry at things, collect stuff, get to the last room.</p>
+  <div class="steps grp">
+    <div class="card s"><b>Clear the room.</b> Doors lock when you walk into a fight and open when every enemy is down.</div>
+    <div class="card s"><b>Pick everything up.</b> Items last the whole run and stack with each other. There are no bad picks, only weird ones.</div>
+    <div class="card s"><b>Every floor has a free item.</b> It's behind the <span style="color:var(--gold)">gold door</span> (treasure room). The <span style="color:var(--teal)">teal door</span> is a shop that takes pins.</div>
+    <div class="card s"><b>Find the <span style="color:#ff6a7a">red door</span>.</b> Beat the boss, grab its item and the heart it leaves, then drop through the trapdoor.</div>
+    <div class="card s"><b>Dash through danger.</b> You can't be hurt mid-dash. Use it to slip through bullets and over spikes.</div>
+    <div class="card s"><b>Fill HYPE.</b> Kill fast and hurt bosses to fill the meter. At 100 you get an <b>ENCORE</b>: 8 seconds of rainbow tears, ×1.5 damage and faster crying.</div>
+  </div>
+
+  <h3>Hearts</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Heart</th><th>What it does</th></tr>
+    <tr class="s"><td><span class="hearts hr">♥</span> Red</td><td class="w">Your health, in half hearts. Heal it with heart pickups. Max hearts go up with containers.</td></tr>
+    <tr class="s"><td><span class="hearts hb">♥</span> Black</td><td class="w">An extra heart on top. Lost before red ones. <b>When one breaks it blasts every enemy in the room.</b></td></tr>
+    <tr class="s"><td><span class="hearts hc">♡</span> Cracked</td><td class="w">Soaks up one hit of any size, then shatters. Great against big hits.</td></tr>
+  </table></div>
+
+  <h3>Stats</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Stat</th><th>Means</th></tr>
+    <tr class="s"><td>Damage</td><td class="w">How hard each tear hits. Wren starts at <span class="num">3.5</span>.</td></tr>
+    <tr class="s"><td>Tears</td><td class="w">How fast you cry (shots per second). Wren starts at <span class="num">2.7</span>.</td></tr>
+    <tr class="s"><td>Speed</td><td class="w">How fast you walk.</td></tr>
+    <tr class="s"><td>Range</td><td class="w">How far tears fly before they drop.</td></tr>
+    <tr class="s"><td>Shot speed</td><td class="w">How fast tears travel. Faster is easier to hit with.</td></tr>
+    <tr class="s"><td>Luck</td><td class="w">More drops from enemies (+1% each), more crits with Bloodshot Eye and more fire with Matchstick Heart.</td></tr>
+  </table></div>
+
+  <h3>Things worth knowing</h3>
+  <div class="grid grp">
+    <div class="card s"><b>Bosses play along with the music.</b> Their attacks land on bars, kicks and snares. Listen for the count and you'll see attacks coming.</div>
+    <div class="card s"><b>Your active item recharges</b> one notch per room you clear. The bar next to it shows how full it is.</div>
+    <div class="card s"><b>Candles are bombs.</b> They break rocks, open secret walls and hurt you too (a whole heart), so step back.</div>
+    <div class="card s"><b>Shoot pots</b> for a 30% chance at loot. Shoot fires to put them out.</div>
+    <div class="card s"><b>Hearts you don't need stay on the floor.</b> Come back for them later.</div>
+    <div class="card s"><b>Look before you grab.</b> Walk up to an item and a box says what it does, what it costs and what it would swap out. Cards and candy you know show up too.</div>
+    <div class="card s"><b>Candy is a gamble.</b> Each color does something different every run. Once you eat one, that color is known for the rest of the run.</div>
+    <div class="card s"><b>Three items from one set transform you.</b> Look for the set tag on items (SCENE, DEATHCORE…). See the Items tab.</div>
+    <div class="card s"><b>Pins you finish with aren't lost.</b> They go to the Merch Table for permanent perks.</div>
+    <div class="card s"><b>Every run has a code</b> (like <span class="num">ABCD-EFGH</span>). Type it in to replay the exact same night, or send it to a friend.</div>
+    <div class="card s"><b>Closing the app is fine.</b> Your run is saved. Pick it up with CONTINUE.</div>
+    <div class="card s"><b>Bring friends.</b> Up to four controllers can join on the character select screen. See <a href="#coop" data-tab="coop">Co-op</a>.</div>
+  </div>
+</section>
+
+<!-- ================= CONTROLS ================= -->
+<section id="controls" data-name="Controls">
+  <h2>Controls</h2>
+  <p class="lede">Keys can be changed in Settings › Controls.</p>
+  <h3>Keyboard</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Do</th><th>Keys</th></tr>
+    <tr class="s"><td>Move</td><td><span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span></td></tr>
+    <tr class="s"><td>Cry (shoot)</td><td><span class="k">↑</span><span class="k">←</span><span class="k">↓</span><span class="k">→</span> or hold the left mouse button to cry at the cursor</td></tr>
+    <tr class="s"><td>Dash</td><td><span class="k">SHIFT</span></td></tr>
+    <tr class="s"><td>Use active item</td><td><span class="k">SPACE</span></td></tr>
+    <tr class="s"><td>Drop a candle</td><td><span class="k">Q</span></td></tr>
+    <tr class="s"><td>Use card / candy</td><td><span class="k">E</span></td></tr>
+    <tr class="s"><td>Map</td><td><span class="k">TAB</span> (hold)</td></tr>
+    <tr class="s"><td>Pause</td><td><span class="k">ESC</span> or <span class="k">P</span></td></tr>
+    <tr class="s"><td>Menus</td><td><span class="k">ENTER</span> <span class="k">Z</span> ok · <span class="k">ESC</span> <span class="k">X</span> back</td></tr>
+  </table></div>
+  <h3>Controller</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Do</th><th>Button</th></tr>
+    <tr class="s"><td>Move / cry</td><td>Left stick / right stick</td></tr>
+    <tr class="s"><td>Dash</td><td><span class="k">B</span> or click the left stick</td></tr>
+    <tr class="s"><td>Active item</td><td><span class="k">RB</span> <span class="k">RT</span></td></tr>
+    <tr class="s"><td>Candle</td><td><span class="k">LB</span> <span class="k">LT</span></td></tr>
+    <tr class="s"><td>Card / candy</td><td><span class="k">X</span> <span class="k">Y</span></td></tr>
+    <tr class="s"><td>Map · Pause</td><td><span class="k">SELECT</span> · <span class="k">START</span></td></tr>
+  </table></div>
+  <h3>Touch</h3>
+  <div class="grid grp">
+    <div class="card s"><h4>Move</h4>Put your left thumb down anywhere on the left side. The stick appears where you touch.</div>
+    <div class="card s"><h4>Cry</h4>Right thumb. Pick a style on the run setup screen:<ul class="tight"><li><b>Twin stick:</b> drag any direction.</li><li><b>8-way:</b> same, but snaps to 8 directions.</li><li><b>Point &amp; shoot:</b> touch where you want tears to go.</li></ul></div>
+    <div class="card s"><h4>Buttons</h4><b>ITEM</b> active item · <b>CNDL</b> candle · <b>DASH</b> · <b>USE</b> card or candy · <b>II</b> pause. Tap the minimap in the top corner for the full map.</div>
+    <div class="card s"><h4>Make it easier</h4><b>Auto-fire</b> cries at the nearest enemy you can hit when you're not aiming. <b>Aim assist</b> nudges your tears toward enemies. <b>Flick to dash</b> lets you flick your move thumb to dash. There's also <b>Left-handed</b> and <b>Touch button size</b>.</div>
+  </div>
+  <h3>Settings worth a look</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Setting</th><th>Why</th></tr>
+    <tr class="s"><td>Item info</td><td class="w">The box that says what an item, card or candy does when you walk up to it. On by default.</td></tr>
+    <tr class="s"><td>High-contrast bullets</td><td class="w">Enemy bullets pop out more against busy floors.</td></tr>
+    <tr class="s"><td>Damage numbers</td><td class="w">See exactly how hard you hit. Good for testing items.</td></tr>
+    <tr class="s"><td>Speedrun timer</td><td class="w">An on-screen timer for the run.</td></tr>
+    <tr class="s"><td>Calm music</td><td class="w">Quiet rooms have three versions of each song (classic, twinkle, dreamy). Mixed by default, or pick one.</td></tr>
+    <tr class="s"><td>Mono audio</td><td class="w">For one earbud. Sounds are panned to where they happen, so this keeps both sides.</td></tr>
+    <tr class="s"><td>Screen shake · Flashing</td><td class="w">Turn down if the big hits are too much.</td></tr>
+    <tr class="s"><td>Replay tutorial</td><td class="w">In Settings › Data.</td></tr>
+  </table></div>
+</section>
+
+<!-- ================= CO-OP ================= -->
+<section id="coop" data-name="Co-op">
+  <h2>Couch co-op (up to 5)</h2>
+  <p class="lede">Up to five players on one screen. Players 2–5 each need a controller; player 1 can use touch, a keyboard or a controller.</p>
+  <div class="steps grp">
+    <div class="card s"><b>Pair controllers.</b> Xbox, PlayStation and Switch Pro controllers all pair with phones over Bluetooth. Most browsers see 4 controllers at most, so for all five of you, player 1 plays on touch.</div>
+    <div class="card s"><b>Join.</b> On the character select screen, each extra player presses <span class="k">START</span> on their controller. Everyone gets a cursor in their own color: <span style="color:#7ff5e6">2P</span> <span style="color:#ffd23f">3P</span> <span style="color:#7cff6a">4P</span> <span style="color:#b48cff">5P</span>.</div>
+    <div class="card s"><b>Pick.</b> Everyone picks with their own stick or d-pad. <span class="k">START</span> or <span class="k">B</span> again leaves. Player 1 picks and descends like normal.</div>
+    <div class="card s"><b>Go bigger.</b> Mirror your phone to a TV (AirPlay or screen cast) and it's proper couch co-op.</div>
+  </div>
+  <h3>How it plays</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Thing</th><th>In co-op</th></tr>
+    <tr class="s"><td>Hearts, items, pins</td><td class="w">Everyone has their own. Whoever touches a pickup or an item gets it.</td></tr>
+    <tr class="s"><td>Treasure &amp; boss rooms</td><td class="w">One item for each player.</td></tr>
+    <tr class="s"><td>Enemies</td><td class="w">Go after whoever is closest. They get about 30% more health for each extra player (bosses 50%).</td></tr>
+    <tr class="s"><td>Going down</td><td class="w">Out of hearts? You float along as a ghost. Clear the room, beat the boss or reach the next floor and you're back with a heart. The run only ends when everyone is down.</td></tr>
+    <tr class="s"><td>Doors</td><td class="w">Walk through one and everyone goes.</td></tr>
+    <tr class="s"><td>Candles</td><td class="w">Hurt anyone close, friends included. Shout before you drop one.</td></tr>
+    <tr class="s"><td>Telling you apart</td><td class="w">An arrow over each head in that player's color. Everyone's hearts sit along the top of the screen.</td></tr>
+    <tr class="s"><td>Controller died?</td><td class="w">That player waits as a ghost. Press any button on a controller to take over again.</td></tr>
+    <tr class="s"><td>Modes</td><td class="w">Story, Encore and Boss Rush. Daily, weekly and the tutorial are one player.</td></tr>
+    <tr class="s"><td>Pause</td><td class="w">Anyone's <span class="k">START</span>.</td></tr>
+  </table></div>
+  <div class="tip s"><b class="lb">NOTE</b>A co-op run uses the same run code as a solo one, but with the extra items it won't play out quite the same.</div>
+</section>
+
+<!-- ================= CHARACTERS ================= -->
+<section id="chars" data-name="Characters">
+  <h2>Characters</h2>
+  <p class="lede">Wren is there from the start. Everyone else unlocks by playing; each card says how.</p>
+  <div class="grid grp" id="charGrid"></div>
+</section>
+
+<!-- ================= ITEMS ================= -->
+<section id="items" data-name="Items">
+  <h2>Items</h2>
+  <p class="lede">Every item you pick up is yours for the run. In the game, walk up to one and a box tells you what it does before you take it. Tags here show where it can turn up: <span class="tag t">treasure</span> <span class="tag s">shop</span> <span class="tag b">boss</span> <span class="tag c">confession</span>.</p>
+  <div class="filters" id="itemFilters"></div>
+  <div class="count" id="itemCount"></div>
+  <div class="grid grp" id="itemGrid"></div>
+
+  <h3>Active items</h3>
+  <div class="tip s"><b class="lb">HOW</b>You carry one active item at a time. Using it empties its charge; every cleared room adds one notch (and beating a boss adds one too). Picking up another active swaps them.</div>
+
+  <h3>Sets &amp; transformations</h3>
+  <p>Collect <b>3 items with the same set tag</b> and you transform for the rest of the run. Transforming the first time also unlocks <b>Away Message</b>.</p>
+  <div class="tbl grp"><table>
+    <tr><th>Set</th><th>Bonus</th><th>Pieces</th></tr>
+    <tr class="s"><td style="color:#ff3fa4">SCENE KID</td><td class="w">+0.15 speed, +0.3 tears</td><td class="w">Black Nail Polish, Studded Belt, Skinny Jeans, Side Fringe, Worn Converse, Snakebites</td></tr>
+    <tr class="s"><td style="color:#ff3b30">DEATHCORE</td><td class="w">+1 damage, every tear explodes. BLEGH.</td><td class="w">Bullet Belt, Amp Stack, Distortion Pedal, Drop Tuning, Blast Beat, Breakdown</td></tr>
+    <tr class="s"><td style="color:#d8ccb0">MOTHKIN</td><td class="w">Flight, and moths follow you around and bite enemies</td><td class="w">Glow Stick, Funeral Lilies, Moth Wings, Moth Dust, Lighter</td></tr>
+    <tr class="s"><td style="color:#cfe6ff">GHOST</td><td class="w">Spectral tears (through rocks), black hearts</td><td class="w">Polaroid, Ouija Board, Snapped Rosary, Pale Moon</td></tr>
+    <tr class="s"><td style="color:#7cff6a">POP-PUNK</td><td class="w">+0.2 speed, tears bounce off walls</td><td class="w">Feedback Loop, Skateboard, Checkered Slip-ons, Band Patch</td></tr>
+    <tr class="s"><td style="color:#e8c870">ACOUSTIC SET</td><td class="w">Tears pierce, cleared rooms heal you a little</td><td class="w">Capo, Campfire Song, Wooden Stool</td></tr>
+  </table></div>
+</section>
+
+<!-- ================= PICKUPS ================= -->
+<section id="pickups" data-name="Pickups">
+  <h2>Pickups</h2>
+  <p class="lede">The small stuff enemies, pots, rooms and shops drop.</p>
+  <div class="tbl grp"><table>
+    <tr><th>Pickup</th><th>What it does</th></tr>
+    <tr class="s"><td><span class="hr">♥</span> Heart</td><td class="w">Heals a full heart (half hearts heal half).</td></tr>
+    <tr class="s"><td><span class="hb">♥</span> Black heart</td><td class="w">An extra heart that blasts the room when it breaks.</td></tr>
+    <tr class="s"><td><span class="hc">♡</span> Cracked heart</td><td class="w">Blocks one hit completely.</td></tr>
+    <tr class="s"><td>Pin · 5-pin</td><td class="w">Money. Spend in shops, jukeboxes and photo booths. Leftovers go to the Merch Table.</td></tr>
+    <tr class="s"><td>Candle</td><td class="w">A bomb. Drop it, step back. Breaks rocks, opens secret walls, hurts everything nearby, you included.</td></tr>
+    <tr class="s"><td>Candy</td><td class="w">Eat with USE. Random effect, see below.</td></tr>
+    <tr class="s"><td>Tarot card</td><td class="w">Use with USE. One-time effect, see below.</td></tr>
+  </table></div>
+
+  <h3>Candy</h3>
+  <p>There are 8 colors. Each run shuffles which color does what. Once you've eaten a color, the game remembers it until the run ends.</p>
+  <div class="tbl grp"><table>
+    <tr><th>Candy</th><th>Effect</th></tr>
+    <tr class="s"><td>Sweet Dreams</td><td class="w">Full heal</td></tr>
+    <tr class="s"><td>Sugar Rush</td><td class="w">+0.15 speed</td></tr>
+    <tr class="s"><td>Cherry</td><td class="w">+0.3 tears</td></tr>
+    <tr class="s"><td>Blue Raspberry</td><td class="w">+30 range</td></tr>
+    <tr class="s"><td>Pop Rocks</td><td class="w">+0.4 damage</td></tr>
+    <tr class="s"><td>Lucky</td><td class="w">+1 luck</td></tr>
+    <tr class="s"><td>Midnight</td><td class="w">A black heart</td></tr>
+    <tr class="s"><td>Clarity</td><td class="w">Shows the floor map</td></tr>
+    <tr class="s"><td>Sour</td><td class="w">−0.1 speed</td></tr>
+    <tr class="s"><td>Grape</td><td class="w">−0.2 tears</td></tr>
+    <tr class="s"><td>Bitter</td><td class="w">Hurts you half a heart (it can't kill you)</td></tr>
+  </table></div>
+
+  <h3>Tarot cards</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Card</th><th>Effect</th></tr>
+    <tr class="s"><td>The Moon</td><td class="w">Shows the whole map, secret room included.</td></tr>
+    <tr class="s"><td>The Tower</td><td class="w">Seven explosions go off around the room. Breaks rocks, hurts enemies.</td></tr>
+    <tr class="s"><td>The Hanged Man</td><td class="w">Fly for 15 seconds with ×1.3 damage.</td></tr>
+    <tr class="s"><td>Death</td><td class="w">40 damage to everything in the room, bosses too.</td></tr>
+    <tr class="s"><td>The Lovers</td><td class="w">Two hearts drop at your feet.</td></tr>
+    <tr class="s"><td>The Star</td><td class="w">Teleports you to the treasure room.</td></tr>
+    <tr class="s"><td>The Fool</td><td class="w">Teleports you back to the start room.</td></tr>
+    <tr class="s"><td>Strength</td><td class="w">×1.5 damage for 20 seconds and heals a heart.</td></tr>
+  </table></div>
+</section>
+
+<!-- ================= ROOMS ================= -->
+<section id="rooms" data-name="Rooms">
+  <h2>Rooms</h2>
+  <p class="lede">Door colors tell you what's on the other side.</p>
+  <div class="legend">
+    <span><i class="sw" style="background:#d4af37"></i>Treasure</span>
+    <span><i class="sw" style="background:#4fc3c3"></i>Shop</span>
+    <span><i class="sw" style="background:#7a2a7a"></i>Confession</span>
+    <span><i class="sw" style="background:#ff8fc8"></i>Music box</span>
+    <span><i class="sw" style="background:#8a0a1f"></i>Boss</span>
+    <span><i class="sw" style="background:#000;border-color:#555"></i>Cracked hole: secret</span>
+  </div>
+  <div class="grid grp">
+    <div class="card s"><h4>Normal room</h4>Enemies. Doors lock until they're all down. Clearing it charges your active item and might drop something.</div>
+    <div class="card s"><h4>Treasure room</h4>One free item, every floor. Sometimes rocks guard it.</div>
+    <div class="card s"><h4>Shop</h4>One item for <span class="num">15</span> pins, a heart (<span class="num">3</span>), a candle (<span class="num">5</span>), and one of candy (<span class="num">4</span>), a card (<span class="num">4</span>) or a black heart (<span class="num">6</span>). Also has a jukebox. Chain Wallet takes 25% off.</div>
+    <div class="card s"><h4>Confession booth</h4>Floor II onward, sometimes. Two items, paid for with <b>heart containers</b>: one container each, two for the best items. You can't pay with your last heart unless you have black or cracked hearts to fall back on. Juniper pays in black hearts.</div>
+    <div class="card s"><h4>Music box room</h4>Wind the music box for a full heal. Works once.</div>
+    <div class="card s"><h4>Boss room</h4>Beat the boss for a boss item, a heart and the trapdoor down.</div>
+    <div class="card s"><h4>Secret room</h4>Hidden behind a wall. Usually 3–5 pickups, sometimes (35%) an item. How to find one is in <a href="#secrets" data-tab="secrets">Secrets</a>.</div>
+    <div class="card s"><h4>Power outage</h4>About one room in ten loses its lights. Glow Stick, Stage Light and Flashlight help.</div>
+    <div class="card s"><h4>Empty room with loot</h4>Now and then a room has no enemies, only stuff.</div>
+  </div>
+
+  <h3>Jukebox · 3 pins · +30 HYPE</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Song</th><th>You get</th></tr>
+    <tr class="s"><td>Power Ballad</td><td class="w">Heal a heart</td></tr>
+    <tr class="s"><td>Mosh Anthem</td><td class="w">+0.4 damage</td></tr>
+    <tr class="s"><td>Slow Jam</td><td class="w">+25 range</td></tr>
+    <tr class="s"><td>Speedcore</td><td class="w">+0.3 tears</td></tr>
+    <tr class="s"><td>Sad Acoustic</td><td class="w">A black heart</td></tr>
+  </table></div>
+  <p class="meta">Jukeboxes are in every shop, and sometimes in a normal room corner.</p>
+
+  <h3>Photo booth · 5 pins</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Photo</th><th>You get</th></tr>
+    <tr class="s"><td>Good angle</td><td class="w">+1 luck</td></tr>
+    <tr class="s"><td>You look tired</td><td class="w">+0.5 damage</td></tr>
+    <tr class="s"><td>Blurry</td><td class="w">+0.15 speed</td></tr>
+    <tr class="s"><td>Eyes closed</td><td class="w">−20 range, +0.45 tears</td></tr>
+  </table></div>
+
+  <h3>Stuff on the floor</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Tile</th><th>Deal with it</th></tr>
+    <tr class="s"><td>Rock</td><td class="w">Blocks you and your tears. Candles break them, and sometimes there's a pin inside.</td></tr>
+    <tr class="s"><td>Pot</td><td class="w">Shoot it. 30% chance of loot.</td></tr>
+    <tr class="s"><td>Fire</td><td class="w">Hurts. Shoot it out.</td></tr>
+    <tr class="s"><td>Spikes</td><td class="w">Hurt on touch. Dash across, fly over, or wear Worn Converse.</td></tr>
+    <tr class="s"><td>Pit</td><td class="w">Can't walk over. Flying can.</td></tr>
+    <tr class="s"><td>Puddles &amp; petals</td><td class="w">Enemy creep hurts. Rain Jacket or flying makes you immune.</td></tr>
+  </table></div>
+
+  <h3>Curses</h3>
+  <p>Floors II–VI can be cursed (about 1 in 4). Beat that floor's boss and the curse lifts for <span class="num">+15</span> pins and bonus score.</p>
+  <div class="tbl grp"><table>
+    <tr><th>Curse</th><th>Effect</th></tr>
+    <tr class="s"><td>Lost</td><td class="w">Your map forgets where you've been.</td></tr>
+    <tr class="s"><td>Blackout</td><td class="w">Every light on the floor is out.</td></tr>
+    <tr class="s"><td>Haunted</td><td class="w">An Echo follows you into every fight.</td></tr>
+  </table></div>
+</section>
+
+<!-- ================= BOSSES ================= -->
+<section id="bosses" data-name="Floors &amp; Bosses">
+  <h2>Floors &amp; bosses</h2>
+  <p class="lede">Seven floors. Some have a second boss that shows up instead now and then.</p>
+  <div class="tbl grp"><table>
+    <tr><th>Floor</th><th>Boss</th><th>Sometimes instead</th></tr>
+    <tr class="s"><td>I · The Bedroom</td><td class="w">The Mother of Moths</td><td class="w">The Opening Act (40%)</td></tr>
+    <tr class="s"><td>II · Rain Street</td><td class="w">Gutterlight</td><td class="w">The Opening Act (40%)</td></tr>
+    <tr class="s"><td>II · The Mall After Close</td><td class="w">The Mascot</td><td class="w">Replaces Rain Street half the time</td></tr>
+    <tr class="s"><td>III · The Overgrown Chapel</td><td class="w">The Choirmaster</td><td class="w">The Myspace Angel (40%)</td></tr>
+    <tr class="s"><td>IV · Static Hospital</td><td class="w">The Flatline</td><td class="w">The Myspace Angel (40%)</td></tr>
+    <tr class="s"><td>V · The Drowned Memory</td><td class="w">The Drowned Bride</td><td class="w">The Ex (35%)</td></tr>
+    <tr class="s"><td>VI · Ashfield</td><td class="w">The Ember Saint</td><td class="w">The Night Bus (35%)</td></tr>
+    <tr class="s"><td>VII · The Last Room</td><td class="w">Yourself</td><td class="w">—</td></tr>
+  </table></div>
+
+  <div class="tip s"><b class="lb">EVERY BOSS</b>Attacks are timed to the music. Most big moves come on the first beat of every bar or every other bar. Count along and dodge early. Beat one without getting hurt to unlock <b>Top 8</b>.</div>
+
+  <h3>The bosses</h3>
+  <div class="grid grp">
+    <div class="card s"><h4>The Mother of Moths</h4><div class="meta">Floor I · 150 HP</div>
+      <p>Circles the room dropping a ring of dust every bar, and keeps calling in pairs of moths.</p>
+      <p><b>Half health:</b> the lights go out. Every other bar she flaps (listen for the wings) and charges straight at you. She also fires 3-shot bursts.</p>
+      <p class="tip"><b class="lb">TIP</b>When you hear the wings, step sideways, not back.</p></div>
+    <div class="card s"><h4>The Opening Act</h4><div class="meta">Floor I or II · 190 HP</div>
+      <p>Comes with a band. The Drummer shoots at you on every kick and sprays a ring on the snare. The Guitarist keeps its distance and fires 5-shot fans.</p>
+      <p><b>Half health:</b> "The crowd turns on you." Spirals join the rings.</p>
+      <p class="tip"><b class="lb">TIP</b>Take out the band first. The singer alone is easy.</p></div>
+    <div class="card s"><h4>Gutterlight</h4><div class="meta">Floor II, Rain Street · 250 HP</div>
+      <p>Sits at the top and sweeps a stream of light back and forth. Every other bar, puddles splash down: blue circles show where, and one is always on you. Standing in a puddle hurts.</p>
+      <p><b>Half health:</b> spins in a full circle firing both ways, and blinks to a new spot every few seconds.</p>
+      <p class="tip"><b class="lb">TIP</b>Rain Jacket makes the puddles harmless.</p></div>
+    <div class="card s"><h4>The Mascot</h4><div class="meta">Floor II, the Mall · 260 HP</div>
+      <p>Every other bar it jumps at you. A yellow circle shows the landing spot, and the landing sends out a ring. Fans of shots in between.</p>
+      <p><b>Half health:</b> the head comes off. It gets faster, spirals, and brings mannequins.</p>
+      <p class="tip"><b class="lb">TIP</b>Get out of the yellow circle, and keep crying toward mannequins to freeze them.</p></div>
+    <div class="card s"><h4>The Choirmaster</h4><div class="meta">Floor III · 340 HP</div>
+      <p>Hangs back, shoots 3 at a time on the kick, and sends out a ring on the snare.</p>
+      <p><b>60%:</b> calls in a Choir of three whenever none are left. <b>30%:</b> constant spirals on top.</p>
+      <p class="tip"><b class="lb">TIP</b>When one choir member dies the others get angry. Kill them close together.</p></div>
+    <div class="card s"><h4>The Myspace Angel</h4><div class="meta">Floor III or IV · 430 HP</div>
+      <p>Every other bar she charges a camera flash. Three white lines show the direction, then a wide fan of bullets goes off. Heart-shaped volleys in between.</p>
+      <p><b>Half health:</b> "You are in her Top 8." Bullets circle her.</p>
+      <p class="tip"><b class="lb">TIP</b>When the lines show, run sideways out of the fan.</p></div>
+    <div class="card s"><h4>The Flatline</h4><div class="meta">Floor IV · 430 HP</div>
+      <p>Beeps on every beat. Every other bar a laser fires along the row you're standing in. A warning line shows first.</p>
+      <p><b>Half health:</b> lasers come in a cross (your row and your column), plus aimed shots on the beat.</p>
+      <p class="tip"><b class="lb">TIP</b>The laser locks to where you were. Move off the line as soon as it shows up.</p></div>
+    <div class="card s"><h4>The Drowned Bride</h4><div class="meta">Floor V · 540 HP</div>
+      <p>Always pulling you toward her. Takes turns firing rings and veils (curtains of bullets with gaps).</p>
+      <p><b>Half health:</b> rings that wait and then aim at you, and she fades out and reappears somewhere else.</p>
+      <p class="tip"><b class="lb">TIP</b>Flying ignores the pull (Moth Wings, The Hanged Man, MOTHKIN).</p></div>
+    <div class="card s"><h4>The Ex</h4><div class="meta">Floor V · 520 HP</div>
+      <p>Circles you and shoots back with the effects of the <b>last three items you picked up</b>: split, homing, fire, poison, explosions, pierce.</p>
+      <p><b>Half health:</b> "It brings up old stuff." Heart volleys and rings.</p>
+      <p class="tip"><b class="lb">TIP</b>Grabbing something harmless right before the boss changes what it throws at you.</p></div>
+    <div class="card s"><h4>The Ember Saint</h4><div class="meta">Floor VI · 660 HP</div>
+      <p>Walks toward you slowly. Every bar, pillars of fire burst up in orange circles, one under you.</p>
+      <p><b>55%:</b> "The walls are burning." Fire creeps in from the edges and spirals start. <b>25%:</b> 5-shot bursts on the snare.</p>
+      <p class="tip"><b class="lb">TIP</b>Do the damage early. The room only gets smaller.</p></div>
+    <div class="card s"><h4>The Night Bus</h4><div class="meta">Floor VI · 600 HP</div>
+      <p>Idles at the curb lining up with your row. Horn, red lane, then it drives straight across, dropping a Cinder on the way.</p>
+      <p><b>Half health:</b> "It runs every red light." Goes every bar, faster, and fires a fan when it brakes.</p>
+      <p class="tip"><b class="lb">TIP</b>Horn means change rows. Hit it while it idles.</p></div>
+    <div class="card s spoil"><h4>Yourself</h4><div class="sb"><div class="in"><div class="meta">Floor VII · 950 HP</div>
+      <p>Mirrors where you stand, across the middle of the room. A ring every bar, and its aimed shots only come while you're shooting.</p>
+      <p><b>60%:</b> "The room cracks open." It cycles through every boss you've seen: moth rings, light sweeps, lasers, veils, fire spirals.</p>
+      <p><b>15%:</b> something changes. See Secrets.</p></div><div class="veil">FINAL BOSS · TAP TO REVEAL</div></div></div>
+  </div>
+</section>
+
+<!-- ================= ENEMIES ================= -->
+<section id="enemies" data-name="Enemies">
+  <h2>Enemies</h2>
+  <p class="lede">Touching any enemy hurts. Here's what each one does on top of that.</p>
+  <div class="tbl grp"><table id="enemyTable">
+    <tr><th>Enemy</th><th>Floors</th><th>Does · Beat it</th></tr>
+  </table></div>
+</section>
+
+<!-- ================= MODES ================= -->
+<section id="modes" data-name="Modes">
+  <h2>Modes</h2>
+  <div class="grid grp">
+    <div class="card s"><h4>Story (Descend)</h4>Pick a character, go down seven floors. Texts from Sam show up between floors. Two endings. More of you? See <a href="#coop" data-tab="coop">Co-op</a> (up to 5).</div>
+    <div class="card s"><h4>Daily run</h4>Same night for everyone today, as Wren. One go per day; your score sits on the title screen after.</div>
+    <div class="card s"><h4>Weekly challenge</h4>Same night and two set modifiers for everyone this week. Replay it as much as you like; your best score shows on the menu.</div>
+    <div class="card s"><h4>Encore</h4>(More modes) The floors never end. After the last room it loops back to the start, heavier every time.</div>
+    <div class="card s"><h4>Boss Rush</h4>(More modes) Every boss, back to back, 12 rounds, with an item between fights.</div>
+    <div class="card s"><h4>Merch Table</h4>(More modes) Spend the pins you've brought home on permanent perks.</div>
+  </div>
+
+  <h3>Difficulty</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Difficulty</th><th>What changes</th><th>Score</th></tr>
+    <tr class="s"><td>Very Easy</td><td class="w">Enemies at half health, slower bullets, one fewer enemy per room</td><td>×0.5</td></tr>
+    <tr class="s"><td>Easy</td><td class="w">Enemies at 70% health, slightly slower bullets</td><td>×0.75</td></tr>
+    <tr class="s"><td>Normal</td><td class="w">The night as it was meant to be</td><td>×1</td></tr>
+    <tr class="s"><td>Hard</td><td class="w">Enemies 30% tougher, faster bullets</td><td>×1.25</td></tr>
+    <tr class="s"><td>Heavier</td><td class="w">An extra enemy per room, tougher bosses, darker rooms. <span class="lock"><b>UNLOCK</b> finish the game</span></td><td>×1.6</td></tr>
+    <tr class="s"><td>Sleepless</td><td class="w">Two extra enemies per room, and every hit takes a whole heart. <span class="lock"><b>UNLOCK</b> beat a boss on Heavier</span></td><td>×2.25</td></tr>
+  </table></div>
+
+  <h3>Modifiers</h3>
+  <p>Switch these on in run setup. Each is a real trade and moves your score.</p>
+  <div class="tbl grp"><table>
+    <tr><th>Modifier</th><th>Effect</th><th>Score</th></tr>
+    <tr class="s"><td>Hopeful</td><td class="w">Two extra hearts, but every hit takes a whole heart</td><td>×1</td></tr>
+    <tr class="s"><td>Reckless</td><td class="w">Double damage, but you start with one heart</td><td>×1.35</td></tr>
+    <tr class="s"><td>Insomniac</td><td class="w">The lights never come on. Everything drops twice as much</td><td>×1.15</td></tr>
+    <tr class="s"><td>Sellout</td><td class="w">Treasure rooms become shops. Start with 20 pins; everything is 40% off</td><td>×1.05</td></tr>
+    <tr class="s"><td>Hand-me-downs</td><td class="w">Start with two random items and one less heart</td><td>×0.9</td></tr>
+  </table></div>
+
+  <h3>Run codes</h3>
+  <p>Every run has a code like <span class="num">ABCD-EFGH</span>. It's on the end screen and the share card. On the run setup screen, tap <b>SEED</b> and type a code to play that exact night again: same map, same items. Shared links fill the code in for you.</p>
+
+  <h3>Score</h3>
+  <div class="tbl grp"><table>
+    <tr><th>For</th><th>Points</th></tr>
+    <tr class="s"><td>Each floor reached</td><td>1000</td></tr>
+    <tr class="s"><td>Each boss</td><td>500</td></tr>
+    <tr class="s"><td>Each item</td><td>25</td></tr>
+    <tr class="s"><td>Each kill</td><td>10</td></tr>
+    <tr class="s"><td>Lifting a curse</td><td>300</td></tr>
+    <tr class="s"><td>Finishing</td><td>5000</td></tr>
+    <tr class="s"><td>Each minute</td><td>−20</td></tr>
+  </table></div>
+  <p class="meta">Then everything is multiplied by your difficulty and modifiers.</p>
+
+  <h3>Merch Table</h3>
+  <p>At the end of every run you bank the pins you had left, plus <span class="num">5</span> for each boss you beat.</p>
+  <div class="tbl grp"><table>
+    <tr><th>Perk</th><th>Effect</th><th>Pins</th></tr>
+    <tr class="s"><td>Spare Candle</td><td class="w">Start every run with an extra candle</td><td>25</td></tr>
+    <tr class="s"><td>Loose Change</td><td class="w">Start every run with 6 pins</td><td>35</td></tr>
+    <tr class="s"><td>Lucky Pin</td><td class="w">+1 luck</td><td>60</td></tr>
+    <tr class="s"><td>Taped Setlist</td><td class="w">Every fight starts with some HYPE</td><td>70</td></tr>
+    <tr class="s"><td>New Strings</td><td class="w">A little more damage</td><td>90</td></tr>
+    <tr class="s"><td>Map Sketch</td><td class="w">See the shape of every floor when you arrive</td><td>110</td></tr>
+    <tr class="s"><td>Thrifted Hoodie</td><td class="w">Start with one more heart</td><td>160</td></tr>
+  </table></div>
+
+  <h3>HYPE</h3>
+  <div class="tbl grp"><table>
+    <tr><th>Source</th><th>HYPE</th></tr>
+    <tr class="s"><td>Each kill</td><td>+14</td></tr>
+    <tr class="s"><td>Hurting a boss</td><td class="w">A bit per hit</td></tr>
+    <tr class="s"><td>Jukebox</td><td>+30</td></tr>
+    <tr class="s"><td>Setlist (item)</td><td class="w">+45 every fight</td></tr>
+    <tr class="s"><td>Taped Setlist (perk)</td><td class="w">+25 every fight</td></tr>
+  </table></div>
+  <p class="meta">At 100: ENCORE. 8 seconds of rainbow tears, ×1.5 damage and faster crying. The first one unlocks Amp Feedback.</p>
+</section>
+
+<!-- ================= UNLOCKS ================= -->
+<section id="unlocks" data-name="Unlocks">
+  <h2>Unlocks</h2>
+  <p class="lede">Achievements unlock characters, items and difficulties. Check progress in the Journal.</p>
+  <div class="tbl grp"><table>
+    <tr><th>Achievement</th><th>How</th><th>Unlocks</th></tr>
+    <tr class="s"><td>Practice</td><td class="w">Finish the tutorial</td><td class="w">Ivy, Black Cat</td></tr>
+    <tr class="s"><td>Moth Dust</td><td class="w">Defeat The Mother of Moths</td><td class="w">Ash, Moth Wings</td></tr>
+    <tr class="s"><td>Opening Night</td><td class="w">Defeat The Opening Act</td><td class="w">Whammy Bar</td></tr>
+    <tr class="s"><td>Closing Time</td><td class="w">Defeat The Mascot</td><td class="w">Rook</td></tr>
+    <tr class="s"><td>Getting Deeper</td><td class="w">Reach The Overgrown Chapel</td><td class="w">Sad Song on Repeat</td></tr>
+    <tr class="s"><td>Encore</td><td class="w">Defeat The Choirmaster</td><td class="w">Distortion Pedal</td></tr>
+    <tr class="s"><td>Top Friend</td><td class="w">Defeat The Myspace Angel</td><td class="w">Megaphone</td></tr>
+    <tr class="s"><td>Static</td><td class="w">Reach Static Hospital</td><td class="w">Juniper</td></tr>
+    <tr class="s"><td>Flatline</td><td class="w">Defeat The Flatline</td><td class="w">Static Cassette</td></tr>
+    <tr class="s"><td>Something Borrowed</td><td class="w">Defeat The Drowned Bride</td><td class="w">The Twins</td></tr>
+    <tr class="s"><td>It's Not You</td><td class="w">Defeat The Ex</td><td class="w">Campfire Song</td></tr>
+    <tr class="s"><td>Burn Bright</td><td class="w">Defeat The Ember Saint</td><td class="w">Glass Heart</td></tr>
+    <tr class="s"><td>Last Stop</td><td class="w">Defeat The Night Bus</td><td class="w">Band Patch</td></tr>
+    <tr class="s"><td>The Last Room</td><td class="w">Finish the game</td><td class="w">Nobody, Heavier, Paper Crown</td></tr>
+    <tr class="s spoil"><td colspan="3"><div class="in"><b style="color:#fff">Stay</b> · Choose not to fight yourself → Polaroid</div><div class="veil">ENDING SPOILER · TAP</div></td></tr>
+    <tr class="s"><td>No Sleep</td><td class="w">Defeat a boss on Heavier</td><td class="w">Sleepless</td></tr>
+    <tr class="s"><td>Untouched</td><td class="w">Beat a boss without getting hurt</td><td class="w">Top 8</td></tr>
+    <tr class="s"><td>Crowd Pleaser</td><td class="w">Trigger an Encore</td><td class="w">Amp Feedback</td></tr>
+    <tr class="s"><td>Becoming</td><td class="w">Transform during a run</td><td class="w">Away Message</td></tr>
+    <tr class="s"><td>Behind The Wall</td><td class="w">Find 3 secret rooms</td><td class="w">Flashlight</td></tr>
+    <tr class="s"><td>Confession</td><td class="w">Give up a heart in a confession booth</td><td class="w">Hollow Ribcage</td></tr>
+    <tr class="s"><td>Scene Points</td><td class="w">Kill 250 things in total</td><td class="w">Bass Drop</td></tr>
+    <tr class="s"><td>Again</td><td class="w">Die 5 times</td><td class="w">Ouija Board</td></tr>
+  </table></div>
+</section>
+
+<!-- ================= SECRETS ================= -->
+<section id="secrets" data-name="Secrets">
+  <h2>Secrets &amp; easter eggs</h2>
+  <p class="lede">Everything here is hidden. Tap a card to reveal it. <button class="btn" id="revealAll" type="button">REVEAL ALL</button></p>
+  <div class="grid grp">
+    <div class="card s spoil"><h4>Finding secret rooms</h4><div class="sb"><div class="in">
+      <p>Floors I–VI almost always hide one. It's in an empty spot on the map that touches <b>the most rooms</b> (always at least two), and never next to the boss.</p>
+      <p>Open the map, find a gap boxed in by rooms, go to a room beside it and drop a candle against the middle of that wall, where a door would be. "A hidden room." Finding 3 unlocks the Flashlight.</p>
+      <p>Flashlight and The Moon mark it on the map for you.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><div class="in"><h4>The last fight isn't a fight</h4>
+      <p>When Yourself drops to 15%, everything stops: "It isn't fighting back anymore."</p>
+      <p><b>Stop shooting.</b> Wait about 8 seconds. It walks over and hugs you. That's the real ending, "Stay", and it unlocks the Polaroid.</p>
+      <p>Kill it instead and you get the other ending, alone.</p></div><div class="veil">BIG SPOILER · TAP TO REVEAL</div></div>
+    <div class="card s spoil"><h4>A trick for the last boss</h4><div class="sb"><div class="in">
+      <p>In the first part of the Yourself fight it copies you: its aimed shots only come while you're firing. Shoot in short bursts and most of its bullets stop too. Only the rings on the bar keep coming.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Sam</h4><div class="sb"><div class="in">
+      <p>Texts from Sam come in between floors of a story run, later and later into the night. Read them all in the Journal, under TEXTS.</p>
+      <p>The last one depends on your ending. One reply is yours.</p>
+      <p>Two texts mention things you can find: the setlist you stole for Sam at the chapel show (the <b>Setlist</b> item), and the mixtape whose side B is all songs about leaving (<b>Mixtape (Side B)</b>).</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>The Mall After Close</h4><div class="sb"><div class="in">
+      <p>Half the time, floor II isn't Rain Street. It's a mall that closed four hours ago, with mannequins, The Mascot, and its own text from Sam asking you to save a pretzel.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Who's in the suit</h4><div class="sb"><div class="in">
+      <p>Get The Mascot to half health and its head comes off. Underneath it's just someone, tired, still in the suit.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>What The Ex remembers</h4><div class="sb"><div class="in">
+      <p>It fights with your last three items. "It still has your…" tells you which. Want it to stop homing? Pick up something else before the fight.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>What Echoes are</h4><div class="sb"><div class="in">
+      <p>Echoes look like your character and walk the path you took about a second and a half ago. Don't double back through your own footsteps.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Don't look away</h4><div class="sb"><div class="in">
+      <p>Mannequins freeze while you're crying in their direction. The moment you aim somewhere else, they run at you.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>The Merch Gremlin</h4><div class="sb"><div class="in">
+      <p>A little green thing that sometimes turns up in a room and runs from you. It can't hurt you. Catch it within about 8 seconds and it drops 4–7 pins. Too slow and "It got away with the merch."</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Everything plays along</h4><div class="sb"><div class="in">
+      <p>Lullabies fire on every beat. The Opening Act's drummer shoots on the kick. Bosses hit on bars and snares. Mixtape (Side B) doubles tears fired on the beat, Sad Song fires every other bar, Headphones hit harder in the heavy parts, and Bass Drop really drops the music.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Quiet rooms sound different</h4><div class="sb"><div class="in">
+      <p>Treasure and secret rooms switch the floor's calm song to another arrangement. If the music suddenly twinkles or gets dreamy, you've found something.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Nobody is really nobody</h4><div class="sb"><div class="in">
+      <p>Play as Nobody and you're invisible, so enemies aim worse. But your Echoes and the final boss still look like Wren.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Black hearts bite back</h4><div class="sb"><div class="in">
+      <p>Every black heart that breaks hurts everything in the room. Juniper, who only has black hearts, sets one off every time a heart's worth is gone.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Float past the Bride</h4><div class="sb"><div class="in">
+      <p>The Drowned Bride's pull doesn't work on you while you're flying. The Hanged Man card makes it a much easier fight.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Killed by…</h4><div class="sb"><div class="in">
+      <p>The end screen says what got you. Some to look for: "your own candle", "a bad candy" (no, Bitter can't actually kill you), "the night bus", "a stray note" (Twins only), and "going home early" if you quit.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Two of you, one heart</h4><div class="sb"><div class="in">
+      <p>The Twins' mirror twin can be hit too, and it costs the same heart. Bullets that miss you can still find your other half.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+    <div class="card s spoil"><h4>Curses pay</h4><div class="sb"><div class="in">
+      <p>A cursed floor is a bad night, but beating its boss lifts the curse for +15 pins and 300 score. Don't restart over one.</p></div><div class="veil">TAP TO REVEAL</div></div></div>
+  </div>
+</section>
+
+<p id="none">Nothing matches that. Try a shorter word.</p>
+</main>
+<footer><div class="wrap">Made for Sorrowbloom · <a href="./" id="back2">back to the game</a></div></footer>
+
+<script>
+// ---------- data ----------
+const SETC={scene:['SCENE','#ff3fa4'],deathcore:['DEATHCORE','#ff3b30'],moth:['MOTHKIN','#d8ccb0'],ghost:['GHOST','#cfe6ff'],poppunk:['POP-PUNK','#7cff6a'],acoustic:['ACOUSTIC','#e8c870']};
+const POOL={t:'treasure',s:'shop',b:'boss',c:'confession'};
+// k: tears (tear effects), stat, heart, buddy, active, weapon, util
+const ITEMS=[
+['Eyeliner','t','','tears','+0.7 damage. Tears leave ink puddles that hurt anything walking through them.'],
+['Mixtape (Side B)','tb','','tears','+0.3 tears. Tears fired on the beat do double damage. Cry in time with the music.'],
+['Wilted Rose','t','','tears','Tears split into smaller tears when they hit.'],
+['Unsent Text','t','','tears','Homing tears.'],
+['Broken Locket','t','','heart','A cracked heart. Double damage while you\'re down to your last heart.'],
+['Matchstick Heart','t','','tears','+0.3 damage. Tears can set enemies on fire (more often with luck).'],
+['Hoodie','ts','','stat','+0.25 speed. Enemies aim worse at you.'],
+['Polaroid','t','ghost','heart','One more try: when you die, you get back up.','The "Stay" ending'],
+['Black Nail Polish','ts','scene','stat','+0.55 tears.'],
+['Insomnia','tc','','tears','The longer you stay in a room, the harder you hit: up to +60% damage after 20 seconds.'],
+['Rain Jacket','s','','util','+40 range. Puddles, petals and other floor creep can\'t hurt you.'],
+['Mood Ring','t','','stat','A random mix of small stat changes, rerolled every floor. Usually more good than bad.'],
+['Headphones','tb','','tears','+30% damage in fights whenever the guitars are playing.'],
+['Studded Belt','tb','scene','heart','+1 heart container and a heart of healing, +0.3 damage.'],
+['Skinny Jeans','ts','scene','stat','+0.35 speed, −15 range.'],
+['Side Fringe','t','scene','stat','+1 damage, but your aim is slightly crooked.'],
+['Black Wristband','ts','','heart','+0.35 tears and a black heart.'],
+['Worn Converse','s','scene','util','+0.2 speed. Spikes can\'t hurt you.'],
+['Lip Ring','t','','tears','Tears go through enemies.'],
+['Snakebites','t','scene','tears','Cry two tears at once. −0.3 damage.'],
+['Gauges','t','','tears','Bigger tears, +0.6 damage, slower shots.'],
+['Bullet Belt','tb','deathcore','stat','+0.5 tears, faster shots.'],
+['Top 8','t','','buddy','Two little orbs circle you, hurt whatever they touch and block bullets.','Beat a boss without getting hurt'],
+['Away Message','t','','buddy','A little buddy follows you and cries wherever you cry during fights.','Transform during a run'],
+['Profile Song','t','','tears','Every 4th tear is a power chord: triple damage. Rook starts with it.'],
+['Hair Dye','t','','tears','Every tear gets a random effect: homing, fire, slow, pierce or poison.'],
+['Glow Stick','ts','moth','util','+0.3 damage and light around you. Good in dark rooms.'],
+['Candle Stub','s','','util','+3 candles.'],
+['Box of Matches','ts','','util','+5 candles, and candle blasts get bigger.'],
+['Fingerless Gloves','s','','stat','+0.35 tears, +0.1 speed.'],
+['Chain Wallet','s','','util','+10 pins and 25% off in shops.'],
+['Safety Pin Earring','s','','util','+1 luck and +3 pins.'],
+['Ouija Board','tc','ghost','tears','+0.4 damage. Spectral tears fly through rocks.','Die 5 times'],
+['Snapped Rosary','tc','ghost','heart','+0.4 damage and a black heart.'],
+['Funeral Lilies','t','moth','tears','+0.3 damage. Tears slow enemies down.'],
+['Static Cassette','t','','tears','+0.5 damage, +30 range. Tears wobble in waves.','Defeat The Flatline'],
+['Feedback Loop','t','poppunk','tears','Tears bounce off walls (twice).'],
+['Amp Stack','tb','deathcore','tears','+0.6 damage and big knockback, slower shots.'],
+['Distortion Pedal','tbc','deathcore','stat','×1.5 damage, but ×0.8 tears.','Defeat The Choirmaster'],
+['Drop Tuning','tbc','deathcore','stat','+1.2 damage. Bigger, slower tears.'],
+['Blast Beat','tb','deathcore','stat','+1.1 tears, −0.6 damage. A firehose.'],
+['Breakdown','tc','deathcore','tears','Double damage to the last enemy left in a room.'],
+['Circle Pit','t','','util','Walking into a fight fires 8 strong tears in a ring around you.'],
+['Wall of Death','tc','','util','Every enemy (not bosses) takes damage the moment you walk into a room.'],
+['Crowd Surf','t','','util','+0.1 speed. You stay invincible longer after you\'re hit.'],
+['Black Veil','tc','','tears','Tears explode when they hit. ×0.8 tears.'],
+['Paper Crown','tb','','stat','Everything up: +1 heart container, damage, tears, speed, range and luck.','Finish the game'],
+['Bleeding Heart','t','','util','Getting hurt fires 10 tears in every direction.'],
+['Spite','tc','','stat','+0.2 damage for every half heart you\'re missing.'],
+['Night Bus Ticket','s','','util','+0.15 speed. Shows the whole floor map (not the secret room).'],
+['Flashlight','ts','','util','More light, and the map shows everything, secret room included.','Find 3 secret rooms'],
+['Vinyl Scratch','tb','','tears','Hits jump to another enemy nearby.'],
+['Bloodshot Eye','tc','','tears','Tears can crit for ×3 damage (10%, +2% per luck).'],
+['Pale Moon','t','ghost','stat','+40 range, faster shots, +1 luck.'],
+['Hollow Ribcage','tb','','heart','+2 empty heart containers. Fill them with hearts.','Give up a heart in a confession booth'],
+['Glass Heart','t','','heart','+2 cracked hearts and +0.5 damage.','Defeat The Ember Saint'],
+['1 Missed Call','ts','','util','Cleared rooms drop stuff more often, sometimes twice.'],
+['Hot Tea','sb','','heart','+1 heart container and a full heal.'],
+['Band Tee (XL)','tb','','heart','+1 heart container and a heart of healing, +0.3 damage, −0.1 speed.'],
+['Crushed Flower','t','','tears','Tears poison enemies.'],
+['Sad Song on Repeat','t','','tears','In fights, every other bar of music you fire 6 homing tears around you.','Reach The Overgrown Chapel'],
+['Stitched Plush','t','','buddy','A plush buddy follows you and cries wherever you cry during fights.'],
+['Moth Wings','t','moth','util','Flight: float over pits, spikes and creep, and ignore the Drowned Bride\'s pull.','Defeat The Mother of Moths'],
+['Moth Dust','b','moth','stat','+0.3 tears and a little light.'],
+['Jar of Tears','tb','','stat','+0.5 damage, +20 range, faster and bigger tears.'],
+['Heartbreak','bc','','stat','+1 damage.'],
+['Running Mascara','t','','stat','+0.4 tears, +15 range.'],
+['Black Cat','t','','buddy','+1 luck, and a black cat that chases enemies and scratches them. Ivy starts with it.','Finish the tutorial'],
+['Setlist','ts','','util','Every fight starts with +45 HYPE.'],
+['Stage Light','s','','util','+0.3 damage and a big light around you.'],
+['Earplugs','ts','','util','Blocks the first hit you take in every fight.'],
+['Skateboard','ts','poppunk','stat','+0.25 speed and a longer dash.'],
+['Checkered Slip-ons','ts','poppunk','stat','+0.45 tears.'],
+['Band Patch','t','poppunk','stat','+0.6 damage.','Defeat The Night Bus'],
+['Capo','t','acoustic','stat','+40 range, faster shots.'],
+['Campfire Song','tc','acoustic','heart','Heal half a heart every time you clear a room.','Defeat The Ex'],
+['Wooden Stool','t','acoustic','tears','×1.5 damage while you stand still.'],
+// actives: charge in rooms
+['Scream','ts','','active','Shockwave: hurts and shoves back everything close, and wipes out nearby bullets. Your panic button.','',2],
+['Lighter','ts','moth','active','Three flames circle you for 8 seconds, burning whatever they touch. Ash starts with it.','',3],
+['Diary','ts','','active','Something random: heal a heart, 5 pins, the map, ×1.5 damage for 15 s, a black heart, 2 candles… or nothing.','',2],
+['Hourglass','ts','','active','Slows everything down for 6 seconds.','',3],
+['Matchbook','ts','','active','Throw a big fireball the way you\'re aiming (or facing). It explodes and burns.','',1],
+['Bass Drop','tb','','active','The music drops: heavy damage to every enemy in the room and a one-second stun.','Kill 250 things in total',4],
+['Mic Stand','ts','','active','Swing it: a big hit and knockback on everything around you.','',1],
+['Burn Book','tc','','active','Everyone in the room gets poisoned and runs from you for 3 seconds.','',3],
+// weapons replace how you cry
+['Amp Feedback','tb','','weapon','Weapon. Hold to charge, let go to fire a beam.','Trigger an Encore'],
+['Megaphone','tb','','weapon','Weapon. A short-range blast of 5 tears at once, like a shotgun. Each is weaker and it fires slower.','Defeat The Myspace Angel'],
+['Drumsticks','tb','','weapon','Weapon. Double time: about twice as many tears at half damage.'],
+['Whammy Bar','tb','','weapon','Weapon. Tears fly out and come back to you like a boomerang.','Defeat The Opening Act'],
+];
+const CATS=[['all','All'],['tears','Tear effects'],['stat','Stat ups'],['heart','Hearts'],['buddy','Buddies'],['active','Actives'],['weapon','Weapons'],['util','Utility'],['set','Set pieces'],['locked','Locked']];
+
+const CHARS=[
+{n:'Wren',f:'Hood up. Headphones in. Still here.',h:[3,0],dmg:3.5,rate:2.7,spd:0,c:1,p:0,start:'—',ab:'No tricks. The all-rounder, and who the daily and weekly runs use.',un:''},
+{n:'Ash',f:'Burns out fast. Hits hard.',h:[2,0],dmg:4.6,rate:2.45,spd:.05,c:1,p:0,start:'Lighter',ab:'About 30% more damage, one less heart. Light the Lighter when enemies crowd in.',un:'Defeat The Mother of Moths'},
+{n:'Juniper',f:'Can\'t hold onto anything red.',h:[0,3],dmg:3.5,rate:2.7,spd:.1,c:2,p:0,start:'2 candles',ab:'No red hearts, ever. Heart pickups turn into black hearts instead, and every black heart that breaks blasts the room. Pays confession booths in black hearts.',un:'Reach Static Hospital'},
+{n:'The Twins',f:'Two bodies. One heart.',h:[3,0],dmg:2.9,rate:2.5,spd:0,c:1,p:0,start:'—',ab:'A mirror twin stands across the room from you and cries mirrored tears. Twice the tears, a bit weaker each, but your twin can get hit too.',un:'Defeat The Drowned Bride'},
+{n:'Rook',f:'Plays too loud. Every fourth tear is a power chord.',h:[3,0],dmg:3.2,rate:2.5,spd:0,c:1,p:0,start:'Profile Song',ab:'Every 4th tear does triple damage. Keep a steady rhythm.',un:'Defeat The Mascot'},
+{n:'Ivy',f:'Never alone. Brings her cat.',h:[3,0],dmg:3.2,rate:2.7,spd:.05,c:1,p:3,start:'Black Cat, 3 pins',ab:'Her cat runs at enemies and scratches them, and +1 luck means more drops.',un:'Finish the tutorial'},
+{n:'Nobody',f:'You were never really here.',h:[2,0],dmg:3.8,rate:2.9,spd:.15,c:0,p:0,start:'No candles',ab:'Invisible: enemies aim worse at you. Fast and strong, but fragile and with no candles.',un:'Finish the game'},
+];
+
+// [name, floors, does, tip]
+const ENEMIES=[
+['Moth','I II III','Flutters at you in a wobbly line.','Fragile. Homing tears make short work of them.'],
+['Weeper','I II V','Drifts toward you sobbing. Hitting it sprays a ring of tears back.','Shoot from a distance, not up close.'],
+['Mourner','I II IV Mall','Wanders until you line up with it, grunts, then charges straight at you and slams into the wall.','When it grunts, step out of its line.'],
+['Unsent Letter','I II V Mall','Bounces off walls on the diagonal. Splits into two small letters when it dies.','Watch the bounce angle and stay off it.'],
+['Widow','I II Mall','Hops toward you in quick jumps.','Small and fast. Keep crying where it lands.'],
+['Static Kid','II IV Mall','Glitches out (can\'t be hurt), teleports, then fires a 3-shot spread.','Wait for it to reappear, then dodge the spread and hit back.'],
+['The Wilted','III','Crawls toward you and leaves a trail of petals that hurts.','Don\'t walk the trail. Rain Jacket ignores it.'],
+['Hollow Mask','III IV VI VII','Its mask slowly turns to face you, and tears hitting the front bounce off.','Circle it and hit it from the side or back.'],
+['Lullaby','III VII','Floats around firing two tears on every beat in a turning pattern. From floor IV on it adds a ring every bar.','The pattern turns steadily, so step into the gaps.'],
+['Echo','IV V VII','A ghost of you that follows the path you walked a second and a half ago.','Don\'t double back.'],
+['The Choir','III V VII','Three singers circling together. One sings a shot at you now and then. Kill one and the rest get angry and faster.','Bring them down close together.'],
+['Drowned Hand','V VI VII','Hides underwater. Ripples show up under you, then it grabs and sprays a ring of water.','Ripples mean move. Hit it while it\'s up.'],
+['Grief Totem','III IV VI','Heavy and slow. Its eyes glow, then it fires three aimed shots.','Glowing eyes: start strafing.'],
+['Cinder','VI VII','Walks at you, and blows up in a ring a moment after it dies (orange circle).','Kill it, then back off.'],
+['Bloodfly','IV VI','Circles you, buzzes, then dashes straight in.','Sidestep when it buzzes.'],
+['Mosher','V VI','Big and tough. Swings around in a wide circle pit while drifting toward you.','Stay outside the circle and keep shooting.'],
+['Scene Kid','IV VI VII','Keeps its distance, dodges sideways when your tears get close, and fires pink shots.','It can only dodge every so often. Homing and spread tears help.'],
+['Mannequin','Mall','Frozen while you\'re crying toward it. Look away and it runs at you.','Keep it in front of you.'],
+['Merch Gremlin','Any','Harmless. Runs away with your merch, and escapes after about 8 seconds.','Catch it for 4–7 pins.'],
+['The Drummer','Opening Act','Shoots at you on the kick drum, sprays a ring on the snare.','Kill it first.'],
+['The Guitarist','Opening Act','Keeps its distance and fires 5-shot fans.','Get close and it backs off.'],
+];
+
+// ---------- render ----------
+const $=s=>document.querySelector(s),esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function itemCard(it){
+  const[n,pool,set,cat,d,lock,charge]=it;
+  const tags=[...pool].map(p=>`<span class="tag ${p}">${POOL[p]}</span>`);
+  if(cat==='active')tags.unshift(`<span class="tag act">active · ${charge} room${charge>1?'s':''}</span>`);
+  if(cat==='weapon')tags.unshift('<span class="tag wpn">weapon</span>');
+  if(set)tags.push(`<span class="tag" style="color:${SETC[set][1]};border-color:${SETC[set][1]}55">${SETC[set][0]}</span>`);
+  const el=document.createElement('div');el.className='card s item';el.dataset.cat=cat;el.dataset.set=set?'1':'';el.dataset.lock=lock?'1':'';
+  el.innerHTML=`<div class="hd"><h4>${esc(n)}</h4><div class="tags">${tags.join('')}</div></div><div class="d">${esc(d)}</div>${lock?`<div class="lock"><b>UNLOCK</b> ${esc(lock)}</div>`:''}`;
+  return el;
+}
+const ig=$('#itemGrid');ITEMS.forEach(it=>ig.appendChild(itemCard(it)));
+let cat='all';
+const ifl=$('#itemFilters');
+CATS.forEach(([id,l])=>{const b=document.createElement('button');b.type='button';b.className='chip'+(id==='all'?' on':'');b.textContent=l;b.onclick=()=>{cat=id;ifl.querySelectorAll('.chip').forEach(x=>x.classList.toggle('on',x===b));applyItemFilter()};ifl.appendChild(b)});
+function applyItemFilter(){
+  let n=0;for(const el of ig.children){const ok=cat==='all'||(cat==='set'?el.dataset.set:cat==='locked'?el.dataset.lock:el.dataset.cat===cat);el.hidden=!ok&&!document.body.classList.contains('searching');if(ok)n++}
+  $('#itemCount').textContent=n+' item'+(n===1?'':'s');
+}
+applyItemFilter();
+
+const cg=$('#charGrid');
+for(const c of CHARS){
+  const el=document.createElement('div');el.className='card s';
+  const hearts='<span class="hr">♥</span>'.repeat(c.h[0])+'<span class="hb">♥</span>'.repeat(c.h[1]);
+  const bar=(l,v,max,txt)=>`<div class="stat"><span>${l}</span><i style="--v:${Math.round(Math.min(1,v/max)*100)}%"></i><span>${txt}</span></div>`;
+  el.innerHTML=`<h4>${esc(c.n)}</h4><div class="meta">"${esc(c.f)}"</div>
+    <div class="hearts">${hearts}</div>
+    ${bar('damage',c.dmg,4.8,c.dmg)}${bar('tears',c.rate,3,c.rate)}${bar('speed',c.spd+.05,.2,c.spd?'+'+c.spd:'—')}
+    <p class="meta">Candles ${c.c} · Start: ${esc(c.start)}</p>
+    <p class="d">${esc(c.ab)}</p>${c.un?`<div class="lock"><b>UNLOCK</b> ${esc(c.un)}</div>`:'<div class="lock" style="color:var(--mute)">Unlocked from the start</div>'}`;
+  cg.appendChild(el);
+}
+
+const et=$('#enemyTable');
+for(const[n,f,d,t]of ENEMIES){const tr=document.createElement('tr');tr.className='s';tr.innerHTML=`<td>${esc(n)}</td><td class="w meta">${esc(f)}</td><td class="w">${esc(d)} <span style="color:var(--pink)">${esc(t)}</span></td>`;et.appendChild(tr)}
+
+// ---------- tabs ----------
+const secs=[...document.querySelectorAll('main section')],tabs=$('#tabs');
+secs.forEach(s=>{const b=document.createElement('button');b.type='button';b.role='tab';b.textContent=s.dataset.name.replace('&amp;','&');b.dataset.id=s.id;b.onclick=()=>show(s.id,true);tabs.appendChild(b)});
+function show(id,push){
+  if(!document.getElementById(id))id='start';
+  if($('#q').value){$('#q').value='';search()}
+  secs.forEach(s=>s.classList.toggle('show',s.id===id));
+  tabs.querySelectorAll('button').forEach(b=>{const on=b.dataset.id===id;b.setAttribute('aria-selected',on);if(on)b.scrollIntoView({block:'nearest',inline:'nearest'})});
+  if(push)try{history.replaceState(null,'','#'+id)}catch(e){}
+  const top=document.querySelector('.stick').offsetTop;if(scrollY>top)window.scrollTo(0,top);
+}
+document.addEventListener('click',e=>{const a=e.target.closest('[data-tab]');if(a){e.preventDefault();show(a.dataset.tab,true)}});
+window.addEventListener('hashchange',()=>show(location.hash.slice(1)));
+show(location.hash.slice(1)||'start');
+
+// ---------- search ----------
+const norm=s=>s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[’']/g,"'");
+function search(){
+  const q=norm($('#q').value.trim()),on=!!q;document.body.classList.toggle('searching',on);
+  let any=false;
+  for(const el of document.querySelectorAll('main .s')){const hit=!on||q.split(/\s+/).every(w=>norm(el.textContent).includes(w));el.classList.toggle('miss',!hit);if(on&&hit)any=true}
+  for(const g of document.querySelectorAll('main .grp'))g.classList.toggle('empty',on&&!g.querySelector('.s:not(.miss)'));
+  for(const s of secs)s.classList.toggle('empty',on&&!s.querySelector('.s:not(.miss)'));
+  document.body.classList.toggle('nores',on&&!any);
+  applyItemFilter();
+}
+$('#q').addEventListener('input',search);
+
+// ---------- spoilers ----------
+document.addEventListener('click',e=>{const s=e.target.closest('.spoil');if(s&&!s.classList.contains('open')){s.classList.add('open');e.preventDefault()}});
+$('#revealAll').onclick=()=>document.querySelectorAll('#secrets .spoil').forEach(s=>s.classList.add('open'));
+
+// ---------- back to the game ----------
+// Opened from inside the game, this page is its own window: close it and the paused run is still there.
+for(const a of[$('#back'),$('#back2')])a.addEventListener('click',e=>{
+  if(window.opener&&!window.opener.closed){e.preventDefault();window.close();setTimeout(()=>{if(!window.closed)$('#back').textContent='CLOSE THIS TAB'},300)}
+});
+</script>
+</body>
+</html>
