@@ -168,9 +168,9 @@ const Input={
   ptr:{x:W/2,y:H/2,down:false,mouse:false},clicks:[],
   touches:new Map(),touchUI:false,mapHeld:false,
   move:{x:0,y:0},aim:{x:0,y:0},fire:false,stickPrev:{x:0,y:0},dev:'kb',
-  // couch co-op: player 2 plays on a controller of their own (p2pad, a gamepad index); player 1 gets every other input
-  p2pad:null,pads:[],startHit:[],startPrev:{},lastPad:null,
-  p2:{move:{x:0,y:0},aim:{x:0,y:0},fire:false,pb:{},pbHit:new Set(),stickPrev:{x:0,y:0},flick:null,dev:'pad',ptr:{down:false,mouse:false},connected:false,pressed(n){return this.pbHit.has(n)}},
+  // couch co-op: players 2-5 each play on a controller of their own. coPads[k] is player k+2's gamepad index, co[k] what
+  // that controller is doing. Player 1 gets every other input (touch, keyboard, mouse, any other controller).
+  coPads:[],co:[],pads:[],startHit:[],startPrev:{},lastPad:null,p1idx:null,
   init(cv){
     addEventListener('keydown',e=>{
       if(e.target&&e.target.tagName==='INPUT')return; // typing a run code
@@ -232,7 +232,7 @@ const Input={
   },
   k(n){return KEYS[n].some(c=>this.down.has(c))},
   pressed(n){return(KEYS[n]&&KEYS[n].some(c=>this.hit.has(c)))||this.pbHit.has(n)||this.tHit.has(n)},
-  // one controller's buttons (with press edges) and sticks, into st: this for player 1, this.p2 for player 2
+  // one controller's buttons (with press edges) and sticks, into st: this for player 1, this.co[k] for the others
   readPad(gp,st){
     for(const name in PADB){
       const on=PADB[name].some(i=>gp.buttons[i]&&(gp.buttons[i].pressed||gp.buttons[i].value>.5));
@@ -255,10 +255,13 @@ const Input={
     this.mapHeld=this.k('map');
     let pads=[];
     try{pads=[...(navigator.getGamepads?navigator.getGamepads():[])].filter(g=>g&&g.connected)}catch(e){}
-    this.pads=pads.map(g=>g.index);this.startHit=[];
+    const prev=this.pads;this.pads=pads.map(g=>g.index);this.startHit=[];
     for(const g of pads){const on=!!(g.buttons[9]&&g.buttons[9].pressed);if(on&&!this.startPrev[g.index])this.startHit.push(g.index);this.startPrev[g.index]=on}
-    coopClaimPad();
-    const gp=pads.find(g=>g.index!==this.p2pad)||null;
+    coopClaimPads();
+    const gp=pads.find(g=>!this.coPads.includes(g.index))||null;
+    // a controller that just changed hands (someone left co-op) can't press anything for player 1 until it's let go
+    if(gp&&gp.index!==this.p1idx&&(this.p1idx!=null||prev.includes(gp.index)))this.pb=heldPad();
+    this.p1idx=gp?gp.index:null;
     if(gp){
       const r=this.readPad(gp,this);
       if(this.pb.map)this.mapHeld=true;
@@ -266,11 +269,11 @@ const Input={
       if(r.mx!=null){mx=r.mx;my=r.my}
       if(r.ax!=null){ax=r.ax;ay=r.ay}
     }
-    {const q=this.p2,g2=this.p2pad==null?null:pads.find(g=>g.index===this.p2pad);
+    this.coPads.forEach((idx,k)=>{const q=this.co[k]||(this.co[k]=mkCtl()),g2=idx==null?null:pads.find(g=>g.index===idx);
       q.connected=!!g2;q.move.x=q.move.y=q.aim.x=q.aim.y=0;q.fire=false;
       if(g2){const r=this.readPad(g2,q);
         if(r.mx!=null){const l=Math.max(1,Math.hypot(r.mx,r.my));q.move.x=r.mx/l;q.move.y=r.my/l}
-        if(r.ax!=null){const l=Math.hypot(r.ax,r.ay);q.aim.x=r.ax/l;q.aim.y=r.ay/l;q.fire=true}}}
+        if(r.ax!=null){const l=Math.hypot(r.ax,r.ay);q.aim.x=r.ax/l;q.aim.y=r.ay/l;q.fire=true}}});
     const style=Save.d.opts.touchStyle;
     for(const t of this.touches.values()){
       if(t.role==='move'){const dx=(t.x-t.ox)/20,dy=(t.y-t.oy)/20;mx=dx;my=dy}
@@ -284,7 +287,7 @@ const Input={
     const al=Math.hypot(ax,ay);if(al>0.01){ax/=al;ay/=al}else{ax=0;ay=0}
     this.move.x=mx;this.move.y=my;this.aim.x=ax;this.aim.y=ay;this.fire=al>0.01;
   },
-  endStep(){this.hit.clear();this.pbHit.clear();this.p2.pbHit.clear();this.tHit.clear();this.clicks.length=0;this.flick=null}
+  endStep(){this.hit.clear();this.pbHit.clear();for(const q of this.co)q.pbHit.clear();this.tHit.clear();this.clicks.length=0;this.flick=null}
 };
 
 // ---------- 5. AUDIO ENGINE ----------
@@ -1828,8 +1831,7 @@ function buildRoom(room){
     if(rng.chance(.08)){const k=rng.chance(.5)?'jukebox':'photobooth',cx=rng.pick([1,15]),cy=rng.pick([1,7]);room.tiles[tileIdx(cx,cy)]=T_FLOOR;const c=cellCenter(cx,cy);room.objects.push({kind:k,x:c.x,y:c.y})}
   }else if(room.type==='treasure'){
     if(rng.chance(.5))for(const[x,y]of[[2,2],[14,2],[2,6],[14,6]])room.tiles[tileIdx(x,y)]=T_ROCK;
-    const it=drawItem('t');if(it)room.peds.push({x:coop()?CX-30:CX,y:CY,item:it});
-    if(coop()){const i2=drawItem('t');if(i2)room.peds.push({x:CX+30,y:CY,item:i2})}
+    for(let k=0,n=Math.max(1,G.players.length);k<n;k++){const it=drawItem('t');if(it)room.peds.push({x:CX+(k-(n-1)/2)*30,y:CY,item:it})} // co-op: one each
   }else if(room.type==='shop'){
     const it=drawItem(room.sold?'t':'s');const disc=(G.player.flags.discount?.75:1)*(G.run.mods.sellout?.6:1);
     if(it)room.peds.push({x:CX-60,y:CY+10,item:it,price:Math.round(15*disc),pt:'pins'});
@@ -1966,7 +1968,14 @@ function withP(p,f){const o=G.player;G.player=p;try{return f()}finally{G.player=
 const isUp=p=>!!p&&!p.dead&&!p.away;           // standing, with a controller
 const shown=p=>!p.down&&!p.away;               // drawn as themselves (not a ghost)
 const coop=()=>G.players.length>1;
-const P1COL='#ff8fc8',P2COL='#7ff5e6';
+const PCOL=['#ff8fc8','#7ff5e6','#ffd23f','#7cff6a','#b48cff']; // 1P pink, 2P teal, 3P gold, 4P green, 5P violet
+const MAXP=5;
+// where everyone stands next to whoever leads: [ahead, sideways] in pixels, by player number
+const SPREAD=[[0,0],[14,0],[14,14],[14,-14],[28,0]],TAG_OFF=[[18,-12],[-18,-12],[18,8],[-18,8],[0,-24]];
+function mkCtl(){return{move:{x:0,y:0},aim:{x:0,y:0},fire:false,pb:{},pbHit:new Set(),stickPrev:{x:0,y:0},flick:null,dev:'pad',ptr:{down:false,mouse:false},connected:false,pressed(n){return this.pbHit.has(n)}}}
+const IDLE=mkCtl(); // stands still: a player whose controller hasn't been read yet
+const ctlOf=p=>p.pn?Input.co[p.pn-1]||IDLE:Input;
+const coPressed=n=>Input.co.some(q=>q.connected&&q.pressed(n));
 function livePlayers(){return G.players.filter(isUp)}
 function nearestPlayer(x,y){let best=null,bd=1e18;for(const q of G.players)if(isUp(q)){const d=d2(x,y,q.x,q.y);if(d<bd){bd=d;best=q}}return best||G.players[0]||G.player}
 // enemies go after whoever is closest, and stick with them a while so they don't flip back and forth
@@ -1979,23 +1988,26 @@ function targetOf(e){
 // the screen goes grey and red for whoever is closest to dying
 function hpFocus(){let best=null,bh=1e9;for(const q of G.players)if(isUp(q)){const h=q.red+extraHalves(q);if(h<bh){bh=h;best=q}}return best||G.players[0]||G.player}
 // down (or waiting for their controller): float along behind whoever is still standing
-function tagAlong(q){const f=livePlayers()[0];if(!f)return;const h=f.hist[Math.max(0,f.hist.length-20)]||[f.x,f.y];q.x=lerp(q.x,h[0]+(q.pn?-18:18),.08);q.y=lerp(q.y,h[1]-12,.08);q.vx=q.vy=0}
+function tagAlong(q){const f=livePlayers()[0];if(!f)return;const h=f.hist[Math.max(0,f.hist.length-20)]||[f.x,f.y];const o=TAG_OFF[q.pn]||TAG_OFF[0];q.x=lerp(q.x,h[0]+o[0],.08);q.y=lerp(q.y,h[1]+o[1],.08);q.vx=q.vy=0}
 // clearing a room (or a boss, or reaching a new floor) brings back anyone who went down
 function reviveDowned(){
   for(const q of G.players){
     if(!q.down)continue;const f=livePlayers()[0];if(!f)return;
-    q.dead=false;q.down=false;q.inv=120;q.x=f.x+(q.pn?14:-14);q.y=f.y;if(collides(q)){q.x=f.x;q.y=f.y}
+    q.dead=false;q.down=false;q.inv=120;q.x=f.x+(TAG_OFF[q.pn]||TAG_OFF[0])[0]*.8;q.y=f.y;if(collides(q)){q.x=f.x;q.y=f.y}
     if(q.noRed)addExtra(q,'black',2);else{q.maxRed=Math.max(q.maxRed,2);q.red=Math.max(q.red,2)}
-    AU.play('heart');burst(q.x,q.y,20,'#ffffff',2);toast(tr('{0} is back.',tr(q.ch.name)),'',q.pn?P2COL:P1COL);
+    AU.play('heart');burst(q.x,q.y,20,'#ffffff',2);toast(tr('{0} is back.',tr(q.ch.name)),'',PCOL[q.pn]);
   }
 }
-// Player 2 always plays on a controller. If theirs isn't connected (the app reopened, a battery died), the next
-// controller to show up that isn't player 1's becomes theirs, preferring the one they had before.
-function coopClaimPad(){
-  const r=G.run;if(!r||!r.coop)return;
-  const ps=Input.pads;if(Input.p2pad!=null&&ps.includes(Input.p2pad))return;
-  const free=ps.filter(i=>i!==r.p1pad);if(!free.length)return;
-  Input.p2pad=r.p2pad=free.includes(r.p2pad)?r.p2pad:free[0];Input.p2.pb=heldPad();
+// Players 2-5 always play on a controller. When one's isn't connected (the app reopened, a battery died), the next
+// controller to show up that isn't player 1's or anyone else's becomes theirs: the one they had before if it comes back.
+function coopClaimPads(){
+  const r=G.run;if(!r||!r.co||!r.co.length)return;
+  const ps=Input.pads,saved=r.coPads||(r.coPads=[]);
+  const on=k=>Input.coPads[k]!=null&&ps.includes(Input.coPads[k]);
+  const taken=i=>i===r.p1pad||Input.coPads.some((j,k)=>j===i&&on(k));
+  const give=(k,i)=>{Input.coPads[k]=saved[k]=i;(Input.co[k]||(Input.co[k]=mkCtl())).pb=heldPad()};
+  for(let k=0;k<r.co.length;k++)if(!on(k)&&saved[k]!=null&&ps.includes(saved[k])&&!taken(saved[k]))give(k,saved[k]);
+  for(let k=0;k<r.co.length;k++)if(!on(k)){const i=ps.find(i=>!taken(i));if(i!=null)give(k,i)}
 }
 const heldPad=()=>Object.fromEntries(Object.keys(PADB).map(n=>[n,true])); // buttons already down on a newly assigned controller aren't presses
 function makePlayer(ch){
@@ -2079,7 +2091,7 @@ function playerDie(src){
   }
   if(G.players.some(q=>q!==p&&isUp(q))){
     p.dead=true;p.down=true;p.firing=false;p.lz=0;p.encore=0;burst(p.x,p.y,30,'#cfe6ff',2.5);AU.play('fall');G.run.lastHurt=src;
-    toast(tr('{0} is down.',tr(p.ch.name)),'Clear the room to bring them back.',p.pn?P2COL:P1COL);return;
+    toast(tr('{0} is down.',tr(p.ch.name)),'Clear the room to bring them back.',PCOL[p.pn]);return;
   }
   p.dead=true;G.run.killer=src||'something';G.dieP=p;G.state='dying';G.dieT=0;clearRunSave(); // closing the app can't undo a death
   Music.setMode('off');AU.tapeStop((Music.song?Music.song.root:36)+12);
@@ -2620,7 +2632,7 @@ function useConsumable(p){
 }
 // ----- player update -----
 function updatePlayer(p){
-  const ctl=p.pn?Input.p2:Input,mv=ctl.move;let sp=p.spd*(G.floorDef.water?.88:1);
+  const ctl=ctlOf(p),mv=ctl.move;let sp=p.spd*(G.floorDef.water?.88:1);
   p.vx=lerp(p.vx,mv.x*sp,.25);p.vy=lerp(p.vy,mv.y*sp,.25);
   if(p.dashCd>0)p.dashCd--;
   if(ctl.pressed('dash')&&p.dashCd<=0){let dx=ctl.flick?ctl.flick.x:mv.x,dy=ctl.flick?ctl.flick.y:mv.y;if(Math.hypot(dx,dy)<.2){dx=p.face==='side'?(p.flip?-1:1):0;dy=p.face==='up'?-1:p.face==='down'?1:0}const l=Math.hypot(dx,dy)||1;p.dashX=dx/l*3.6;p.dashY=dy/l*3.6;p.dashT=p.flags.longDash?19:13;p.dashCd=48;p.dashes=(p.dashes||0)+1;AU.play('dash')}
@@ -2780,7 +2792,7 @@ const EN={
 };
 function spawnEnemy(type,x,y,o){
   o=o||{};const def=EN[type]||BOSS[type],depth=G.run.depth,sc=(1+.22*(depth-1))*(G.run.hard?1.25:1),loopMul=1+.35*(G.run.loop||0);
-  const e={type,def,x,y,vx:0,vy:0,kx:0,ky:0,r:def.r,hp:def.hp*(def.boss?(G.run.hard?1.2:1):sc)*diff().hp*loopMul*(coop()?(def.boss?1.5:1.3):1),t:0,st:0,stT:0,face:0,flash:0,burn:0,poison:0,slow:0,fear:0,stun:0,
+  const e={type,def,x,y,vx:0,vy:0,kx:0,ky:0,r:def.r,hp:def.hp*(def.boss?(G.run.hard?1.2:1):sc)*diff().hp*loopMul*(1+(Math.max(1,G.players.length)-1)*(def.boss?.5:.3)),t:0,st:0,stT:0,face:0,flash:0,burn:0,poison:0,slow:0,fear:0,stun:0,
     spawnT:40,fly:!!def.fly,elite:false,dead:false,inv:false,hidden:false,seed:FX.next(),boss:!!def.boss};
   Object.assign(e,o);e.maxhp=e.hp;
   if(e.elite){e.hp*=1.8;e.maxhp=e.hp;e.r*=1.15}
@@ -2957,8 +2969,7 @@ function bossDefeated(e){
   const p=G.player;
   G.fx.push({t:70,f:()=>{
     G.locked=false;G.room.cleared=true;G.bossDying=false;reviveDowned();
-    const it=drawItem('b');if(it)G.room.peds.push({x:coop()?CX-30:CX,y:CY-14,item:it});
-    if(coop()){const i2=drawItem('b');if(i2)G.room.peds.push({x:CX+30,y:CY-14,item:i2})}
+    for(let k=0,n=Math.max(1,G.players.length);k<n;k++){const it=drawItem('b');if(it)G.room.peds.push({x:CX+(k-(n-1)/2)*30,y:CY-14,item:it})}
     spawnPickup('heart',CX-34,CY+8);
     G.room.trapdoor={x:CX,y:CY+44,t:0};AU.play('hatch');
     if(G.floor.curse&&!G.floor.curseLifted){G.floor.curseLifted=true;p.pins=Math.min(99,p.pins+15);G.run.curseBonus=(G.run.curseBonus||0)+300;AU.play('lift');toast('The curse lifts.','+15 pins','#ffd23f')}
@@ -3107,9 +3118,9 @@ function snapshotRun(){
     rooms.push(o);
   }
   return{v:1,build:BUILD,at:Date.now(),
-    run:{coop:r.coop||null,p2pad:r.p2pad==null?null:r.p2pad,p1pad:r.p1pad==null?-1:r.p1pad,perks:r.perks,curseBonus:r.curseBonus,mode:r.mode,loop:r.loop,round:r.round,weekly:r.weekly,splits:r.splits,seedStr:r.seedStr,char:r.char.id,depth:r.depth,diff:r.diff,mods:r.mods,daily:r.daily,dailyKey:r.dailyKey,items:ids(r.items),taken:r.taken,pools:r.pools,
+    run:{co:r.co||null,coPads:r.coPads||null,p1pad:r.p1pad==null?-1:r.p1pad,perks:r.perks,curseBonus:r.curseBonus,mode:r.mode,loop:r.loop,round:r.round,weekly:r.weekly,splits:r.splits,seedStr:r.seedStr,char:r.char.id,depth:r.depth,diff:r.diff,mods:r.mods,daily:r.daily,dailyKey:r.dailyKey,items:ids(r.items),taken:r.taken,pools:r.pools,
       candyMap:r.candyMap,candyKnown:r.candyKnown,kills:r.kills,frames:r.frames,bossKills:r.bossKills,secrets:r.secrets,newUnlocks:r.newUnlocks.map(a=>a.id)},
-    player:snapPlayer(p),p2:G.players[1]?snapPlayer(G.players[1]):null,
+    player:snapPlayer(p),co:G.players.slice(1).map(snapPlayer),
     floor:{room:G.room.idx,rooms,curseLifted:!!G.floor.curseLifted}};
 }
 function snapPlayer(p){const ids=a=>a.map(i=>i.id);
@@ -3136,8 +3147,11 @@ function restoreRun(d){
   G.run=run;const p=G.player=makePlayer(ch);G.players=[p];G.dieP=null;
   G.toasts=[];G.banner=null;G.sadBar=0;G.mapToggle=false;G.tut=null;G.trans=null;
   loadPlayer(p,sp,one,many);
-  {const ch2=sr.coop&&CHARS.find(c=>c.id===sr.coop);
-    if(ch2&&d.p2){const q=makePlayer(ch2);q.pn=1;G.players.push(q);loadPlayer(q,d.p2,one,many);run.coop=ch2.id;run.p2pad=sr.p2pad;run.p1pad=sr.p1pad==null?-1:sr.p1pad}}
+  // co-op (the first co-op build saved one extra player as coop/p2/p2pad)
+  {const ids=sr.co||(sr.coop?[sr.coop]:[]),snaps=d.co||(d.p2?[d.p2]:[]),pads=sr.coPads||(sr.p2pad!=null?[sr.p2pad]:[]);
+    ids.forEach((id,k)=>{const c2=CHARS.find(c=>c.id===id);if(!c2||!snaps[k]||G.players.length>=MAXP)return;const q=makePlayer(c2);q.pn=G.players.length;G.players.push(q);loadPlayer(q,snaps[k],one,many);
+      (run.co||(run.co=[])).push(id);(run.coPads||(run.coPads=[])).push(pads[k]==null?null:pads[k])});
+    run.p1pad=sr.p1pad==null?-1:sr.p1pad;Input.coPads=(run.co||[]).map(()=>null);Input.co=Input.coPads.map(()=>mkCtl())}
   setupFloor(run.depth,true);G.floor.curseLifted=!!d.floor.curseLifted;
   for(const o of d.floor.rooms){
     const rm=G.floor.rooms.get(o.idx);if(!rm)continue;
@@ -3208,7 +3222,7 @@ function shareRun(){
 // ---------- run / floor / room flow ----------
 function startRun(charId,o){
   o=o||{};
-  const ch=CHARS.find(c=>c.id===charId)||CHARS[0],ch2=!o.tutorial&&o.p2&&CHARS.find(c=>c.id===o.p2)||null;
+  const ch=CHARS.find(c=>c.id===charId)||CHARS[0],chs=o.tutorial?[]:(o.co||[]).map(id=>CHARS.find(c=>c.id===id)).filter(Boolean).slice(0,MAXP-1);
   // everything seeded keys off the run code, so typing one in replays that night
   const seedStr=o.weekly?o.weekly.seedStr:o.seedStr||seedString(o.seed!=null?o.seed>>>0:(Math.random()*4294967296)>>>0);
   const seed=hashStr(seedStr),rng=new RNG(hashStr(seedStr+':pools'));
@@ -3218,7 +3232,7 @@ function startRun(charId,o){
     mode:o.mode||'story',loop:0,round:0,weekly:o.weekly?o.weekly.key:null,splits:[],curseBonus:0,perks:o.tutorial||o.daily||o.weekly?{}:activePerks(),
     tutorial:!!o.tutorial,kills:0,frames:0,bossKills:0,killer:null,newUnlocks:[],pools:null,candyMap:null,candyKnown:{},hurtBoss:false,hurtRoom:false,secrets:0,win:null,lastHurt:null};
   const pools={t:[],s:[],b:[],c:[]};
-  for(const it of ITEMS){if(it.lock&&!isUnlocked(it.lock))continue;if(ch.items.includes(it.id)||ch2&&ch2.items.includes(it.id))continue;for(const k of'tsbc')if(it.pool.includes(k))pools[k].push(it.id)}
+  for(const it of ITEMS){if(it.lock&&!isUnlocked(it.lock))continue;if(ch.items.includes(it.id)||chs.some(c=>c.items.includes(it.id)))continue;for(const k of'tsbc')if(it.pool.includes(k))pools[k].push(it.id)}
   for(const k in pools)rng.shuffle(pools[k]);
   run.pools=pools;
   const fx=rng.shuffle(CANDY_FX.map((_,i)=>i));run.candyMap=CANDY_COLS.map((_,i)=>fx[i]);
@@ -3227,11 +3241,16 @@ function startRun(charId,o){
   for(const id of ch.items){const it=ITEM[id];run.taken[id]=1;if(it.active){G.player.active=it;G.player.charge=it.active.charge;run.items.push(it)}else{G.player.items.push(it);run.items.push(it);if(it.fam)for(const f of it.fam)addFam(G.player,f)}}
   recalc(G.player);
   applyHeartMods(G.player,mods);if(mods.sellout)G.player.pins+=20;applyPerks(G.player,run.perks);
-  if(ch2){
-    const q=makePlayer(ch2);q.pn=1;G.players.push(q);
-    run.coop=ch2.id;run.p2pad=Input.p2pad;run.p1pad=Input.dev==='pad'&&Input.lastPad!==Input.p2pad?Input.lastPad:-1;
-    for(const id of ch2.items){const it=ITEM[id];run.taken[id]=1;run.items.push(it);if(it.active){q.active=it;q.charge=it.active.charge}else{q.items.push(it);if(it.fam)for(const f of it.fam)addFam(q,f)}}
-    recalc(q);applyHeartMods(q,mods);if(mods.sellout)q.pins+=20;applyPerks(q,run.perks);Save.d.lastChar2=ch2.id;
+  if(chs.length){
+    run.co=chs.map(c=>c.id);run.coPads=chs.map((_,k)=>Input.coPads[k]==null?null:Input.coPads[k]);
+    run.p1pad=Input.dev==='pad'&&!Input.coPads.includes(Input.lastPad)?Input.lastPad:-1;
+    Input.coPads=run.coPads.slice();Input.co=chs.map((_,k)=>Input.co[k]||mkCtl());
+    chs.forEach((ch2,k)=>{
+      const q=makePlayer(ch2);q.pn=k+1;G.players.push(q);
+      for(const id of ch2.items){const it=ITEM[id];run.taken[id]=1;run.items.push(it);if(it.active){q.active=it;q.charge=it.active.charge}else{q.items.push(it);if(it.fam)for(const f of it.fam)addFam(q,f)}}
+      recalc(q);applyHeartMods(q,mods);if(mods.sellout)q.pins+=20;applyPerks(q,run.perks);
+    });
+    Save.d.lastCo=run.co.slice();
   }
   if(!run.tutorial){Save.d.stats.runs++;Save.d.lastChar=ch.id;charStats(ch.id).runs++;clearRunSave()}
   if(run.daily)Save.d.daily[dateKey()]={done:false,score:0,diff:diffId};
@@ -3284,7 +3303,7 @@ function enterFloor(d){
   setupFloor(d,false);
   const p=G.player;
   enterRoom(G.floor.start,null);
-  reviveDowned();G.players.forEach((q,k)=>{q.x=CX+(k?14:0);q.y=CY+10;q.hist=[]});
+  reviveDowned();G.players.forEach((q,k)=>{q.x=CX+[0,14,-14,28,-28][k];q.y=CY+10;q.hist=[]});
   const r=G.run,card={type:'floor',t:0,dur:150};
   if(r.mode==='rush'){card.sub=tr('ROUND {0} / {1}',r.round+1,ROUNDS.length);card.title=tr(BOSS[ROUNDS[r.round].boss].name)}
   else if(r.loop)card.sub=tr('FLOOR')+' '+G.floorDef.ro+' · '+tr('LOOP {0}',r.loop+1);
@@ -3307,8 +3326,8 @@ function enterRoom(room,fromDir){
   G.pickups=room.pickups;G.roomT=0;G.extraDark=0;G.boss=null;G.run.hurtRoom=false;G.border=0;G.locked=false;G.void=false;
   const p=G.player;
   {let x=CX,y=CY+10;if(fromDir){const o={u:[CX,OY+IH-10],d:[CX,OY+10],l:[OX+IW-10,CY],r:[OX+10,CY]}[fromDir];x=o[0];y=o[1]}
-    // co-op: the second player comes through right behind the first
-    G.players.forEach((q,k)=>{q.x=x;q.y=y;if(k){const[dx,dy]=fromDir?DIRS[fromDir]:[1,0];q.x+=dx*14;q.y+=dy*14;if(collides(q)){q.x=x;q.y=y}}q.vx*=.3;q.vy*=.3;q.hist=[]})}
+    // co-op: everyone else comes through right behind the first, fanned out a little
+    G.players.forEach((q,k)=>{q.x=x;q.y=y;if(k){const[dx,dy]=fromDir?DIRS[fromDir]:[1,0],[a,sd]=SPREAD[k]||SPREAD[1];q.x+=dx*a-dy*sd;q.y+=dy*a+dx*sd;if(collides(q)){q.x=x;q.y=y}}q.vx*=.3;q.vy*=.3;q.hist=[]})}
   room.visited=true;room.seen=true;
   for(const d in room.doors){const dd=room.doors[d];if(!dd.link.secret||dd.link.revealed)dd.to.seen=true}
   if(room.type==='secret'){for(const d in room.doors)room.doors[d].link.revealed=true;if(!room.counted){room.counted=true;G.run.secrets++;Save.d.stats.secrets++;if(Save.d.stats.secrets>=3)grantAch('secret')}}
@@ -3503,7 +3522,7 @@ function drawPlayer(c,p){
   c.fillStyle='rgba(0,0,0,.4)';c.beginPath();c.ellipse(p.x,p.y+6,6,2.5,0,0,TAU);c.fill();
   if(p.twin){c.beginPath();c.ellipse(p.twin.x,p.twin.y+6,6,2.5,0,0,TAU);c.fill()}
   // co-op: a little arrow over each head, so two of the same character can tell themselves apart
-  if(coop()&&!p.dead){c.fillStyle=p.pn?P2COL:P1COL;const y=(p.y-21+(isFlying(p)?-3:0))|0;c.beginPath();c.moveTo(p.x-3,y);c.lineTo(p.x+3,y);c.lineTo(p.x,y+3);c.fill()}
+  if(coop()&&!p.dead){c.fillStyle=PCOL[p.pn];const y=(p.y-21+(isFlying(p)?-3:0))|0;c.beginPath();c.moveTo(p.x-3,y);c.lineTo(p.x+3,y);c.lineTo(p.x,y+3);c.fill()}
   if(blink||p.invisible)return;
   const spr=playerSprites(p.ch,p.scene),bob=(p.walkT>>3&1)&&(Math.abs(p.vx)+Math.abs(p.vy)>.3)?1:0;
   const fly=isFlying(p)?-3+Math.sin(G.t*.1):0;
@@ -3518,9 +3537,9 @@ const ghostSprs={};
 function ghostSprite(ch,col){const k=ch.id+col;if(ghostSprs[k])return ghostSprs[k];const s=playerSprites(ch.invisible?CHARS[0]:ch).down,g=mkCanvas(s.width,s.height),x=g.getContext('2d');
   x.drawImage(s,0,0);x.globalCompositeOperation='source-in';x.fillStyle=col;x.fillRect(0,0,s.width,s.height);return ghostSprs[k]=g}
 function drawGhostPlayer(c,p){
-  const spr=ghostSprite(p.ch,p.pn?P2COL:P1COL),b=Math.sin(G.t*.08)*2;
+  const spr=ghostSprite(p.ch,PCOL[p.pn]),b=Math.sin(G.t*.08)*2;
   c.globalAlpha=.42+.12*Math.sin(G.t*.1);c.drawImage(spr,(p.x-8)|0,(p.y-12+b)|0);c.globalAlpha=1;
-  txt(c,p.away?'PRESS A BUTTON':'DOWN',p.x,(p.y-26+b)|0,{align:'center',col:p.pn?P2COL:P1COL,alpha:.85});
+  txt(c,p.away?'PRESS A BUTTON':'DOWN',p.x,(p.y-26+b)|0,{align:'center',col:PCOL[p.pn],alpha:.85});
 }
 function drawEnemyShadow(c,e){if(e.hidden)return;c.fillStyle='rgba(0,0,0,.35)';c.beginPath();c.ellipse(e.x,e.y+e.r*.8+(e.fly?4:0),e.r*.9,e.r*.35,0,0,TAU);c.fill()}
 function drawEnemy(c,e){
@@ -3621,11 +3640,25 @@ function drawPlayerHUD(c,p,X){
   if(p.consum){const cx=hx+68,cy=ry+3;if(p.consum.kind==='candy'){c.fillStyle=CANDY_COLS[p.consum.cid];c.beginPath();c.ellipse(cx,cy,4,2.6,.4,0,TAU);c.fill()}else{c.fillStyle='#1a1424';c.fillRect(cx-4,cy-5,8,11);c.strokeStyle='#d4af37';c.strokeRect(cx-3.5,cy-4.5,7,10)}txt(c,glyph('use'),cx+7,ry,{col:'#8f86a0'})}
   if(p.revives&&!G.run.tutorial)txt(c,'x'+p.revives,hx+86,ry,{col:'#cfe6ff'});
   {const hy=ry+11;if(p.encore>0){txt(c,'ENCORE!',hx-3,hy,{col:`hsl(${G.t*6%360},100%,70%)`})}else{txt(c,'HYPE',hx-3,hy,{col:'#8f86a0'});c.fillStyle='rgba(0,0,0,.6)';c.fillRect(hx+26,hy+1,52,5);c.fillStyle=p.hype>75?'#ffd23f':'#ff4f7b';c.fillRect(hx+27,hy+2,50*(p.hype||0)/100,3)}}
-  if(coop()){const col=p.pn?P2COL:P1COL;txt(c,p.pn?'2P':'1P',1,8,{col});if(!shown(p))txt(c,p.away?'PRESS A BUTTON':'DOWN',p.active?44:14,ry+22,{col})}
+  if(coop()){const col=PCOL[p.pn];txt(c,(p.pn+1)+'P',1,8,{col});if(!shown(p))txt(c,p.away?'PRESS A BUTTON':'DOWN',p.active?44:14,ry+22,{col})}
   c.restore();
 }
+// 3+ players: everyone after player 1 gets a small strip along the top: tag, hearts, active charge, pins and candles
+function drawMiniHUD(c,p,X){
+  const col=PCOL[p.pn];c.fillStyle='rgba(5,2,8,.5)';c.fillRect(X-2,3,64,34);
+  txt(c,(p.pn+1)+'P',X,6,{col});
+  let i=0;const put=s=>{c.drawImage(s,X+12+(i%5)*10,5+((i/5)|0)*9);i++};
+  for(let k=0;k<p.maxRed/2;k++){const v=p.red-k*2;put(heartSpr(v>=2?'red':v===1?'half':'empty'))}
+  for(const e of p.extras)put(heartSpr(e.t==='cracked'?'cracked':e.hp===2?'black':'bhalf'));
+  const ry=5+Math.ceil(Math.max(1,i)/5)*9+2;
+  if(!shown(p)){txt(c,p.away?'press a button':'DOWN',X,ry,{font:F_X,size:10,col});return}
+  if(p.active){const max=p.active.active.charge;for(let k=0;k<max;k++){c.fillStyle=k<p.charge?(p.charge>=max?'#ffd23f':'#e9e1f0'):'#2a2030';c.fillRect(X+k*3,ry+2,2,5)}}
+  txt(c,String(p.pins).padStart(2,'0'),X+15,ry,{col:'#d8d8e0'});c.fillStyle='#ffb347';c.fillRect(X+31,ry,2,2);c.fillStyle='#e8e0d0';c.fillRect(X+31,ry+2,2,5);txt(c,String(p.candles).padStart(2,'0'),X+35,ry,{col:'#d8d8e0'});
+  if(p.encore>0)txt(c,'!',X+54,ry,{col:`hsl(${G.t*6%360},100%,70%)`});else{c.fillStyle='rgba(0,0,0,.6)';c.fillRect(X+52,ry+1,8,6);c.fillStyle=p.hype>75?'#ffd23f':'#ff4f7b';c.fillRect(X+53,ry+6-5*(p.hype||0)/100,6,5*(p.hype||0)/100)}
+}
 function drawHUD(c){
-  drawPlayerHUD(c,G.players[0]||G.player,0);if(G.players[1])drawPlayerHUD(c,G.players[1],256);
+  const ps=G.players.length?G.players:[G.player];drawPlayerHUD(c,ps[0],0);
+  if(ps.length===2)drawPlayerHUD(c,ps[1],256);else for(let k=1;k<ps.length;k++)drawMiniHUD(c,ps[k],140+(k-1)*66);
   drawMinimap(c,false);
   txt(c,G.floorDef.ro,W-14,44,{align:'right',col:'#8f86a0'});
   if(G.boss&&!G.boss.dead&&G.state==='play'){const b=G.boss,w=220,x=CX-w/2,y=H-14,k=clamp(b.hp/b.maxhp,0,1);c.fillStyle='rgba(0,0,0,.7)';c.fillRect(x-2,y-2,w+4,8);c.fillStyle='#3a0a12';c.fillRect(x,y,w,4);c.fillStyle=b.harmless?'#cfe6ff':'#c21e3a';c.fillRect(x,y,w*k,4);c.fillStyle='rgba(255,255,255,.3)';c.fillRect(x,y,w*k,1);txt(c,b.def.name,CX,y-13,{align:'center',font:F_T,size:12,col:'#e9e1f0'})}
@@ -3690,8 +3723,9 @@ function renderGame(c){
   if((Input.mapHeld||G.mapToggle)&&G.state==='play')drawMinimap(c,true);
   drawTutorial(c);
   const showTimer=Save.d.opts.timer&&!G.run.tutorial;
-  if(showTimer)txt(c,fmtTime(G.run.frames),CX,3,{align:'center',font:F_X,size:13,col:'#ffd23f'});
-  if(Save.d.opts.fps)txt(c,G.fps+' FPS',CX,showTimer?16:4,{align:'center',col:'#7cff6a'});
+  const ty=G.players.length>2?40:3; // 3+ players: the top strip is theirs, so the timer sits under it
+  if(showTimer)txt(c,fmtTime(G.run.frames),CX,ty,{align:'center',font:F_X,size:13,col:'#ffd23f'});
+  if(Save.d.opts.fps)txt(c,G.fps+' FPS',CX,showTimer?ty+13:ty+1,{align:'center',col:'#7cff6a'});
   if(trn&&trn.type==='floor'){const a=trn.t<20?trn.t/20:trn.t>110?Math.max(0,(trn.dur-trn.t)/40):1;c.globalAlpha=a;c.fillStyle='rgba(0,0,0,.55)';c.fillRect(0,96,W,62);txt(c,trn.sub||tr('FLOOR')+' '+G.floorDef.ro,CX,102,{align:'center',col:G.floorDef.acc});txt(c,trn.title||G.floorDef.n,CX,114,{align:'center',font:F_T,size:28});if(trn.curse)txt(c,CURSES[trn.curse].n,CX,146,{align:'center',col:'#c21e3a'});c.globalAlpha=1}
   if(trn&&trn.type==='fade'){const h=trn.dur/2,a=trn.t<h?trn.t/h:(trn.dur-trn.t)/h;c.fillStyle=`rgba(0,0,0,${clamp(a,0,1)})`;c.fillRect(0,0,W,H)}
   let hint=null,toastY=H-26;
@@ -3715,7 +3749,7 @@ const ES={
 'HEAVIER MODE':'MODO PESADO','{0} choose   {1} descend   {2} back':'{0} elegir   {1} descender   {2} volver',
 'Journal':'Diario','ITEMS':'OBJETOS','ENEMIES':'ENEMIGOS','UNLOCKS':'LOGROS','Not found yet.':'Aún no encontrado.','Locked: {0}':'Bloqueado: {0}',
 'Defeated.':'Derrotado.','Not defeated yet.':'Aún no derrotado.','Killed at least once.':'Eliminado al menos una vez.','Not met yet.':'Aún no visto.',
-'{0} switch tab   {1} browse   {2} back':'{0} cambiar pestaña   {1} explorar   {2} volver','Paused':'Pausa','RESUME':'CONTINUAR','GUIDE':'GUÍA','{0} is down.':'{0} cayó.','Clear the room to bring them back.':'Despeja el cuarto para que vuelva.','{0} is back.':'{0} volvió.','DOWN':'CAÍDO','PRESS A BUTTON':'PULSA UN BOTÓN','co-op: press START on a second controller':'cooperativo: pulsa START en un segundo mando','2P · {0} · ← → to change · START to leave':'2J · {0} · ← → para cambiar · START para salir','with {0}':'con {0}','{0} and {1}':'{0} y {1}','QUIT RUN':'ABANDONAR',
+'{0} switch tab   {1} browse   {2} back':'{0} cambiar pestaña   {1} explorar   {2} volver','Paused':'Pausa','RESUME':'CONTINUAR','GUIDE':'GUÍA','{0} is down.':'{0} cayó.','Clear the room to bring them back.':'Despeja el cuarto para que vuelva.','{0} is back.':'{0} volvió.','DOWN':'CAÍDO','PRESS A BUTTON':'PULSA UN BOTÓN','co-op: up to 4 more players press START on their controllers':'cooperativo: hasta 4 jugadores más pulsan START en sus mandos','START to join or leave':'START para entrar o salir','START to leave':'START para salir','press a button':'pulsa un botón','{0} and {1}':'{0} y {1}','QUIT RUN':'ABANDONAR',
 'FLOOR':'PISO','SEED':'SEMILLA','DAILY':'DIARIA','daily':'diaria','HEAVIER':'PESADO','DAMAGE':'DAÑO','TEARS/S':'LÁGRIMAS/S','RANGE':'ALCANCE','SPEED':'VELOCIDAD',
 'SHOT SPEED':'VEL. DE TIRO','LUCK':'SUERTE','WEAPON':'ARMA','tears':'lágrimas','The End':'Fin','Gone Home':'Te Fuiste a Casa','You Died':'Moriste','KILLED BY':'MUERTO POR',
 'TIME':'TIEMPO','KILLS':'BAJAS','SCORE':'PUNTOS','(best)':'(récord)','nothing, in the end':'nada, al final','something':'algo','going home early':'irse temprano a casa',
@@ -4385,7 +4419,7 @@ const BOKEH=Array.from({length:26},(_,i)=>({x:(i*97)%W,y:60+((i*53)%140),r:4+(i*
 function goTitle(){
   if(Updater.ready){Updater.apply();return}
   G.runSave=loadRunSave();
-  G.state='title';G.menu={sel:0};G.run=null;G.player=null;G.players=[];G.trans=null;G.banner=null;Input.p2pad=null;G.coopSel=null;
+  G.state='title';G.menu={sel:0};G.run=null;G.player=null;G.players=[];G.trans=null;G.banner=null;Input.coPads=[];Input.co=[];G.coSel=null;
   if(!titleSong)titleSong=makeSong(0,1,{song:{tune:'title',calm:'c'}});
   Music.setSong(titleSong);Music.setMode('title');AU.setAmbience('title');AU.setMuffle(18000);
 }
@@ -4485,27 +4519,42 @@ function renderTitle(c){
 }
 const charOpen=ch=>!ch.lock||isUnlocked(ch.lock);
 function nextOpen(i,d){for(let k=1;k<=CHARS.length;k++){const j=((i+d*k)%CHARS.length+CHARS.length)%CHARS.length;if(charOpen(CHARS[j]))return j}return i}
-function coopStart(p1){const last=CHARS.findIndex(c=>c.id===Save.d.lastChar2);return last>=0&&last!==p1&&charOpen(CHARS[last])?last:nextOpen(p1,1)}
-const coopJoined=()=>!!(G.coopSel&&Input.p2pad!=null);
+// a new player starts on who they played last time, or someone nobody else has picked
+function coopStart(k,taken){
+  const want=CHARS.findIndex(c=>c.id===((Save.d.lastCo||[])[k]||(k===0&&Save.d.lastChar2)));
+  if(want>=0&&charOpen(CHARS[want])&&!taken.includes(want))return want;
+  for(let i=0;i<CHARS.length;i++)if(charOpen(CHARS[i])&&!taken.includes(i))return i;
+  return taken[0]||0;
+}
+const coopJoined=()=>!!(G.coSel&&G.coSel.length&&G.coSel.length===Input.coPads.length);
+function coLeave(k){Input.coPads.splice(k,1);Input.co.splice(k,1);if(G.coSel)G.coSel.splice(k,1);AU.play('blip')}
+// draws parts side by side, each its own colour, with dots between
+function txtRow(c,parts,cx,y,size){c.font=size+'px '+F_X;const ws=parts.map(([t])=>c.measureText(tr(t)).width),gap=c.measureText(' · ').width;
+  let x=cx-(ws.reduce((a,b)=>a+b,0)+gap*(parts.length-1))/2;
+  parts.forEach(([t,col],i)=>{txt(c,t,x,y,{font:F_X,size,col});x+=ws[i];if(i<parts.length-1){txt(c,' · ',x,y,{font:F_X,size,col:'#5a5068'});x+=gap}})}
 function updSelect(){
   const m=G.menu;
-  // couch co-op: START on another controller brings in player 2, who picks with that controller; START again leaves
+  // couch co-op: START on another controller brings in the next player (up to five of you), who picks with that
+  // controller; START or B on it again leaves
+  if(!G.coSel||G.coSel.length!==Input.coPads.length){G.coSel=[];Input.coPads=[];Input.co=[]}
+  const cs=G.coSel;
   for(const i of Input.startHit){
-    if(Input.p2pad===i){Input.p2pad=null;G.coopSel=null;AU.play('blip')}
-    else if(Input.p2pad==null){Input.p2pad=i;Input.p2.pb=heldPad();G.coopSel={sel:coopStart(m.sel)};AU.play('select')}
+    const k=Input.coPads.indexOf(i);
+    if(k>=0)coLeave(k);
+    else if(Input.coPads.length<MAXP-1){const st=mkCtl();st.pb=heldPad();Input.coPads.push(i);Input.co.push(st);cs.push({sel:coopStart(cs.length,[m.sel,...cs.map(x=>x.sel)])});AU.play('select')}
   }
-  if(Input.p2pad!=null&&!Input.pads.includes(Input.p2pad)){Input.p2pad=null;G.coopSel=null}
-  if(coopJoined()){const q=Input.p2,cs=G.coopSel;
-    if(q.pressed('ml')||q.pressed('mu')){cs.sel=nextOpen(cs.sel,-1);AU.play('blip')}
-    if(q.pressed('mr')||q.pressed('md')){cs.sel=nextOpen(cs.sel,1);AU.play('blip')}
-    if(q.pressed('back')){Input.p2pad=null;G.coopSel=null;AU.play('blip')}
+  for(let k=Input.coPads.length-1;k>=0;k--)if(!Input.pads.includes(Input.coPads[k]))coLeave(k);
+  for(let k=cs.length-1;k>=0;k--){const q=Input.co[k],x=cs[k];
+    if(q.pressed('ml')||q.pressed('mu')){x.sel=nextOpen(x.sel,-1);AU.play('blip')}
+    if(q.pressed('mr')||q.pressed('md')){x.sel=nextOpen(x.sel,1);AU.play('blip')}
+    if(q.pressed('back'))coLeave(k);
   }
   if(Input.pressed('ml')||Input.pressed('mu')){m.sel=(m.sel+CHARS.length-1)%CHARS.length;AU.play('blip')}
   if(Input.pressed('mr')||Input.pressed('md')){m.sel=(m.sel+1)%CHARS.length;AU.play('blip')}
   let go=Input.pressed('ok');
   for(const cl of Input.clicks)CHARS.forEach((ch,i)=>{if(inRect(cl,[selX(i),70,60,110])){if(m.sel===i)go=true;m.sel=i}});
   if(Input.pressed('back')||backBtnHit()){if(G.selMode==='encore'||G.selMode==='rush'){G.state='modes';G.menu={sel:Math.max(0,MODE_LIST.findIndex(x=>x.id===G.selMode))}}else goTitle();return}
-  if(go){const ch=CHARS[m.sel];if(ch.lock&&!isUnlocked(ch.lock)){AU.play('denied');return}AU.play('select');openSetup(G.selMode||'story',ch.id,coopJoined()?CHARS[G.coopSel.sel].id:null)}
+  if(go){const ch=CHARS[m.sel];if(ch.lock&&!isUnlocked(ch.lock)){AU.play('denied');return}AU.play('select');openSetup(G.selMode||'story',ch.id,coopJoined()?G.coSel.map(x=>CHARS[x.sel].id):null)}
 }
 const selX=i=>CX-(CHARS.length*66-6)/2+i*66;
 function renderSelect(c){
@@ -4521,7 +4570,7 @@ function renderSelect(c){
     c.drawImage(spr,-8,-12);c.restore();c.filter='none';c.globalAlpha=1;
     if(ch.twins){c.save();c.translate(x+46,y+60);c.scale(2,2);c.drawImage(spr,-8,-12);c.restore()}
     txt(c,lock?'???':ch.name,x+30,y+90,{align:'center',col:sel?'#fff':'#a89cb8'});
-    if(coopJoined()){if(sel)txt(c,'1P',x+4,y+4,{col:P1COL});if(G.coopSel.sel===i){c.strokeStyle=P2COL;c.strokeRect(x+2.5,y+2.5,55,105);txt(c,'2P',x+56,y+4,{align:'right',col:P2COL})}}
+    if(coopJoined()){let n=0;[G.menu.sel,...G.coSel.map(z=>z.sel)].forEach((s,k)=>{if(s!==i)return;if(k){c.strokeStyle=PCOL[k];c.strokeRect(x+.5+n*2,y+.5+n*2,59-n*4,109-n*4)}txt(c,(k+1)+'P',x+3+n*11,y+4+(n?n*2:0),{col:PCOL[k]});n++})}
   });
   const ch=CHARS[G.menu.sel],lock=ch.lock&&!isUnlocked(ch.lock);
   if(lock){txt(c,'LOCKED',CX,196,{align:'center',col:'#c21e3a'});txt(c,unlockHint(ch.lock),CX,210,{align:'center',font:F_X,size:13,col:'#b8aec8'})}
@@ -4530,18 +4579,18 @@ function renderSelect(c){
     const hearts=ch.hearts?tr('{0} hearts',ch.hearts):tr('{0} black hearts',ch.black);
     txt(c,tr('{0} · damage {1} · tears {2}',hearts,ch.dmg,ch.rate)+(ch.items.length?tr(' · starts with {0}',tr(ITEM[ch.items[0]].n)):''),CX,210,{align:'center',font:F_X,size:12,col:'#8f86a0'});
   }
-  if(coopJoined())txt(c,tr('2P · {0} · ← → to change · START to leave',tr(CHARS[G.coopSel.sel].name)),CX,228,{align:'center',font:F_X,size:12,col:P2COL});
-  else txt(c,'co-op: press START on a second controller',CX,228,{align:'center',font:F_X,size:11,col:'#5a5068'});
+  if(coopJoined())txtRow(c,[...G.coSel.map((z,k)=>[(k+2)+'P '+tr(CHARS[z.sel].name),PCOL[k+1]]),[G.coSel.length<MAXP-1?'START to join or leave':'START to leave','#8f86a0']],CX,228,12);
+  else txt(c,'co-op: up to 4 more players press START on their controllers',CX,228,{align:'center',font:F_X,size:11,col:'#5a5068'});
   drawBackBtn(c);txt(c,tr('{0} choose   {1} descend   {2} back','← →',glyph('ok'),glyph('back')),CX,H-18,{align:'center',font:F_X,size:11,col:'#4a4058'});
 }
 // ---------- run setup: difficulty, controls, run code, modifiers ----------
 const SETUP_X=184,SETUP_W=288;
 const touchDevice=()=>matchMedia('(pointer:coarse)').matches;
 // kind: story, daily, weekly, encore or rush. Daily and weekly lock the run code (and weekly the modifiers).
-function openSetup(kind,charId,p2){
+function openSetup(kind,charId,co){
   const o=Save.d.opts;if(!diffOk(o.diff|0))o.diff=0;
   G.run=null;G.player=null;G.players=[]; // the setup screen always reads your saved choices, never a finished run
-  G.state='setup';G.setup={kind,daily:kind==='daily'||kind==='weekly',charId,p2:p2||null,seed:'',err:'',wk:kind==='weekly'?weeklySpec():null};G.menu={sel:setupRows().length-1};
+  G.state='setup';G.setup={kind,daily:kind==='daily'||kind==='weekly',charId,co:co&&co.length?co:null,seed:'',err:'',wk:kind==='weekly'?weeklySpec():null};G.menu={sel:setupRows().length-1};
 }
 const MODE_LIST=[{id:'encore',l:'ENCORE',f:'The floors never end. After the last room it loops back to the start, heavier every time. Go until you drop.'},
   {id:'rush',l:'BOSS RUSH',f:'Every boss, back to back, with an item between fights.'},
@@ -4583,7 +4632,7 @@ function beginRun(){
   const s=G.setup;AU.play('select');Save.write();
   if(s.kind==='daily')startRun('wren',{daily:true,seed:hashStr('daily:'+dateKey())});
   else if(s.kind==='weekly')startRun('wren',{weekly:weeklySpec()});
-  else startRun(s.charId,Object.assign({mode:s.kind==='encore'||s.kind==='rush'?s.kind:'story'},s.seed?{seedStr:s.seed}:{},s.p2?{p2:s.p2}:{}));
+  else startRun(s.charId,Object.assign({mode:s.kind==='encore'||s.kind==='rush'?s.kind:'story'},s.seed?{seedStr:s.seed}:{},s.co?{co:s.co}:{}));
 }
 function updSetup(){
   const m=G.menu,s=G.setup,rows=setupRows(),n=rows.length;
@@ -4619,8 +4668,9 @@ function renderSetup(c){
   c.save();c.translate(px,86+Math.sin(G.frame*.08)*2);c.scale(3,3);if(ch.invisible)c.globalAlpha=.18;c.drawImage(spr,-8,-12);c.restore();c.globalAlpha=1;
   if(ch.twins){c.save();c.translate(px+22,94);c.scale(2,2);c.drawImage(spr,-8,-12);c.restore()}
   txt(c,ch.name,px,110,{align:'center',font:F_T,size:16});
-  {const c2=s.p2&&CHARS.find(x=>x.id===s.p2);if(c2){const s2=playerSprites(c2.invisible?CHARS[0]:c2).down;c.save();c.translate(px-48,98);c.scale(2,2);if(c2.invisible)c.globalAlpha=.3;c.drawImage(s2,-8,-12);c.restore();c.globalAlpha=1;
-    txt(c,tr('with {0}',tr(c2.name)),px,124,{align:'center',font:F_X,size:12,col:P2COL})}}
+  // co-op: everyone else in small, on either side
+  (s.co||[]).forEach((id,k)=>{const c2=CHARS.find(x=>x.id===id);if(!c2)return;const s2=playerSprites(c2.invisible?CHARS[0]:c2).down,sx=k<2?40:140,sy=56+(k%2)*34;
+    c.save();c.translate(sx,sy);c.scale(1.5,1.5);if(c2.invisible)c.globalAlpha=.3;c.drawImage(s2,-8,-12);c.restore();c.globalAlpha=1;txt(c,(k+2)+'P',sx,sy+9,{align:'center',col:PCOL[k+1]})});
   [['RUNS',st.runs],['WINS',st.wins],['BEST',st.best]].forEach(([k,v],i)=>{txt(c,k,26,136+i*13,{col:'#8f86a0'});txt(c,String(v),154,136+i*13,{align:'right',col:'#fff'})});
   txt(c,'DEEPEST',26,175,{col:'#8f86a0'});
   txt(c,st.deep?FLOORS[st.deep-1].ro+' · '+tr(FLOORS[st.deep-1].n):tr('not yet'),px,188,{align:'center',font:F_X,size:12,col:'#d8cce4'});
@@ -4729,7 +4779,7 @@ function openGuide(){
 }
 function updPause(){
   const items=PAUSE_ITEMS;
-  if((Input.pressed('pause')||Input.p2.pressed('pause'))&&G.menu.t>2){resume();return}
+  if((Input.pressed('pause')||coPressed('pause'))&&G.menu.t>2){resume();return}
   G.menu.t=(G.menu.t||0)+1;
   const i=menuNav(items.length);
   if(i===0)resume();
@@ -4786,7 +4836,7 @@ function toSummary(){
 }
 const CLOSERS=["The rain didn't stop.",'Nobody called.','The candle burned all the way down.','It was a quiet night.','The song ended mid-chorus.','Someone left the light on.'];
 function epitaph(r){
-  const pas=r.items.filter(i=>!i.active),c2=r.coop&&CHARS.find(c=>c.id===r.coop),nm=c2?tr('{0} and {1}',tr(r.char.name),tr(c2.name)):tr(r.char.name);
+  const pas=r.items.filter(i=>!i.active),names=[r.char,...(r.co||[]).map(id=>CHARS.find(c=>c.id===id)).filter(Boolean)].map(c=>tr(c.name)),nm=names.length>1?tr('{0} and {1}',names.slice(0,-1).join(', '),names[names.length-1]):names[0];
   let s=pas.length>=2?tr('{0} carried {1} and {2}.',nm,tr(pas[pas.length-1].n),tr(pas[0].n)):pas.length?tr('{0} carried {1}.',nm,tr(pas[0].n)):tr('{0} carried nothing at all.',nm);
   return s+' '+(r.win?tr('They made it out.'):tr('They made it to {0}.',tr(floorOf(r).n)))+' '+tr(CLOSERS[hashStr(r.seedStr)%CLOSERS.length]);
 }
@@ -4840,14 +4890,14 @@ function updateTrans(){
 }
 function updPlay(){
   const p=G.player;
-  if(Input.pressed('pause')||Input.p2.pressed('pause')){G.prevState='play';G.state='pause';G.menu={sel:0};AU.setMuffle(900);return}
+  if(Input.pressed('pause')||coPressed('pause')){G.prevState='play';G.state='pause';G.menu={sel:0};AU.setMuffle(900);return}
   if(updateTrans()){updateParticles();return}
   if(G.hitstop>0){G.hitstop--;updateParticles();return}
   G.t++;G.roomT++;G.run.frames++;
   if(G.slowT>0)G.slowT--;
   if(G.swing>0)G.swing--;
   if(--G.flowT<=0){computeFlow();G.flowT=8}
-  for(const q of G.players){q.away=q.pn>0&&!Input.p2.connected;if(!isUp(q))continue;withP(q,()=>updatePlayer(q));if(G.state!=='play'||G.trans&&G.trans.type!=='floor')return}
+  for(const q of G.players){q.away=q.pn>0&&!ctlOf(q).connected;if(!isUp(q))continue;withP(q,()=>updatePlayer(q));if(G.state!=='play'||G.trans&&G.trans.type!=='floor')return}
   for(const q of G.players)if(isUp(q))withP(q,()=>updateFams(q));else tagAlong(q);
   updateTears();updateEnemies();updateEBul();updateCreeps();updateBombs();updatePickups();updateBeams();updateTutorial();
   const cur=G.fx;G.fx=[];const due=[];for(const f of cur){if(--f.t<=0)due.push(f);else G.fx.push(f)}for(const f of due)f.f();
@@ -4924,7 +4974,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.03-0025';
+const BUILD='2026.10.03-0149';
 const Updater={
   ready:false,
   check(){

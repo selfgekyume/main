@@ -14,8 +14,10 @@ Each folder is a standalone browser game published with GitHub Pages and played 
 - Couch co-op: `G.players` holds everyone in the run (player 1 first) and `G.player` is whoever the running code is about,
   swapped with `withP(p,fn)`: each player while they update, a tear's owner (`t.p`), an enemy's target (`targetOf`). So code
   written against `G.player` mostly just works; anything that should touch every player (hazards, healing, positions) loops
-  `G.players`/`livePlayers()`. Player 2 always plays on their own controller (`Input.p2pad`, read into `Input.p2`), joins with
-  START on the character select screen, and is saved as `p2` in the run save. Solo runs have one player, so keep them unchanged.
+  `G.players`/`livePlayers()`. Up to five players (`MAXP`): player 1 on touch, keyboard or a controller; players 2-5 each on
+  their own controller (`Input.coPads[k]`, read into `Input.co[k]`, colors in `PCOL`). They join with START on the character
+  select screen and are saved as `co` in the run save (the first co-op build saved one as `coop`/`p2`; `restoreRun` still reads
+  that). Chrome shows at most 4 controllers. Solo runs have one player, so keep them unchanged.
 - Run codes (`ABCD-EFGH`) replay a run because every seeded system derives from `run.seedStr`. Key any new
   seeded randomness off it too; cosmetic randomness uses `FX`.
 - The current floor's look, enemies and boss come from `G.floorDef` (floor II is sometimes `MALL`), so use it
