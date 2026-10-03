@@ -4,7 +4,7 @@
 // version.json is never cached: the page uses it to notice updates.
 // The recorded instruments (audio/*.mp3) live in their own cache that survives game updates, so they download once.
 // Changing one means bumping its number in AUDIO_V here and in index.html; stale copies are dropped on activate.
-const CACHE='sorrowbloom-2026.10.02-2128';
+const CACHE='sorrowbloom-2026.10.03-0025';
 const CORE=['./','index.html','guide.html','manifest.webmanifest','icon-180.png','icon-192.png','icon-512.png','icon-maskable-512.png'];
 const AUDIO_V={gtr:1,bass:1,drums:2,gtrx:1,drumx:1},AUDIO='sorrowbloom-audio-1';
 const AUDIO_FILES=Object.keys(AUDIO_V).map(k=>`audio/${k}.mp3?v=${AUDIO_V[k]}`);

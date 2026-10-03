@@ -11,6 +11,11 @@ Each folder is a standalone browser game published with GitHub Pages and played 
 - After any change to the game, run `sh sorrowbloom/bump-version.sh`. It writes one build stamp into `index.html`,
   `sw.js` and `version.json`. Installed copies compare that stamp to decide when to update, so skipping it means
   phones keep the old version.
+- Couch co-op: `G.players` holds everyone in the run (player 1 first) and `G.player` is whoever the running code is about,
+  swapped with `withP(p,fn)`: each player while they update, a tear's owner (`t.p`), an enemy's target (`targetOf`). So code
+  written against `G.player` mostly just works; anything that should touch every player (hazards, healing, positions) loops
+  `G.players`/`livePlayers()`. Player 2 always plays on their own controller (`Input.p2pad`, read into `Input.p2`), joins with
+  START on the character select screen, and is saved as `p2` in the run save. Solo runs have one player, so keep them unchanged.
 - Run codes (`ABCD-EFGH`) replay a run because every seeded system derives from `run.seedStr`. Key any new
   seeded randomness off it too; cosmetic randomness uses `FX`.
 - The current floor's look, enemies and boss come from `G.floorDef` (floor II is sometimes `MALL`), so use it
