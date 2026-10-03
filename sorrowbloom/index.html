@@ -93,7 +93,7 @@ const Save={
   d:null,
   fresh(){return{ach:{},seenI:{},gotI:{},seenE:{},bossK:{},
     stats:{runs:0,wins:0,deaths:0,kills:0,secrets:0,confess:0},
-    opts:{lang:(navigator.language||'').toLowerCase().startsWith('es')?'es':'en',master:1,music:.75,sfx:.8,ambVol:.8,mono:false,calm2:'mix',shake:1,flash:true,hints:true,autofire:false,aim:false,dmgNums:false,fps:false,crt:true,grain:true,pixel:false,hiContrast:false,touchSize:1,diff:0,timer:false,touchStyle:'twin',touchAssist:true,aimLine:true,flick:true,lefty:false,binds:{}},daily:{},best:0,hard:false,lastChar:'wren',tutDone:false,mods:{},chars:{},weekly:{},bestSplits:{},texts:{},bank:0,merch:{owned:{},on:{}}}},
+    opts:{lang:(navigator.language||'').toLowerCase().startsWith('es')?'es':'en',master:1,music:.75,sfx:.8,ambVol:.8,mono:false,calm2:'mix',shake:1,flash:true,hints:true,autofire:false,aim:false,dmgNums:false,fps:false,crt:true,grain:true,pixel:false,hiContrast:false,eid:true,touchSize:1,diff:0,timer:false,touchStyle:'twin',touchAssist:true,aimLine:true,flick:true,lefty:false,binds:{}},daily:{},best:0,hard:false,lastChar:'wren',tutDone:false,mods:{},chars:{},weekly:{},bestSplits:{},texts:{},bank:0,merch:{owned:{},on:{}}}},
   load(){
     let s=null;try{s=JSON.parse(localStorage.getItem(SAVE_KEY)||'null')}catch(e){s=null}
     const f=this.fresh();
@@ -3720,6 +3720,7 @@ function renderGame(c){
   c.drawImage(wb,0,0);
   postFx(c);
   drawHUD(c);
+  drawItemInfo(c);
   if((Input.mapHeld||G.mapToggle)&&G.state==='play')drawMinimap(c,true);
   drawTutorial(c);
   const showTimer=Save.d.opts.timer&&!G.run.tutorial;
@@ -3956,6 +3957,131 @@ const ES={
 'How big the on-screen buttons are.':'Qué tan grandes son los botones en pantalla.',
 'Turn your phone sideways':'Gira tu teléfono','or tap to keep going':'o toca para seguir','Update ready':'Actualización lista',
 'It installs when you get back to the title screen.':'Se instala cuando vuelvas a la pantalla de título.',
+// item info
+"+0.7 damage. Tears leave ink puddles that hurt enemies walking through.":"+0.7 de daño. Las lágrimas dejan charcos de tinta que dañan a quien los pisa.",
+"+0.3 tears. Tears cried on the beat do double damage.":"+0.3 lágrimas. Las lágrimas al ritmo hacen el doble de daño.",
+"Tears split into two smaller tears when they hit.":"Al pegar, las lágrimas se parten en dos más pequeñas.",
+"Homing tears.":"Lágrimas teledirigidas.",
+"+1 cracked heart. Double damage while you're on your last heart.":"+1 corazón agrietado. Doble daño cuando te queda el último corazón.",
+"+0.3 damage. Tears can set enemies on fire.":"+0.3 de daño. Las lágrimas pueden prender fuego a los enemigos.",
+"+0.25 speed. Enemies aim worse at you.":"+0.25 de velocidad. Los enemigos te apuntan peor.",
+"One more life: when you die, you get back up.":"Una vida más: cuando mueres, te levantas.",
+"+0.55 tears.":"+0.55 lágrimas.",
+"The longer you stay in a room, the harder you hit (up to +60% after 20 seconds).":"Cuanto más tiempo en un cuarto, más fuerte pegas (hasta +60% a los 20 segundos).",
+"+40 range. Puddles and other floor creep can't hurt you.":"+40 de alcance. Los charcos del suelo no te dañan.",
+"Small random stat changes, rerolled every floor. Usually good.":"Pequeños cambios de estadísticas al azar en cada piso. Casi siempre buenos.",
+"+30% damage in fights while the guitars are playing.":"+30% de daño en las peleas mientras suenan las guitarras.",
+"+1 heart container and a heart of healing. +0.3 damage.":"+1 contenedor de corazón y cura un corazón. +0.3 de daño.",
+"+0.35 speed, -15 range.":"+0.35 de velocidad, -15 de alcance.",
+"+1 damage, but your aim is a little crooked.":"+1 de daño, pero apuntas un poco chueco.",
+"+0.35 tears and a black heart.":"+0.35 lágrimas y un corazón negro.",
+"+0.2 speed. Spikes can't hurt you.":"+0.2 de velocidad. Los picos no te dañan.",
+"Tears go through enemies.":"Las lágrimas atraviesan a los enemigos.",
+"Cry two tears at once. -0.3 damage.":"Lloras dos lágrimas a la vez. -0.3 de daño.",
+"Bigger tears. +0.6 damage, slower shots.":"Lágrimas más grandes. +0.6 de daño, tiros más lentos.",
+"+0.5 tears, faster shots.":"+0.5 lágrimas, tiros más rápidos.",
+"Two orbs circle you, hurting enemies and blocking bullets.":"Dos orbes giran a tu alrededor, dañan enemigos y bloquean balas.",
+"A buddy follows you and cries wherever you cry.":"Un amigo te sigue y llora hacia donde llores.",
+"Every 4th tear is a power chord: triple damage.":"Cada cuarta lágrima es un power chord: triple daño.",
+"Every tear gets a random effect: homing, fire, slow, pierce or poison.":"Cada lágrima tiene un efecto al azar: teledirigida, fuego, lentitud, perforante o veneno.",
+"+0.3 damage and light around you.":"+0.3 de daño y luz a tu alrededor.",
+"+3 candles.":"+3 velas.",
+"+5 candles. Candle blasts get bigger.":"+5 velas. Las explosiones de vela son más grandes.",
+"+0.35 tears, +0.1 speed.":"+0.35 lágrimas, +0.1 de velocidad.",
+"+10 pins. 25% off in shops.":"+10 seguros. 25% de descuento en las tiendas.",
+"+1 luck, +3 pins.":"+1 de suerte, +3 seguros.",
+"+0.4 damage. Tears fly through rocks.":"+0.4 de daño. Las lágrimas atraviesan las rocas.",
+"+0.4 damage and a black heart.":"+0.4 de daño y un corazón negro.",
+"+0.3 damage. Tears slow enemies down.":"+0.3 de daño. Las lágrimas frenan a los enemigos.",
+"+0.5 damage, +30 range. Tears wobble in waves.":"+0.5 de daño, +30 de alcance. Las lágrimas van en ondas.",
+"Tears bounce off walls twice.":"Las lágrimas rebotan dos veces en las paredes.",
+"+0.6 damage and big knockback. Slower shots.":"+0.6 de daño y mucho empuje. Tiros más lentos.",
+"x1.5 damage, but x0.8 tears.":"x1.5 de daño, pero x0.8 lágrimas.",
+"+1.2 damage. Bigger, slower tears.":"+1.2 de daño. Lágrimas más grandes y lentas.",
+"+1.1 tears, -0.6 damage.":"+1.1 lágrimas, -0.6 de daño.",
+"Double damage to the last enemy left in a room.":"Doble daño al último enemigo del cuarto.",
+"Walking into a fight fires 8 strong tears around you.":"Al entrar a una pelea disparas 8 lágrimas fuertes a tu alrededor.",
+"Every enemy (not bosses) takes damage when you walk in.":"Todos los enemigos (no los jefes) reciben daño cuando entras.",
+"+0.1 speed. You stay invincible longer after a hit.":"+0.1 de velocidad. Más tiempo invencible después de un golpe.",
+"Tears explode when they hit. x0.8 tears.":"Las lágrimas explotan al pegar. x0.8 lágrimas.",
+"Everything up: +1 heart, damage, tears, speed, range and luck.":"Todo sube: +1 corazón, daño, lágrimas, velocidad, alcance y suerte.",
+"Getting hurt fires 10 tears in every direction.":"Cuando te dañan disparas 10 lágrimas en todas direcciones.",
+"+0.2 damage for every half heart you're missing.":"+0.2 de daño por cada medio corazón que te falta.",
+"+0.15 speed. Shows the floor map.":"+0.15 de velocidad. Muestra el mapa del piso.",
+"More light. The map shows everything, secret room too.":"Más luz. El mapa muestra todo, también el cuarto secreto.",
+"Hits jump to another enemy nearby.":"Los golpes saltan a otro enemigo cercano.",
+"Tears can crit for triple damage (10%, more with luck).":"Las lágrimas pueden hacer crítico: triple daño (10%, más con suerte).",
+"+40 range, faster shots, +1 luck.":"+40 de alcance, tiros más rápidos, +1 de suerte.",
+"+2 empty heart containers.":"+2 contenedores de corazón vacíos.",
+"+2 cracked hearts, +0.5 damage.":"+2 corazones agrietados, +0.5 de daño.",
+"Cleared rooms drop stuff more often.":"Los cuartos despejados sueltan cosas más seguido.",
+"+1 heart container and a full heal.":"+1 contenedor de corazón y curación completa.",
+"+1 heart container and a heart of healing. +0.3 damage, -0.1 speed.":"+1 contenedor de corazón y cura un corazón. +0.3 de daño, -0.1 de velocidad.",
+"Tears poison enemies.":"Las lágrimas envenenan.",
+"In fights, every other bar you fire 6 homing tears.":"En las peleas, cada dos compases disparas 6 lágrimas teledirigidas.",
+"Flight: float over pits, spikes and puddles.":"Vuelo: flotas sobre fosos, picos y charcos.",
+"+0.3 tears and a little light.":"+0.3 lágrimas y un poco de luz.",
+"+0.5 damage, +20 range, faster and bigger tears.":"+0.5 de daño, +20 de alcance, lágrimas más rápidas y grandes.",
+"+1 damage.":"+1 de daño.",
+"+0.4 tears, +15 range.":"+0.4 lágrimas, +15 de alcance.",
+"Shockwave: hurts and shoves everything close, and wipes out nearby bullets.":"Onda expansiva: daña y empuja todo lo cercano y borra las balas de cerca.",
+"Three flames circle you for 8 seconds, burning whatever they touch.":"Tres llamas giran a tu alrededor 8 segundos y queman lo que tocan.",
+"Something random: heal, pins, the map, more damage, a black heart, candles... or nothing.":"Algo al azar: curación, seguros, el mapa, más daño, un corazón negro, velas... o nada.",
+"Slows everything down for 6 seconds.":"Hace todo más lento durante 6 segundos.",
+"Throw a big fireball that explodes and burns.":"Lanza una bola de fuego grande que explota y quema.",
+"Heavy damage to every enemy in the room, and a short stun.":"Mucho daño a todos los enemigos del cuarto y un breve aturdimiento.",
+"Swing it: a big hit and knockback all around you.":"Gíralo: un golpe fuerte y empuje a tu alrededor.",
+"Every enemy gets poisoned and runs from you for 3 seconds.":"Todos los enemigos se envenenan y huyen de ti 3 segundos.",
+"Replaces your tears: hold to charge, let go to fire a beam.":"Reemplaza tus lágrimas: mantén para cargar, suelta para disparar un rayo.",
+"Replaces your tears: a short-range blast of 5 at once, each weaker.":"Reemplaza tus lágrimas: una ráfaga corta de 5 a la vez, más débiles.",
+"Replaces your tears: about twice as many, at half damage.":"Reemplaza tus lágrimas: casi el doble de lágrimas, a mitad de daño.",
+"Replaces your tears: they fly out and come back like a boomerang.":"Reemplaza tus lágrimas: van y vuelven como bumerán.",
+"+1 luck. A black cat chases and scratches enemies.":"+1 de suerte. Un gato negro persigue y araña a los enemigos.",
+"Every fight starts with +45 HYPE.":"Cada pelea empieza con +45 de HYPE.",
+"+0.3 damage and a big light around you.":"+0.3 de daño y mucha luz a tu alrededor.",
+"Blocks the first hit you take in every fight.":"Bloquea el primer golpe que recibes en cada pelea.",
+"+0.25 speed and a longer dash.":"+0.25 de velocidad y un esquive más largo.",
+"+0.45 tears.":"+0.45 lágrimas.",
+"+0.6 damage.":"+0.6 de daño.",
+"+40 range, faster shots.":"+40 de alcance, tiros más rápidos.",
+"Heal half a heart every time you clear a room.":"Curas medio corazón cada vez que despejas un cuarto.",
+"x1.5 damage while you stand still.":"x1.5 de daño mientras estés quieto.",
+"Shows the whole map, secret room too.":"Muestra todo el mapa, también el cuarto secreto.",
+"Seven explosions go off around the room.":"Siete explosiones por todo el cuarto.",
+"Fly for 15 seconds with x1.3 damage.":"Vuela 15 segundos con x1.3 de daño.",
+"40 damage to everything in the room, bosses too.":"40 de daño a todo lo del cuarto, jefes incluidos.",
+"Two hearts drop at your feet.":"Caen dos corazones a tus pies.",
+"Takes you to the treasure room.":"Te lleva al cuarto del tesoro.",
+"Takes you back to the start room.":"Te regresa al cuarto inicial.",
+"x1.5 damage for 20 seconds, and a heart of healing.":"x1.5 de daño durante 20 segundos y cura un corazón.",
+"Full heal.":"Curación completa.",
+"+0.15 speed.":"+0.15 de velocidad.",
+"-0.1 speed.":"-0.1 de velocidad.",
+"+0.3 tears.":"+0.3 lágrimas.",
+"-0.2 tears.":"-0.2 lágrimas.",
+"+30 range.":"+30 de alcance.",
+"Hurts half a heart (it can't kill you).":"Quita medio corazón (no te puede matar).",
+"A black heart.":"Un corazón negro.",
+"Shows the floor map.":"Muestra el mapa del piso.",
+"+1 luck.":"+1 de suerte.",
+"+0.4 damage.":"+0.4 de daño.",
+"Eat it to find out. After that you'll know this color.":"Cómelo para saberlo. Después vas a reconocer este color.",
+"3 pins: a random song (heal, damage, range, tears or a black heart) and +30 HYPE.":"3 seguros: una canción al azar (curación, daño, alcance, lágrimas o un corazón negro) y +30 de HYPE.",
+"5 pins: a random photo, and a random stat changes.":"5 seguros: una foto al azar, y cambia una estadística al azar.",
+"A full heal. Works once.":"Curación completa. Funciona una vez.",
+"Jukebox":"Rocola",
+"Photo booth":"Cabina de fotos",
+"Music box":"Caja musical",
+"ACTIVE · 1 ROOM":"ACTIVO · 1 CUARTO",
+"ACTIVE · {0} ROOMS":"ACTIVO · {0} CUARTOS",
+"WEAPON":"ARMA",
+"TAROT":"TAROT",
+"CANDY":"DULCE",
+"{0} PINS":"{0} SEGUROS",
+"COSTS 1 HEART CONTAINER":"CUESTA 1 CONTENEDOR DE CORAZÓN",
+"COSTS {0} HEART CONTAINERS":"CUESTA {0} CONTENEDORES DE CORAZÓN",
+"Swaps out your {0}.":"Cambia tu {0}.",
+"ITEM INFO":"INFO DE OBJETOS"
 };
 function tr(s,...a){s=String(s);let r=(Save.d&&Save.d.opts.lang==='es'&&ES[s])||s;for(let i=0;i<a.length;i++)r=r.split('{'+i+'}').join(String(a[i]));return r}
 
@@ -4289,6 +4415,146 @@ function drawAimLine(c,p){
 }
 function drawGhosts(c){for(const g of G.ghosts){const p=g.p||G.player;if(p.invisible)continue;const spr=playerSprites(p.ch,p.scene);c.globalAlpha=g.t/24;c.save();c.translate(g.x|0,g.y|0);if(g.face==='side'&&g.flip)c.scale(-1,1);c.drawImage(spr[g.face],-8,-12);c.restore()}c.globalAlpha=1}
 
+// ---------- item info: what something does, shown in a box before you pick it up (Settings > General > Item info) ----------
+// Plain words and real numbers. guide.html says the same things, so keep the two in step.
+const EID={
+  eyeliner:"+0.7 damage. Tears leave ink puddles that hurt enemies walking through.",
+  mixtape:"+0.3 tears. Tears cried on the beat do double damage.",
+  rose:"Tears split into two smaller tears when they hit.",
+  unsent:"Homing tears.",
+  locket:"+1 cracked heart. Double damage while you're on your last heart.",
+  matchheart:"+0.3 damage. Tears can set enemies on fire.",
+  hoodie:"+0.25 speed. Enemies aim worse at you.",
+  polaroid:"One more life: when you die, you get back up.",
+  nailpolish:"+0.55 tears.",
+  insomnia:"The longer you stay in a room, the harder you hit (up to +60% after 20 seconds).",
+  raincoat:"+40 range. Puddles and other floor creep can't hurt you.",
+  moodring:"Small random stat changes, rerolled every floor. Usually good.",
+  headphones:"+30% damage in fights while the guitars are playing.",
+  studbelt:"+1 heart container and a heart of healing. +0.3 damage.",
+  skinnyjeans:"+0.35 speed, -15 range.",
+  fringe:"+1 damage, but your aim is a little crooked.",
+  wristband:"+0.35 tears and a black heart.",
+  converse:"+0.2 speed. Spikes can't hurt you.",
+  lipring:"Tears go through enemies.",
+  snakebites:"Cry two tears at once. -0.3 damage.",
+  gauges:"Bigger tears. +0.6 damage, slower shots.",
+  bulletbelt:"+0.5 tears, faster shots.",
+  top8:"Two orbs circle you, hurting enemies and blocking bullets.",
+  awaymsg:"A buddy follows you and cries wherever you cry.",
+  profilesong:"Every 4th tear is a power chord: triple damage.",
+  hairdye:"Every tear gets a random effect: homing, fire, slow, pierce or poison.",
+  glowstick:"+0.3 damage and light around you.",
+  candlestub:"+3 candles.",
+  matches:"+5 candles. Candle blasts get bigger.",
+  gloves:"+0.35 tears, +0.1 speed.",
+  wallet:"+10 pins. 25% off in shops.",
+  safetypin:"+1 luck, +3 pins.",
+  ouija:"+0.4 damage. Tears fly through rocks.",
+  rosary:"+0.4 damage and a black heart.",
+  lilies:"+0.3 damage. Tears slow enemies down.",
+  staticcassette:"+0.5 damage, +30 range. Tears wobble in waves.",
+  feedback:"Tears bounce off walls twice.",
+  ampstack:"+0.6 damage and big knockback. Slower shots.",
+  distortion:"x1.5 damage, but x0.8 tears.",
+  droptuning:"+1.2 damage. Bigger, slower tears.",
+  blastbeat:"+1.1 tears, -0.6 damage.",
+  breakdown:"Double damage to the last enemy left in a room.",
+  circlepit:"Walking into a fight fires 8 strong tears around you.",
+  wallofdeath:"Every enemy (not bosses) takes damage when you walk in.",
+  crowdsurf:"+0.1 speed. You stay invincible longer after a hit.",
+  blackveil:"Tears explode when they hit. x0.8 tears.",
+  papercrown:"Everything up: +1 heart, damage, tears, speed, range and luck.",
+  bleedingheart:"Getting hurt fires 10 tears in every direction.",
+  spite:"+0.2 damage for every half heart you're missing.",
+  nightbus:"+0.15 speed. Shows the floor map.",
+  flashlight:"More light. The map shows everything, secret room too.",
+  vinyl:"Hits jump to another enemy nearby.",
+  bloodshot:"Tears can crit for triple damage (10%, more with luck).",
+  palemoon:"+40 range, faster shots, +1 luck.",
+  ribcage:"+2 empty heart containers.",
+  glassheart:"+2 cracked hearts, +0.5 damage.",
+  missedcall:"Cleared rooms drop stuff more often.",
+  hottea:"+1 heart container and a full heal.",
+  bandtee:"+1 heart container and a heart of healing. +0.3 damage, -0.1 speed.",
+  crushedflower:"Tears poison enemies.",
+  sadsong:"In fights, every other bar you fire 6 homing tears.",
+  plush:"A buddy follows you and cries wherever you cry.",
+  mothwings:"Flight: float over pits, spikes and puddles.",
+  mothdust:"+0.3 tears and a little light.",
+  tearjar:"+0.5 damage, +20 range, faster and bigger tears.",
+  heartbreak:"+1 damage.",
+  mascara:"+0.4 tears, +15 range.",
+  scream:"Shockwave: hurts and shoves everything close, and wipes out nearby bullets.",
+  lighter:"Three flames circle you for 8 seconds, burning whatever they touch.",
+  diary:"Something random: heal, pins, the map, more damage, a black heart, candles... or nothing.",
+  hourglass:"Slows everything down for 6 seconds.",
+  matchbook:"Throw a big fireball that explodes and burns.",
+  bassdrop:"Heavy damage to every enemy in the room, and a short stun.",
+  micstand:"Swing it: a big hit and knockback all around you.",
+  burnbook:"Every enemy gets poisoned and runs from you for 3 seconds.",
+  feedbacklaser:"Replaces your tears: hold to charge, let go to fire a beam.",
+  megaphone:"Replaces your tears: a short-range blast of 5 at once, each weaker.",
+  drumsticks:"Replaces your tears: about twice as many, at half damage.",
+  whammy:"Replaces your tears: they fly out and come back like a boomerang.",
+  blackcat:"+1 luck. A black cat chases and scratches enemies.",
+  setlist:"Every fight starts with +45 HYPE.",
+  stagelight:"+0.3 damage and a big light around you.",
+  earplugs:"Blocks the first hit you take in every fight.",
+  skateboard:"+0.25 speed and a longer dash.",
+  slipons:"+0.45 tears.",
+  bandpatch:"+0.6 damage.",
+  capo:"+40 range, faster shots.",
+  campfire:"Heal half a heart every time you clear a room.",
+  stool:"x1.5 damage while you stand still."
+};
+const EID_CARD={moon:"Shows the whole map, secret room too.",tower:"Seven explosions go off around the room.",hanged:"Fly for 15 seconds with x1.3 damage.",death:"40 damage to everything in the room, bosses too.",lovers:"Two hearts drop at your feet.",star:"Takes you to the treasure room.",fool:"Takes you back to the start room.",strength:"x1.5 damage for 20 seconds, and a heart of healing."};
+const EID_CANDY={"Sweet Dreams":"Full heal.","Sugar Rush":"+0.15 speed.","Sour":"-0.1 speed.","Cherry":"+0.3 tears.","Grape":"-0.2 tears.","Blue Raspberry":"+30 range.","Bitter":"Hurts half a heart (it can't kill you).","Midnight":"A black heart.","Clarity":"Shows the floor map.","Lucky":"+1 luck.","Pop Rocks":"+0.4 damage."};
+// the nearest thing in reach: an item on a pedestal first, then a card or candy, then a jukebox, photo booth or music box
+function infoFor(p){
+  let best=null,bd=48*48;
+  for(const ped of G.room.peds)if(ped.item){const d=d2(ped.x,ped.y,p.x,p.y);if(d<bd){bd=d;best={k:'ped',o:ped,x:ped.x,top:ped.y-24,bot:ped.y+28}}}
+  if(best)return best;
+  bd=30*30;for(const pk of G.pickups)if(pk.kind==='card'||pk.kind==='candy'){const d=d2(pk.x,pk.y,p.x,p.y);if(d<bd){bd=d;best={k:pk.kind,o:pk,x:pk.x,top:pk.y-8,bot:pk.y+10}}}
+  if(best)return best;
+  bd=40*40;for(const o of G.room.objects)if(o.kind==='jukebox'||o.kind==='photobooth'||o.kind==='musicbox'&&!o.used){const d=d2(o.x,o.y,p.x,p.y);if(d<bd){bd=d;best={k:o.kind,o,x:o.x,top:o.y-16,bot:o.y+18}}}
+  return best;
+}
+function infoText(inf,p){
+  const tags=[];let title='',body='',cost=null;
+  if(inf.k==='ped'){
+    const it=inf.o.item,ped=inf.o;title=tr(it.n);body=tr(EID[it.id]||it.f);
+    if(it.active){const n=it.active.charge;tags.push([n===1?tr('ACTIVE · 1 ROOM'):tr('ACTIVE · {0} ROOMS',n),'#ffffff']);if(p.active&&p.active!==it)body+=' '+tr('Swaps out your {0}.',tr(p.active.n))}
+    if(it.weapon)tags.push([tr('WEAPON'),'#ffb347']);
+    if(it.set){const n=p.items.filter(i=>i.set===it.set).length+(p.active&&p.active.set===it.set?1:0);tags.push([tr(SETS[it.set].n)+' '+Math.min(3,n)+'/3',SETS[it.set].col])}
+    if(ped.price&&ped.pt==='pins')cost=[tr('{0} PINS',ped.price),p.pins>=ped.price?'#ffd23f':'#ff4f7b'];
+    else if(ped.price)cost=[ped.price>1?tr('COSTS {0} HEART CONTAINERS',ped.price):tr('COSTS 1 HEART CONTAINER'),'#ff4f7b'];
+  }else if(inf.k==='card'){const cd=CARDS[inf.o.cid];title=tr(cd.n);body=tr(EID_CARD[cd.id]||cd.f);tags.push([tr('TAROT'),'#e8d7ff'])}
+  else if(inf.k==='candy'){const cid=inf.o.cid,known=G.run.candyKnown[cid];tags.push([tr('CANDY'),CANDY_COLS[cid]]);
+    if(known){const fx=CANDY_FX[G.run.candyMap[cid]];title=tr(fx.n);body=tr(EID_CANDY[fx.n]||'')}else{title=tr('A little candy');body=tr("Eat it to find out. After that you'll know this color.")}}
+  else if(inf.k==='jukebox'){title=tr('Jukebox');body=tr('3 pins: a random song (heal, damage, range, tears or a black heart) and +30 HYPE.')}
+  else if(inf.k==='photobooth'){title=tr('Photo booth');body=tr('5 pins: a random photo, and a random stat changes.')}
+  else {title=tr('Music box');body=tr('A full heal. Works once.')}
+  return{title,tags,body,cost};
+}
+function drawItemInfo(c){
+  if(Save.d.opts.eid===false||G.state!=='play'||G.trans||!G.run||G.run.tutorial&&G.tut&&G.tut.step<4)return;
+  const boxes=[],done=new Set();
+  for(const p of livePlayers()){
+    const inf=infoFor(p);if(!inf||done.has(inf.o))continue;done.add(inf.o);
+    const L=infoText(inf,p),w=162,lines=wrapText(c,L.body,w-12,11).slice(0,4);
+    const h=19+(L.tags.length?10:0)+lines.length*10+(L.cost?11:0)+3;
+    // above the thing, or under it if that would cover the HUD or another player's box; nowhere free, no box
+    const x=clamp(inf.x-w/2,OX+2,OX+IW-w-2),hits=y=>boxes.some(b=>x<b[0]+b[2]&&x+w>b[0]&&y<b[1]+b[3]&&y+h>b[1]);
+    let y=inf.top-h-3;if(y<42||hits(y))y=inf.bot;if(hits(y)||y+h>OY+IH+8)continue;
+    boxes.push([x,y,w,h]);
+    c.fillStyle='rgba(8,4,14,.9)';c.fillRect(x,y,w,h);c.strokeStyle=coop()?PCOL[p.pn]:'#5a4068';c.strokeRect(x+.5,y+.5,w-1,h-1);
+    let ty=y+3;txt(c,L.title,x+6,ty,{font:F_T,size:14,col:'#ffffff'});ty+=16;
+    if(L.tags.length){let tx=x+6;c.font='8px '+F_U;for(const[t,col]of L.tags){txt(c,t,tx,ty,{col});c.font='8px '+F_U;tx+=c.measureText(t).width+8}ty+=10}
+    for(const l of lines){txt(c,l,x+6,ty-1,{font:F_X,size:11,col:'#d8cce4'});ty+=10}
+    if(L.cost)txt(c,L.cost[0],x+6,ty+1,{col:L.cost[1]});
+  }
+}
 // ---------- room objects: jukebox, photo booth ----------
 const JUKE=[['Power Ballad','You feel better.',p=>healRed(p,2)],['Mosh Anthem','Damage up.',p=>{p.bonus.dmg+=.4;recalc(p)}],['Slow Jam','Range up.',p=>{p.bonus.range+=25;recalc(p)}],['Speedcore','Tears up.',p=>{p.bonus.rate+=.3;recalc(p)}],['Sad Acoustic','A black heart.',p=>addExtra(p,'black',2)]];
 const BOOTH=[['Good angle. Luck up.',p=>{p.bonus.luck+=1;recalc(p)}],['You look tired. Damage up.',p=>{p.bonus.dmg+=.5;recalc(p)}],['Blurry. Speed up.',p=>{p.bonus.spd+=.15;recalc(p)}],['Eyes closed. Range down, tears up.',p=>{p.bonus.range-=20;p.bonus.rate+=.45;recalc(p)}]];
@@ -4365,7 +4631,7 @@ function optRows(tab){
   const sl=(k,lo,hi,after)=>({v:()=>bar((o[k]-lo)/(hi-lo)),act:(d,click)=>{let v=Math.round((o[k]+(d||1)*(hi-lo)/10)*100)/100;if(click&&v>hi+.001)v=lo;o[k]=clamp(v,lo,hi);after&&after()}});
   let rows;
   if(tab===0)rows=[{l:'LANGUAGE',v:()=>o.lang==='es'?'Español':'English',act:()=>{o.lang=o.lang==='es'?'en':'es';applyVideo()}},
-    {l:'BUTTON HINTS',...tog('hints')},{l:'SPEEDRUN TIMER',...tog('timer')},{l:'AUTO-FIRE',...tog('autofire')},{l:'AIM ASSIST',...tog('aim')},{l:'DAMAGE NUMBERS',...tog('dmgNums')},{l:'SHOW FPS',...tog('fps')}];
+    {l:'BUTTON HINTS',...tog('hints')},{l:'SPEEDRUN TIMER',...tog('timer')},{l:'AUTO-FIRE',...tog('autofire')},{l:'AIM ASSIST',...tog('aim')},{l:'DAMAGE NUMBERS',...tog('dmgNums')},{l:'ITEM INFO',...tog('eid')},{l:'SHOW FPS',...tog('fps')}];
   else if(tab===1)rows=[{l:'MASTER VOLUME',...sl('master',0,1,()=>AU.applyVolume())},{l:'MUSIC',...sl('music',0,1,()=>AU.applyVolume())},{l:'SFX',...sl('sfx',0,1,()=>AU.applyVolume())},{l:'AMBIENCE',...sl('ambVol',0,1,()=>AU.applyVolume())},{l:'MONO AUDIO',...tog('mono',()=>AU.applyMono())},
     {l:'CALM MUSIC',v:()=>({mix:'MIXED',a:'CLASSIC',b:'TWINKLE',c:'DREAMY'}[o.calm2]||'MIXED'),act:d=>{const L=['mix','a','b','c'];o.calm2=L[(Math.max(0,L.indexOf(o.calm2))+(d<0?3:1))%4];if(['title','explore','void'].includes(Music.mode))Music.pending=true}},
     {l:'MUTE ALL',v:()=>onoff(AU.muted),act:()=>{AU.muted=!AU.muted;AU.applyVolume()}}];
@@ -4974,7 +5240,7 @@ function frame(now){
 // ---------- updates ----------
 // BUILD must match version.json (run bump-version.sh after every change). The page asks for version.json
 // whenever it opens or comes back to the foreground; a newer build reloads on the title screen, never mid-run.
-const BUILD='2026.10.03-0149';
+const BUILD='2026.10.03-0207';
 const Updater={
   ready:false,
   check(){
